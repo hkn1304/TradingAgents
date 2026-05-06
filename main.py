@@ -9,8 +9,8 @@ load_dotenv()
 # Create a custom config
 config = DEFAULT_CONFIG.copy()
 config["llm_provider"] = "google"
-config["deep_think_llm"] = "gemini-2.5-pro"    # Deep reasoning model
-config["quick_think_llm"] = "gemini-2.5-flash"  # Fast model for lighter tasks
+config["deep_think_llm"] = "gemini-2.5-flash-lite"   # Deep reasoning model
+config["quick_think_llm"] = "gemini-2.5-flash-lite"  # Fast model for lighter tasks
 config["max_debate_rounds"] = 1
 
 # Configure data vendors (yfinance — no extra API keys needed)
@@ -25,8 +25,12 @@ config["data_vendors"] = {
 ta = TradingAgentsGraph(debug=True, config=config)
 
 # Run analysis — ticker and date
-_, decision = ta.propagate("NVDA", "2024-05-10")
-print(decision)
+for ticker in ["NVDA", "OUST"]:
+    print(f"\n{'='*60}")
+    print(f"Analyzing {ticker}...")
+    print('='*60)
+    _, decision = ta.propagate(ticker, "2024-05-10")
+    print(decision)
 
 # Memorize mistakes and reflect
 # ta.reflect_and_remember(1000) # parameter is the position returns
