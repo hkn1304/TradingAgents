@@ -30,10 +30,10 @@ MODEL_OPTIONS: ProviderModeOptions = {
             ("Claude Sonnet 4.5 - Agents and coding", "claude-sonnet-4-5"),
         ],
         "deep": [
-            ("Claude Opus 4.6 - Most intelligent, agents and coding", "claude-opus-4-6"),
-            ("Claude Opus 4.5 - Premium, max intelligence", "claude-opus-4-5"),
+            ("Claude Opus 4.7 - Most capable, long-horizon agentic work", "claude-opus-4-7"),
+            ("Claude Opus 4.6 - Highly intelligent, agents and coding", "claude-opus-4-6"),
             ("Claude Sonnet 4.6 - Best speed and intelligence balance", "claude-sonnet-4-6"),
-            ("Claude Sonnet 4.5 - Agents and coding", "claude-sonnet-4-5"),
+            ("Claude Opus 4.5 - Premium intelligence", "claude-opus-4-5"),
         ],
     },
     "google": {
