@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="XAGUSD">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.svg">
+<title>XAGUSD Analyser</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d1117;
+    --bg2:      #161b22;
+    --bg3:      #1f2937;
+    --border:   #30363d;
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --bull:     #3fb950;
+    --bear:     #f85149;
+    --neutral:  #d29922;
+    --silver:   #c0c0c0;
+    --accent:   #58a6ff;
+    --r3: #ff4444; --r2: #ff7744; --r1: #ffaa44;
+    --pp: #8b949e;
+    --s1: #44aaff; --s2: #4488ff; --s3: #4444ff;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px; }
+
+  body { overflow-x: hidden; padding-bottom: env(safe-area-inset-bottom); }
+
+  /* ── Header ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding: 12px 16px 10px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 8px; }
+  .ag-badge {
+    background: var(--bg3); border: 1px solid var(--silver);
+    color: var(--silver); font-weight: 900; font-size: 15px;
+    border-radius: 8px; padding: 3px 8px; letter-spacing: 1px;
+  }
+  header h1 { font-size: 16px; font-weight: 600; color: var(--text); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .last-update { font-size: 11px; color: var(--muted); }
+  .pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--bull); animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; margin: 12px 12px 0; padding: 14px 16px;
+  }
+  .card-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 10px;
+  }
+
+  /* ── Price hero ── */
+  .price-card { background: var(--bg2); }
+  .price-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .price-main { font-size: 38px; font-weight: 800; color: var(--silver); line-height: 1; }
+  .price-change {
+    font-size: 16px; font-weight: 700; padding: 3px 8px;
+    border-radius: 6px; line-height: 1.4;
+  }
+  .price-change.bull { background: rgba(63,185,80,.15); color: var(--bull); }
+  .price-change.bear { background: rgba(248,81,73,.15); color: var(--bear); }
+  .price-change.flat { background: rgba(139,148,158,.15); color: var(--muted); }
+  .price-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* ── TradingView chart ── */
+  .chart-card { padding: 0; overflow: hidden; }
+  .chart-controls {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 12px; border-bottom: 1px solid var(--border);
+  }
+  .chart-label { font-size: 11px; color: var(--muted); }
+  .chart-expand-btn {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--muted); font-size: 11px; padding: 4px 9px;
+    border-radius: 6px; cursor: pointer;
+  }
+  .chart-card iframe { width: 100%; height: 400px; border: none; display: block;
+    transition: height .3s ease; }
+
+  /* ── News & Sentiment ── */
+  .news-sentiment-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .news-sent-badge {
+    font-size: 11px; font-weight: 800; padding: 3px 10px;
+    border-radius: 20px; letter-spacing: 1px;
+  }
+  .news-sent-BULLISH { background: rgba(63,185,80,.2); color: var(--bull); border: 1px solid var(--bull); }
+  .news-sent-BEARISH { background: rgba(248,81,73,.2); color: var(--bear); border: 1px solid var(--bear); }
+  .news-sent-NEUTRAL { background: rgba(210,153,34,.2); color: var(--neutral); border: 1px solid var(--neutral); }
+  .news-sent-reason { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .news-list { display: flex; flex-direction: column; }
+  .news-item {
+    display: block; padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none; color: inherit;
+  }
+  .news-item:last-child { border-bottom: none; }
+  .news-item:active { opacity: .7; }
+  .news-title { font-size: 13px; color: var(--text); line-height: 1.4; margin-bottom: 4px; }
+  .news-meta { font-size: 11px; color: var(--muted); }
+  .news-meta span { margin-right: 8px; }
+
+  /* ── Pivot levels ── */
+  .pivot-table { width: 100%; border-collapse: collapse; }
+  .pivot-table tr { border-bottom: 1px solid var(--border); }
+  .pivot-table tr:last-child { border-bottom: none; }
+  .pivot-table td { padding: 7px 4px; font-size: 13px; }
+  .pivot-label { font-weight: 700; width: 36px; }
+  .pivot-bar-cell { width: 100%; padding: 0 8px; }
+  .pivot-bar-wrap { position: relative; height: 6px; background: var(--bg3);
+    border-radius: 3px; overflow: hidden; }
+  .pivot-bar-fill { height: 100%; border-radius: 3px; }
+  .pivot-price { text-align: right; font-weight: 600; font-size: 13px;
+    white-space: nowrap; padding-left: 8px; }
+  .pivot-current-marker {
+    position: absolute; right: 0; top: -2px;
+    font-size: 10px; font-weight: 700; color: var(--silver);
+    background: var(--bg2); border: 1px solid var(--silver);
+    border-radius: 4px; padding: 1px 4px; white-space: nowrap;
+  }
+  .current-row td { background: rgba(192,192,192,0.07); }
+  tr.current-row .pivot-label { color: var(--silver); }
+
+  /* ── AI analysis card ── */
+  .bias-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bias-badge {
+    font-size: 12px; font-weight: 800; padding: 4px 10px;
+    border-radius: 20px; letter-spacing: 1px;
+  }
+  .bias-BULLISH { background: rgba(63,185,80,.2); color: var(--bull);
+    border: 1px solid var(--bull); }
+  .bias-BEARISH { background: rgba(248,81,73,.2); color: var(--bear);
+    border: 1px solid var(--bear); }
+  .bias-NEUTRAL { background: rgba(210,153,34,.2); color: var(--neutral);
+    border: 1px solid var(--neutral); }
+  .strength-badge { font-size: 11px; color: var(--muted); }
+  .summary-text { font-size: 13px; color: var(--text); line-height: 1.5;
+    margin-bottom: 12px; }
+  .key-level-row {
+    background: var(--bg3); border-radius: 8px;
+    padding: 8px 10px; margin-bottom: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .key-level-label { font-size: 11px; color: var(--muted); }
+  .key-level-price { font-size: 15px; font-weight: 700; color: var(--accent); }
+  .targets-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+    margin-bottom: 12px; }
+  .target-box { background: var(--bg3); border-radius: 8px; padding: 8px;
+    text-align: center; }
+  .target-box .tl { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+  .target-box .tv { font-size: 14px; font-weight: 700; }
+  .tv-bull { color: var(--bull); } .tv-bear { color: var(--bear); }
+  .tv-stop { color: var(--neutral); }
+  .range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .range-box { background: var(--bg3); border-radius: 8px; padding: 8px; }
+  .range-box .rl { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .range-row { display: flex; justify-content: space-between; font-size: 12px; }
+  .range-low { color: var(--bear); font-weight: 600; }
+  .range-high { color: var(--bull); font-weight: 600; }
+
+  /* ── Indicators ── */
+  .ind-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ind-box { background: var(--bg3); border-radius: 8px; padding: 10px; }
+  .ind-name { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .ind-value { font-size: 18px; font-weight: 700; }
+  .ind-signal { font-size: 10px; margin-top: 2px; }
+  .sig-bull { color: var(--bull); } .sig-bear { color: var(--bear); }
+  .sig-neutral { color: var(--neutral); }
+
+  /* ── Signals / risks ── */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 11px; padding: 4px 8px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--bg3);
+  }
+  .tag.signal { border-color: rgba(63,185,80,.4); color: var(--bull); }
+  .tag.risk   { border-color: rgba(248,81,73,.4); color: var(--bear); }
+
+  /* ── Action buttons ── */
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    padding: 12px; }
+  .btn {
+    border: none; border-radius: 10px; padding: 14px 10px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: opacity .15s;
+  }
+  .btn:active { opacity: .7; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--bg3); color: var(--text);
+    border: 1px solid var(--border); }
+  .btn-notify { background: rgba(210,153,34,.15); color: var(--neutral);
+    border: 1px solid var(--neutral); }
+
+  /* ── Loading / error ── */
+  .loading { text-align: center; padding: 40px; color: var(--muted); }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin .8s linear infinite; margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { text-align: center; padding: 20px; color: var(--bear);
+    font-size: 13px; }
+
+  /* ── Running overlay ── */
+  #running-banner {
+    display: none; background: rgba(88,166,255,.15);
+    border: 1px solid var(--accent); border-radius: 8px;
+    margin: 8px 12px; padding: 8px 12px; font-size: 12px;
+    color: var(--accent); text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <span class="ag-badge">Ag</span>
+    <h1>XAGUSD Analyser</h1>
+  </div>
+  <div class="header-right">
+    <span class="last-update" id="last-update">--</span>
+    <div class="pulse-dot" id="pulse" style="background:var(--muted)"></div>
+  </div>
+</header>
+
+<div id="running-banner">⟳ Analysis running via Claude Code… ~30s</div>
+
+<div id="app">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div>Loading analysis…</div>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="btn btn-primary" onclick="triggerRun()">▶ Run Analysis</button>
+  <button class="btn btn-notify" id="notify-btn" onclick="subscribeNotify()">🔔 Enable Alerts</button>
+</div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────────────
+const API = "";  // same origin
+
+// ── Service Worker registration ───────────────────────────────────────────────
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(console.error);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = n => n != null ? `$${Number(n).toFixed(2)}` : "—";
+const sign = n => n >= 0 ? "+" : "";
+
+function biasColor(bias) {
+  return bias === "BULLISH" ? "var(--bull)" : bias === "BEARISH" ? "var(--bear)" : "var(--neutral)";
+}
+function indSignal(name, val) {
+  if (name === "rsi")     return val > 70 ? ["Overbought","sig-bear"] : val < 30 ? ["Oversold","sig-bull"] : ["Neutral","sig-neutral"];
+  if (name === "stoch_k") return val > 80 ? ["Overbought","sig-bear"] : val < 20 ? ["Oversold","sig-bull"] : ["Neutral","sig-neutral"];
+  if (name === "macd")    return val > 0 ? ["Bullish","sig-bull"] : ["Bearish","sig-bear"];
+  if (name === "ma20")    return val < (window._price||0) ? ["Below price ✓","sig-bull"] : ["Above price","sig-bear"];
+  if (name === "ma50")    return val < (window._price||0) ? ["Below price ✓","sig-bull"] : ["Above price","sig-bear"];
+  return ["—","sig-neutral"];
+}
+
+function fmtTime(iso) {
+  if (!iso) return "--";
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) +
+         " " + d.toLocaleDateString([], { month:"short", day:"numeric" });
+}
+
+// ── Pivot bar renderer ────────────────────────────────────────────────────────
+function renderPivots(pivots, currentPrice) {
+  const levels = [
+    { key: "R3", label: "R3", color: "var(--r3)" },
+    { key: "R2", label: "R2", color: "var(--r2)" },
+    { key: "R1", label: "R1", color: "var(--r1)" },
+    { key: "P",  label: "P",  color: "var(--pp)" },
+    { key: "S1", label: "S1", color: "var(--s1)" },
+    { key: "S2", label: "S2", color: "var(--s2)" },
+    { key: "S3", label: "S3", color: "var(--s3)" },
+  ];
+
+  const prices = Object.values(pivots).concat([currentPrice]);
+  const minP = Math.min(...prices) * 0.998;
+  const maxP = Math.max(...prices) * 1.002;
+  const range = maxP - minP;
+
+  // Find current position
+  const curPct = ((currentPrice - minP) / range) * 100;
+
+  // Determine which band current price is in
+  let currentBand = null;
+  for (let i = 0; i < levels.length - 1; i++) {
+    const hi = pivots[levels[i].key];
+    const lo = pivots[levels[i + 1].key];
+    if (currentPrice <= hi && currentPrice >= lo) {
+      currentBand = `${levels[i].label}–${levels[i+1].label}`;
+      break;
+    }
+  }
+
+  let rows = "";
+  for (const lv of levels) {
+    const pv = pivots[lv.key];
+    const pct = ((pv - minP) / range) * 100;
+    const isCurrent = currentPrice >= pv - 0.5 && currentPrice <= pv + 0.5;
+    rows += `<tr class="${isCurrent ? 'current-row' : ''}">
+      <td class="pivot-label" style="color:${lv.color}">${lv.label}</td>
+      <td class="pivot-bar-cell">
+        <div class="pivot-bar-wrap">
+          <div class="pivot-bar-fill" style="width:${pct.toFixed(1)}%;background:${lv.color}"></div>
+        </div>
+      </td>
+      <td class="pivot-price" style="color:${lv.color}">${pv}</td>
+    </tr>`;
+  }
+
+  // Insert current price row at correct position
+  const sortedByPrice = [...levels].sort((a,b) => pivots[b.key] - pivots[a.key]);
+  let insertIdx = sortedByPrice.findIndex(l => pivots[l.key] < currentPrice);
+  if (insertIdx < 0) insertIdx = sortedByPrice.length;
+
+  const currentPct = ((currentPrice - minP) / range) * 100;
+  const currentRow = `<tr class="current-row">
+    <td class="pivot-label" style="color:var(--silver)">NOW</td>
+    <td class="pivot-bar-cell">
+      <div class="pivot-bar-wrap">
+        <div class="pivot-bar-fill" style="width:${currentPct.toFixed(1)}%;background:var(--silver)"></div>
+      </div>
+    </td>
+    <td class="pivot-price" style="color:var(--silver);font-size:15px">${currentPrice}</td>
+  </tr>`;
+
+  // Rebuild with current row injected
+  const allLevels = [
+    ...sortedByPrice.slice(0, insertIdx).map(l => ({ ...l, price: pivots[l.key] })),
+    { key: "NOW", label: "NOW", color: "var(--silver)", price: currentPrice },
+    ...sortedByPrice.slice(insertIdx).map(l => ({ ...l, price: pivots[l.key] })),
+  ];
+
+  let finalRows = "";
+  for (const lv of allLevels) {
+    const pv = lv.price;
+    const pct = ((pv - minP) / range) * 100;
+    const isNow = lv.key === "NOW";
+    finalRows += `<tr class="${isNow ? 'current-row' : ''}">
+      <td class="pivot-label" style="color:${lv.color}">${lv.label}</td>
+      <td class="pivot-bar-cell">
+        <div class="pivot-bar-wrap">
+          <div class="pivot-bar-fill" style="width:${pct.toFixed(1)}%;background:${lv.color}"></div>
+        </div>
+      </td>
+      <td class="pivot-price" style="color:${lv.color};${isNow?'font-size:15px':''}">${pv}</td>
+    </tr>`;
+  }
+
+  return `<table class="pivot-table">${finalRows}</table>`;
+}
+
+// ── Main render ────────────────────────────────────────────────────────────────
+function render(data) {
+  const ind  = data.indicators || {};
+  const pv   = data.pivots     || {};
+  const an   = data.analysis   || {};
+  const price = ind.price || 0;
+  window._price = price;
+
+  $("pulse").style.background = "var(--bull)";
+  $("last-update").textContent = fmtTime(data.timestamp) + " UTC";
+
+  const ch4  = ind.change_4h  || 0;
+  const ch24 = ind.change_24h || 0;
+  const chClass = ch4 > 0 ? "bull" : ch4 < 0 ? "bear" : "flat";
+  const biasClass = `bias-${an.bias || "NEUTRAL"}`;
+
+  const signals = (an.signals || []).map(s => `<span class="tag signal">${s}</span>`).join("");
+  const risks   = (an.risks   || []).map(r => `<span class="tag risk">${r}</span>`).join("");
+
+  const indicators = [
+    { name: "rsi",      label: "RSI (14)",    val: ind.rsi },
+    { name: "stoch_k",  label: "Stoch %K",    val: ind.stoch_k },
+    { name: "macd",     label: "MACD",         val: ind.macd },
+    { name: "macd_signal", label: "MACD Sig",  val: ind.macd_signal },
+    { name: "ma20",     label: "MA 20",        val: ind.ma20 },
+    { name: "ma50",     label: "MA 50",        val: ind.ma50 },
+  ];
+
+  const indHtml = indicators.map(i => {
+    const [sigText, sigClass] = indSignal(i.name, i.val);
+    const display = ["ma20","ma50"].includes(i.name) ? fmt(i.val) : (i.val ?? "—");
+    return `<div class="ind-box">
+      <div class="ind-name">${i.label}</div>
+      <div class="ind-value" style="color:${sigClass === 'sig-bull' ? 'var(--bull)' : sigClass === 'sig-bear' ? 'var(--bear)' : 'var(--neutral)'}">${display}</div>
+      <div class="ind-signal ${sigClass}">${sigText}</div>
+    </div>`;
+  }).join("");
+
+  $("app").innerHTML = `
+    <!-- Price Hero -->
+    <div class="card price-card">
+      <div class="card-title">Silver / US Dollar · 4H</div>
+      <div class="price-row">
+        <div class="price-main" id="live-price">${fmt(price)}</div>
+        <div class="price-change ${chClass}" id="live-change">${sign(ch4)}${ch4}%</div>
+      </div>
+      <div class="price-sub">4H: ${sign(ch4)}${ch4}% &nbsp;|&nbsp; 24H: ${sign(ch24)}${ch24}% &nbsp;|&nbsp; Source: ${data.source || "—"}</div>
+    </div>
+
+    <!-- TradingView Widget -->
+    <div class="card chart-card">
+      <div class="chart-controls">
+        <span class="chart-label">XAGUSD · 4H · TradingView</span>
+        <button class="chart-expand-btn" onclick="toggleChart(this)">&#8597; Expand</button>
+      </div>
+      <iframe id="tv-chart"
+        src="https://s.tradingview.com/widgetembed/?frameElementId=tv&symbol=OANDA%3AXAGUSD&interval=240&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0d1117&theme=dark&style=1&timezone=Europe%2FIstanbul&studies=RSI%400&withdateranges=0&showpopupbutton=0"
+        allowtransparency="true" scrolling="no" allowfullscreen="" frameborder="0"
+      ></iframe>
+    </div>
+
+    <!-- Pivot Levels -->
+    <div class="card">
+      <div class="card-title">Pivot Levels</div>
+      ${renderPivots(pv, price)}
+    </div>
+
+    <!-- AI Analysis -->
+    <div class="card">
+      <div class="card-title">AI Analysis · Claude Code</div>
+      ${an.error ? `<div class="error-msg">⚠ ${an.error}</div>` : `
+      <div class="bias-row">
+        <span class="bias-badge ${biasClass}">${an.bias || "?"}</span>
+        <span class="strength-badge">${an.bias_strength || ""}</span>
+      </div>
+      <div class="summary-text">${an.summary || ""}</div>
+      <div class="key-level-row">
+        <div>
+          <div class="key-level-label">Key Level to Watch</div>
+          <div style="font-size:12px;color:var(--text);margin-top:2px">${an.key_level_label || "—"}</div>
+        </div>
+        <div class="key-level-price">${fmt(an.key_level_price)}</div>
+      </div>
+      <div class="targets-grid">
+        <div class="target-box">
+          <div class="tl">BULL TARGET</div>
+          <div class="tv tv-bull">${fmt(an.target_bull)}</div>
+        </div>
+        <div class="target-box">
+          <div class="tl">BEAR TARGET</div>
+          <div class="tv tv-bear">${fmt(an.target_bear)}</div>
+        </div>
+        <div class="target-box">
+          <div class="tl">STOP LOSS</div>
+          <div class="tv tv-stop">${fmt(an.stop_loss)}</div>
+        </div>
+      </div>
+      <div class="range-grid">
+        <div class="range-box">
+          <div class="rl">TODAY RANGE</div>
+          <div class="range-row">
+            <span class="range-low">${fmt(an.today_low)}</span>
+            <span>→</span>
+            <span class="range-high">${fmt(an.today_high)}</span>
+          </div>
+        </div>
+        <div class="range-box">
+          <div class="rl">WEEK RANGE</div>
+          <div class="range-row">
+            <span class="range-low">${fmt(an.week_low)}</span>
+            <span>→</span>
+            <span class="range-high">${fmt(an.week_high)}</span>
+          </div>
+        </div>
+      </div>
+      `}
+    </div>
+
+    <!-- Indicators -->
+    <div class="card">
+      <div class="card-title">Indicators</div>
+      <div class="ind-grid">${indHtml}</div>
+    </div>
+
+    <!-- Signals -->
+    ${signals ? `<div class="card">
+      <div class="card-title">Signals</div>
+      <div class="tag-list">${signals}</div>
+    </div>` : ""}
+
+    <!-- Risks -->
+    ${risks ? `<div class="card">
+      <div class="card-title">Risk Factors</div>
+      <div class="tag-list">${risks}</div>
+    </div>` : ""}
+
+    <!-- News & Sentiment -->
+    ${(data.news && data.news.length) ? `<div class="card" style="margin-bottom:8px">
+      <div class="card-title">News Sentiment</div>
+      ${an.news_sentiment ? `<div class="news-sentiment-row">
+        <span class="news-sent-badge news-sent-${an.news_sentiment}">${an.news_sentiment}</span>
+        <span class="news-sent-reason">${an.news_sentiment_reason || ""}</span>
+      </div>` : ""}
+      <div class="news-list">
+        ${data.news.map(n => `<a class="news-item" href="${n.url}" target="_blank" rel="noopener">
+          <div class="news-title">${n.title}</div>
+          <div class="news-meta">
+            ${n.source ? `<span>${n.source}</span>` : ""}
+            ${n.published ? `<span>${fmtNewsAge(n.published)}</span>` : ""}
+          </div>
+        </a>`).join("")}
+      </div>
+    </div>` : ""}
+  `;
+}
+
+// ── Live price tick (every 60s — only updates the price number, not the chart) ─
+async function refreshPrice() {
+  try {
+    const res = await fetch(`${API}/api/price/live`);
+    if (!res.ok) return;
+    const { price } = await res.json();
+    const el = document.getElementById("live-price");
+    if (!el || !price) return;
+    el.textContent = "$" + Number(price).toFixed(2);
+    el.style.transition = "color .4s";
+    el.style.color = "var(--accent)";
+    setTimeout(() => { el.style.color = "var(--silver)"; }, 500);
+  } catch {}
+}
+
+// ── News date helper ──────────────────────────────────────────────────────────
+function fmtNewsAge(pubStr) {
+  try {
+    const diff = Math.round((Date.now() - new Date(pubStr)) / 60000);
+    if (diff < 60)   return diff + "m ago";
+    if (diff < 1440) return Math.round(diff / 60) + "h ago";
+    return Math.round(diff / 1440) + "d ago";
+  } catch { return ""; }
+}
+
+// ── Chart height toggle ────────────────────────────────────────────────────────
+let _chartExpanded = false;
+function toggleChart(btn) {
+  _chartExpanded = !_chartExpanded;
+  const iframe = document.getElementById("tv-chart");
+  if (iframe) iframe.style.height = _chartExpanded ? "640px" : "400px";
+  if (btn)    btn.textContent = _chartExpanded ? "↕ Collapse" : "↕ Expand";
+}
+
+// ── Data loading ───────────────────────────────────────────────────────────────
+async function loadLatest() {
+  try {
+    const res = await fetch(`${API}/api/analysis/latest`);
+    if (!res.ok) throw new Error("no data");
+    const data = await res.json();
+    render(data);
+  } catch (e) {
+    $("app").innerHTML = `<div class="error-msg">
+      No analysis yet.<br>Tap <b>▶ Run Analysis</b> to generate one.
+    </div>`;
+  }
+}
+
+// ── Trigger analysis ───────────────────────────────────────────────────────────
+let runTimer = null;
+async function triggerRun() {
+  $("running-banner").style.display = "block";
+  try {
+    await fetch(`${API}/api/analysis/run`, { method: "POST" });
+    // Poll every 5s for up to 3min
+    let attempts = 0;
+    clearInterval(runTimer);
+    runTimer = setInterval(async () => {
+      attempts++;
+      await loadLatest();
+      if (attempts > 36) {
+        clearInterval(runTimer);
+        $("running-banner").style.display = "none";
+      }
+    }, 5000);
+  } catch (e) {
+    $("running-banner").textContent = "⚠ Could not reach server.";
+  }
+}
+
+// ── Push notification subscription ────────────────────────────────────────────
+async function subscribeNotify() {
+  if (!("Notification" in window)) {
+    alert("Notifications not supported in this browser.");
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted") { alert("Permission denied."); return; }
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    // Get VAPID public key from server
+    const keyRes = await fetch(`${API}/api/vapid-public-key`);
+    const { key } = await keyRes.json();
+    if (!key) {
+      alert("Push alerts not configured on server yet.\nSee setup instructions.");
+      return;
+    }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(key),
+    });
+    await fetch(`${API}/api/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(sub.toJSON()),
+    });
+    $("notify-btn").textContent = "🔔 Alerts ON";
+    $("notify-btn").style.opacity = "0.6";
+    alert("Alerts enabled! You will be notified every 4H.");
+  } catch (e) {
+    alert("Could not enable push: " + e.message);
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+// ── Auto-refresh every 5 minutes ───────────────────────────────────────────────
+loadLatest();
+setInterval(loadLatest, 5 * 60 * 1000);
+
+// Live price tick — fires 10s after load then every 60s
+setTimeout(() => { refreshPrice(); setInterval(refreshPrice, 60000); }, 10000);
+</script>
+</body>
+</html>
