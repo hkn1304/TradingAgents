@@ -30,6 +30,9 @@ dependencies = [
     "tqdm>=4.67.1",
     "typing-extensions>=4.14.0",
     "yfinance>=0.2.63",
+    "fastapi>=0.136.1",
+    "uvicorn[standard]>=0.46.0",
+    "anthropic>=0.101.0",
 ]
 
 [project.scripts]
