@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TradingAgents">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.svg">
+<title>TradingAgents</title>
+<style>
+/* ── Reset + variables ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0d1117;
+  --bg2:     #161b22;
+  --bg3:     #1f2937;
+  --border:  #30363d;
+  --text:    #e6edf3;
+  --muted:   #8b949e;
+  --bull:    #3fb950;
+  --bear:    #f85149;
+  --neutral: #d29922;
+  --accent:  #58a6ff;
+  --header-h: 56px;
+  --tabbar-h: 56px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--header-h);
+  padding-top: env(safe-area-inset-top);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding-left: 12px; padding-right: 12px; gap: 8px;
+}
+.logo {
+  font-weight: 900; font-size: 15px; color: var(--accent);
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 3px 7px; white-space: nowrap; flex-shrink: 0;
+}
+.ticker-wrap {
+  display: flex; align-items: center; gap: 6px; flex: 1; max-width: 240px;
+}
+.ticker-wrap input {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: 8px; padding: 6px 10px;
+  font-size: 14px; font-weight: 700; letter-spacing: 0.5px;
+  outline: none; text-transform: uppercase;
+}
+.ticker-wrap input:focus { border-color: var(--accent); }
+.ticker-wrap button {
+  background: var(--accent); color: #0d1117;
+  border: none; border-radius: 8px; padding: 6px 12px;
+  font-weight: 700; font-size: 13px; cursor: pointer; flex-shrink: 0;
+}
+.header-right {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.asset-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+  border: 1px solid var(--border); color: var(--muted); background: var(--bg3);
+  text-transform: uppercase;
+}
+.last-update { font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+/* ── Scrollable main area ─────────────────────────────────────────────────── */
+main {
+  position: fixed;
+  top: var(--header-h);
+  bottom: var(--tabbar-h);
+  left: 0; right: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tab-content { display: none; padding-bottom: 16px; }
+.tab-content.active { display: block; }
+
+/* ── Bottom tab bar ───────────────────────────────────────────────────────── */
+nav.tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  height: var(--tabbar-h);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--bg2); border-top: 1px solid var(--border);
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+}
+.tab-btn {
+  background: none; border: none; color: var(--muted);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 2px; cursor: pointer;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
+  transition: color .15s;
+}
+.tab-btn svg { width: 20px; height: 20px; }
+.tab-btn.active { color: var(--accent); }
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; margin: 10px 10px 0; padding: 14px 16px;
+}
+.card-title {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 10px;
+}
+
+/* ── Price hero ───────────────────────────────────────────────────────────── */
+.price-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.price-main { font-size: 36px; font-weight: 800; line-height: 1; }
+.price-badge {
+  font-size: 14px; font-weight: 700; padding: 3px 8px;
+  border-radius: 6px; line-height: 1.4;
+}
+.price-badge.bull { background: rgba(63,185,80,.15); color: var(--bull); }
+.price-badge.bear { background: rgba(248,81,73,.15);  color: var(--bear); }
+.price-badge.flat { background: rgba(139,148,158,.15); color: var(--muted); }
+.price-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.price-loading { font-size: 11px; color: var(--muted); font-style: italic; }
+
+/* ── TradingView chart ────────────────────────────────────────────────────── */
+.chart-card { padding: 0; overflow: hidden; }
+.chart-controls {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+}
+.chart-label { font-size: 11px; color: var(--muted); }
+.chart-btn {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--muted); font-size: 11px; padding: 3px 8px;
+  border-radius: 6px; cursor: pointer;
+}
+#tv-chart { width: 100%; height: 380px; border: none; display: block; }
+
+/* ── Pivot table ──────────────────────────────────────────────────────────── */
+.pivot-table { width: 100%; border-collapse: collapse; }
+.pivot-table tr { border-bottom: 1px solid var(--border); }
+.pivot-table tr:last-child { border-bottom: none; }
+.pivot-table td { padding: 7px 2px; font-size: 13px; }
+.pivot-lbl { font-weight: 700; width: 38px; }
+.pivot-bar-cell { width: 100%; padding: 0 8px; }
+.pivot-bar-wrap {
+  position: relative; height: 5px; background: var(--bg3);
+  border-radius: 3px; overflow: hidden;
+}
+.pivot-bar-fill { height: 100%; border-radius: 3px; }
+.pivot-price {
+  text-align: right; font-weight: 600; font-size: 13px;
+  white-space: nowrap; padding-left: 8px; min-width: 64px;
+}
+.pivot-now td { background: rgba(88,166,255,.07); }
+
+/* ── Indicators grid ──────────────────────────────────────────────────────── */
+.ind-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ind-box { background: var(--bg3); border-radius: 8px; padding: 10px; }
+.ind-name { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+.ind-value { font-size: 20px; font-weight: 700; }
+.ind-signal { font-size: 10px; margin-top: 2px; }
+.bull-c { color: var(--bull); }
+.bear-c { color: var(--bear); }
+.neutral-c { color: var(--neutral); }
+
+/* ── News ─────────────────────────────────────────────────────────────────── */
+.news-item {
+  display: block; padding: 9px 0; border-bottom: 1px solid var(--border);
+  text-decoration: none; color: inherit;
+}
+.news-item:last-child { border-bottom: none; }
+.news-item:active { opacity: .7; }
+.news-title { font-size: 13px; line-height: 1.4; margin-bottom: 3px; }
+.news-meta { font-size: 11px; color: var(--muted); }
+.news-meta span { margin-right: 8px; }
+
+/* ── Loading / error states ───────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg3) 25%, var(--bg2) 50%, var(--bg3) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px; height: 16px;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.error-msg {
+  color: var(--bear); font-size: 12px; padding: 8px 0;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* ── Tab 2 / Tab 3 placeholders ───────────────────────────────────────────── */
+.placeholder-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 60px 24px; text-align: center; gap: 12px;
+}
+.placeholder-wrap svg { width: 48px; height: 48px; color: var(--muted); opacity: .4; }
+.placeholder-title { font-size: 18px; font-weight: 700; color: var(--text); }
+.placeholder-sub { font-size: 13px; color: var(--muted); line-height: 1.5; max-width: 280px; }
+.placeholder-badge {
+  font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+  border: 1px solid var(--accent); color: var(--accent);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ───────────────────────────────────────────────────────────── -->
+<header>
+  <span class="logo">TA</span>
+  <div class="ticker-wrap">
+    <input id="ticker-input" type="text" placeholder="AAPL"
+           autocapitalize="characters" autocorrect="off" spellcheck="false"
+           onkeydown="if(event.key==='Enter') applyTicker()">
+    <button onclick="applyTicker()">Go</button>
+  </div>
+  <div class="header-right">
+    <span class="asset-badge" id="asset-badge">—</span>
+    <span class="last-update" id="last-update">—</span>
+  </div>
+</header>
+
+<!-- ── Main scrollable area ─────────────────────────────────────────────── -->
+<main>
+
+  <!-- ── Tab 1: Markets ─────────────────────────────────────────────────── -->
+  <div id="tab-markets" class="tab-content active">
+
+    <!-- Price hero -->
+    <div class="card" id="price-card">
+      <div class="card-title" id="price-card-title">Price</div>
+      <div class="price-row">
+        <div class="price-main" id="price-val">—</div>
+        <div class="price-badge flat" id="price-change">—</div>
+      </div>
+      <div class="price-sub" id="price-sub">Loading…</div>
+    </div>
+
+    <!-- TradingView chart -->
+    <div class="card chart-card">
+      <div class="chart-controls">
+        <span class="chart-label" id="chart-label">Chart · Daily</span>
+        <button class="chart-btn" onclick="toggleChart(this)">&#8597; Expand</button>
+      </div>
+      <iframe id="tv-chart" scrolling="no" allowtransparency="true"
+              allowfullscreen="" frameborder="0"></iframe>
+    </div>
+
+    <!-- Pivot levels -->
+    <div class="card" id="pivot-card">
+      <div class="card-title">Pivot Levels · Daily</div>
+      <div id="pivot-body"><div class="skeleton" style="height:120px"></div></div>
+    </div>
+
+    <!-- Technical indicators -->
+    <div class="card">
+      <div class="card-title">Technical Indicators</div>
+      <div class="ind-grid" id="ind-grid">
+        <div class="skeleton" style="height:64px"></div>
+        <div class="skeleton" style="height:64px"></div>
+        <div class="skeleton" style="height:64px"></div>
+        <div class="skeleton" style="height:64px"></div>
+        <div class="skeleton" style="height:64px"></div>
+        <div class="skeleton" style="height:64px"></div>
+        <div class="skeleton" style="height:64px"></div>
+        <div class="skeleton" style="height:64px"></div>
+      </div>
+    </div>
+
+    <!-- News -->
+    <div class="card" id="news-card" style="margin-bottom:8px">
+      <div class="card-title">News</div>
+      <div id="news-body"><div class="skeleton" style="height:80px"></div></div>
+    </div>
+
+  </div><!-- /tab-markets -->
+
+  <!-- ── Tab 2: Agents ──────────────────────────────────────────────────── -->
+  <div id="tab-agents" class="tab-content">
+    <div class="placeholder-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5
+             4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5
+             4.5 0 00-3.09 3.09z"/>
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375
+             3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375
+             3.375 0 00-2.456 2.456z"/>
+      </svg>
+      <div class="placeholder-title">Agents</div>
+      <div class="placeholder-sub">
+        Select individual analysts to run — get targeted insights without
+        running the full pipeline. Tier&nbsp;1 analysts run immediately.
+      </div>
+      <span class="placeholder-badge">Coming in Step 3</span>
+    </div>
+  </div>
+
+  <!-- ── Tab 3: Analysis ────────────────────────────────────────────────── -->
+  <div id="tab-analysis" class="tab-content">
+    <div class="placeholder-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5
+             7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5
+             2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125
+             1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+      </svg>
+      <div class="placeholder-title">Analysis</div>
+      <div class="placeholder-sub">
+        Full 9-agent pipeline with bull/bear debate, risk management, and
+        portfolio decision. Chat with the report when it's done.
+      </div>
+      <span class="placeholder-badge">Coming in Step 4</span>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Bottom tab bar ────────────────────────────────────────────────────── -->
+<nav class="tab-bar">
+  <button class="tab-btn active" id="btn-markets" onclick="switchTab('markets')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5
+           20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125
+           1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125
+           1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125
+           1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125
+           1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+    </svg>
+    Markets
+  </button>
+  <button class="tab-btn" id="btn-agents" onclick="switchTab('agents')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5
+           4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5
+           4.5 0 00-3.09 3.09z"/>
+      </svg>
+    Agents
+  </button>
+  <button class="tab-btn" id="btn-analysis" onclick="switchTab('analysis')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5
+           7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5
+           2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125
+           1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+    </svg>
+    Analysis
+  </button>
+</nav>
+
+<script>
+'use strict';
+
+// ── Config ────────────────────────────────────────────────────────────────────
+const API = window.location.origin;
+const PRICE_INTERVAL_MS    = 6000;   // 6 s
+const MARKETS_INTERVAL_MS  = 5 * 60 * 1000;  // 5 min
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let _ticker      = (localStorage.getItem('ta_ticker') || 'AAPL').toUpperCase();
+let _activeTab   = 'markets';
+let _currentPrice = null;
+let _chartExpanded = false;
+let _priceTimer  = null;
+let _marketsTimer = null;
+let _pivotData   = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function fmt(n, decimals = 2) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+function sign(n) { return n >= 0 ? '+' : ''; }
+
+function fmtAge(pubStr) {
+  try {
+    const d = isNaN(pubStr) ? new Date(pubStr) : new Date(Number(pubStr) * 1000);
+    const diff = Math.round((Date.now() - d) / 60000);
+    if (diff < 60)   return diff + 'm ago';
+    if (diff < 1440) return Math.round(diff / 60) + 'h ago';
+    return Math.round(diff / 1440) + 'd ago';
+  } catch { return ''; }
+}
+
+function detectAssetClass(t) {
+  t = t.toUpperCase();
+  const metals = new Set(['XAUUSD','XAGUSD','XPTUSD','XPDUSD']);
+  if (metals.has(t) || t.endsWith('=F')) return 'metal';
+  const cryptoBases = new Set(['BTC','ETH','BNB','SOL','XRP','ADA','DOGE','DOT','AVAX','MATIC','LINK','LTC']);
+  const base3 = t.endsWith('USD') ? t.slice(0,-3) : null;
+  if (base3 && cryptoBases.has(base3)) return 'crypto';
+  if (t.includes('-USD') || t.includes('-USDT')) return 'crypto';
+  if (t.length === 6 && /^[A-Z]+$/.test(t)) return 'forex';
+  const etfs = new Set(['SPY','QQQ','IWM','GLD','SLV','USO','XLE','XLF']);
+  if (etfs.has(t)) return 'etf';
+  return 'stock';
+}
+
+function tvSymbol(t) {
+  t = t.toUpperCase();
+  const metalMap = {
+    XAUUSD:'OANDA:XAUUSD', XAGUSD:'OANDA:XAGUSD',
+    XPTUSD:'OANDA:XPTUSD', XPDUSD:'OANDA:XPDUSD',
+  };
+  if (metalMap[t]) return metalMap[t];
+  if (t.includes('-USD') && t.length > 7) {
+    return 'COINBASE:' + t.replace('-','');
+  }
+  const forexPairs = ['EURUSD','GBPUSD','USDJPY','AUDUSD','USDCAD','NZDUSD'];
+  if (forexPairs.includes(t)) return 'FX:' + t;
+  return t; // TradingView auto-resolves stock tickers
+}
+
+function updateLastUpdate() {
+  $('last-update').textContent = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+
+// ── API fetch ─────────────────────────────────────────────────────────────────
+async function apiFetch(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+// ── Ticker management ─────────────────────────────────────────────────────────
+function applyTicker() {
+  const raw = $('ticker-input').value.trim().toUpperCase();
+  if (!raw) return;
+  _ticker = raw;
+  localStorage.setItem('ta_ticker', _ticker);
+  $('ticker-input').value = _ticker;
+
+  const ac = detectAssetClass(_ticker);
+  $('asset-badge').textContent = ac;
+
+  // Update TradingView chart
+  updateChart();
+
+  // Reset displays
+  $('price-val').textContent = '—';
+  $('price-change').textContent = '—';
+  $('price-change').className = 'price-badge flat';
+  $('price-sub').textContent = 'Loading…';
+  $('price-card-title').textContent = _ticker;
+  $('pivot-body').innerHTML = '<div class="skeleton" style="height:120px"></div>';
+  $('ind-grid').innerHTML = Array(8).fill('<div class="skeleton" style="height:64px"></div>').join('');
+  $('news-body').innerHTML = '<div class="skeleton" style="height:80px"></div>';
+
+  // Reload all data
+  loadAll();
+}
+
+// ── TradingView chart ─────────────────────────────────────────────────────────
+function updateChart() {
+  const sym = encodeURIComponent(tvSymbol(_ticker));
+  const h   = _chartExpanded ? 600 : 380;
+  $('tv-chart').style.height = h + 'px';
+  $('tv-chart').src =
+    `https://s.tradingview.com/widgetembed/?frameElementId=tv&symbol=${sym}` +
+    `&interval=D&hidesidetoolbar=1&symboledit=0&saveimage=0` +
+    `&toolbarbg=161b22&theme=dark&style=1&timezone=Etc%2FUTC` +
+    `&studies=RSI%400&withdateranges=0&showpopupbutton=0`;
+  $('chart-label').textContent = _ticker + ' · Daily';
+}
+
+function toggleChart(btn) {
+  _chartExpanded = !_chartExpanded;
+  $('tv-chart').style.height = (_chartExpanded ? 600 : 380) + 'px';
+  btn.textContent = _chartExpanded ? '↕ Collapse' : '↕ Expand';
+}
+
+// ── Indicator signal ──────────────────────────────────────────────────────────
+function indSignal(name, val, price) {
+  if (val === null || val === undefined) return ['—', 'neutral-c'];
+  const v = parseFloat(val);
+  switch (name) {
+    case 'rsi':
+      if (v > 70) return ['Overbought', 'bear-c'];
+      if (v < 30) return ['Oversold',   'bull-c'];
+      return ['Neutral', 'neutral-c'];
+    case 'stoch_k':
+      if (v > 80) return ['Overbought', 'bear-c'];
+      if (v < 20) return ['Oversold',   'bull-c'];
+      return ['Neutral', 'neutral-c'];
+    case 'macd': case 'macdh':
+      return v > 0 ? ['Bullish', 'bull-c'] : v < 0 ? ['Bearish', 'bear-c'] : ['Neutral', 'neutral-c'];
+    case 'close_50_sma': case 'close_200_sma': case 'close_10_ema':
+    case 'boll': case 'boll_ub': case 'boll_lb':
+      if (!price) return ['—', 'neutral-c'];
+      return parseFloat(price) > v ? ['Price Above', 'bull-c'] : ['Price Below', 'bear-c'];
+    case 'atr':
+      return [fmt(v, 4), 'neutral-c'];
+    default:
+      return ['—', 'neutral-c'];
+  }
+}
+
+// ── Render indicators ─────────────────────────────────────────────────────────
+function renderIndicators(ind, price) {
+  const defs = [
+    { key: 'rsi',           label: 'RSI (14)',      dec: 1 },
+    { key: 'stoch_k',       label: 'Stoch %K',      dec: 1 },
+    { key: 'macd',          label: 'MACD',           dec: 4 },
+    { key: 'macdh',         label: 'MACD Hist',      dec: 4 },
+    { key: 'close_50_sma',  label: 'MA 50',          dec: 2 },
+    { key: 'close_200_sma', label: 'MA 200',         dec: 2 },
+    { key: 'close_10_ema',  label: 'EMA 10',         dec: 2 },
+    { key: 'atr',           label: 'ATR (14)',        dec: 4 },
+  ];
+
+  $('ind-grid').innerHTML = defs.map(({ key, label, dec }) => {
+    const val = ind[key];
+    const [sigText, sigClass] = indSignal(key, val, price);
+    const display = (val !== null && val !== undefined) ? fmt(val, dec) : '—';
+    const color = sigClass === 'bull-c' ? 'var(--bull)'
+                : sigClass === 'bear-c' ? 'var(--bear)'
+                : 'var(--text)';
+    return `<div class="ind-box">
+      <div class="ind-name">${label}</div>
+      <div class="ind-value" style="color:${color}">${display}</div>
+      <div class="ind-signal ${sigClass}">${sigText}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render pivots ─────────────────────────────────────────────────────────────
+const _PIVOT_LEVELS = [
+  { key: 'R3', color: '#ff4444' },
+  { key: 'R2', color: '#ff7744' },
+  { key: 'R1', color: '#ffaa44' },
+  { key: 'P',  color: '#8b949e' },
+  { key: 'S1', color: '#44aaff' },
+  { key: 'S2', color: '#4488ff' },
+  { key: 'S3', color: '#4444ff' },
+];
+
+function renderPivots(pivots, currentPrice) {
+  if (!pivots || !Object.keys(pivots).length) {
+    $('pivot-body').innerHTML = '<div class="error-msg">⚠ No pivot data</div>';
+    return;
+  }
+
+  const prices = _PIVOT_LEVELS.map(l => pivots[l.key]).filter(Boolean);
+  const minP = Math.min(...prices, currentPrice || Infinity) * 0.998;
+  const maxP = Math.max(...prices, currentPrice || -Infinity) * 1.002;
+  const range = maxP - minP || 1;
+
+  // Merge current price row into sorted list
+  const allLevels = [..._PIVOT_LEVELS.map(l => ({
+    ...l, price: pivots[l.key], isNow: false,
+  }))];
+  if (currentPrice) {
+    const insertIdx = allLevels.findIndex(l => l.price < currentPrice);
+    allLevels.splice(insertIdx < 0 ? allLevels.length : insertIdx, 0, {
+      key: 'NOW', color: '#c0c0c0', price: currentPrice, isNow: true,
+    });
+  }
+
+  $('pivot-body').innerHTML = `<table class="pivot-table">${
+    allLevels.map(l => {
+      const pct = ((l.price - minP) / range * 100).toFixed(1);
+      return `<tr class="${l.isNow ? 'pivot-now' : ''}">
+        <td class="pivot-lbl" style="color:${l.color}">${l.key}</td>
+        <td class="pivot-bar-cell">
+          <div class="pivot-bar-wrap">
+            <div class="pivot-bar-fill" style="width:${pct}%;background:${l.color}"></div>
+          </div>
+        </td>
+        <td class="pivot-price" style="color:${l.color};${l.isNow?'font-size:15px':''}">${fmt(l.price,3)}</td>
+      </tr>`;
+    }).join('')
+  }</table>`;
+}
+
+// ── Render news ───────────────────────────────────────────────────────────────
+function renderNews(items) {
+  if (!items || !items.length) {
+    $('news-body').innerHTML = '<div class="error-msg">⚠ No news available</div>';
+    return;
+  }
+  $('news-body').innerHTML = items.map(n => `
+    <a class="news-item" href="${n.url}" target="_blank" rel="noopener noreferrer">
+      <div class="news-title">${n.title}</div>
+      <div class="news-meta">
+        ${n.source ? `<span>${n.source}</span>` : ''}
+        ${n.published ? `<span>${fmtAge(n.published)}</span>` : ''}
+      </div>
+    </a>`).join('');
+}
+
+// ── Data loaders ──────────────────────────────────────────────────────────────
+async function loadPrice() {
+  if (_activeTab !== 'markets') return;
+  try {
+    const d = await apiFetch(`/api/markets/price?ticker=${_ticker}`);
+    _currentPrice = d.price;
+    $('price-val').textContent = '$' + fmt(d.price, 2);
+    $('price-val').style.transition = 'color .3s';
+    $('price-val').style.color = 'var(--accent)';
+    setTimeout(() => { $('price-val').style.color = 'var(--text)'; }, 400);
+
+    // Re-render pivots with updated current price if we have pivot data
+    if (_pivotData) renderPivots(_pivotData, _currentPrice);
+  } catch (_) { /* silent — stale display is fine */ }
+}
+
+async function loadIndicators() {
+  if (_activeTab !== 'markets') return;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const d = await apiFetch(`/api/markets/indicators?ticker=${_ticker}&date=${today}`);
+    renderIndicators(d.indicators, _currentPrice);
+    updateLastUpdate();
+  } catch (e) {
+    $('ind-grid').innerHTML = `<div class="error-msg" style="grid-column:1/-1">⚠ ${e.message}</div>`;
+  }
+}
+
+async function loadPivots() {
+  if (_activeTab !== 'markets') return;
+  try {
+    const d = await apiFetch(`/api/markets/pivots?ticker=${_ticker}&interval=1d&days=90`);
+    _pivotData = d.pivots;
+    renderPivots(_pivotData, _currentPrice);
+  } catch (e) {
+    $('pivot-body').innerHTML = `<div class="error-msg">⚠ ${e.message}</div>`;
+  }
+}
+
+async function loadNews() {
+  if (_activeTab !== 'markets') return;
+  try {
+    const d = await apiFetch(`/api/markets/news?ticker=${_ticker}&limit=6`);
+    renderNews(d.news);
+  } catch (_) {
+    $('news-body').innerHTML = '<div class="error-msg">⚠ News unavailable</div>';
+  }
+}
+
+async function loadAll() {
+  await loadPrice();
+  // Fire the heavier calls in parallel
+  await Promise.allSettled([loadIndicators(), loadPivots(), loadNews()]);
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  ['markets', 'agents', 'analysis'].forEach(t => {
+    $('tab-' + t).classList.toggle('active', t === tab);
+    $('btn-' + t).classList.toggle('active', t === tab);
+  });
+  _activeTab = tab;
+}
+
+// ── Timer management ──────────────────────────────────────────────────────────
+function startTimers() {
+  clearInterval(_priceTimer);
+  clearInterval(_marketsTimer);
+  _priceTimer   = setInterval(loadPrice,   PRICE_INTERVAL_MS);
+  _marketsTimer = setInterval(loadAll,     MARKETS_INTERVAL_MS);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function init() {
+  $('ticker-input').value = _ticker;
+  $('asset-badge').textContent = detectAssetClass(_ticker);
+  $('price-card-title').textContent = _ticker;
+
+  updateChart();
+  loadAll();
+  startTimers();
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+}
+
+init();
+</script>
+</body>
+</html>
