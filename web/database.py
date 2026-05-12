@@ -163,12 +163,18 @@ def session_set_queue_position(session_id: str, pos: Optional[int]) -> None:
         )
 
 
+def _parse_session(row) -> dict:
+    d = dict(row)
+    d["config"] = json.loads(d.pop("config_json", "{}") or "{}")
+    return d
+
+
 def session_get(session_id: str) -> Optional[dict]:
     with _conn() as con:
         row = con.execute(
             "SELECT * FROM sessions WHERE id=?", (session_id,)
         ).fetchone()
-    return dict(row) if row else None
+    return _parse_session(row) if row else None
 
 
 def session_list(user_id: str = "default", limit: int = 50) -> list[dict]:
@@ -178,7 +184,7 @@ def session_list(user_id: str = "default", limit: int = 50) -> list[dict]:
                ORDER BY created_at DESC LIMIT ?""",
             (user_id, limit),
         ).fetchall()
-    return [dict(r) for r in rows]
+    return [_parse_session(r) for r in rows]
 
 
 def session_delete(session_id: str) -> None:

@@ -197,7 +197,7 @@ nav.tab-bar {
   display: flex; align-items: center; gap: 6px;
 }
 
-/* ── Tab 2 / Tab 3 placeholders ───────────────────────────────────────────── */
+/* ── Tab 3 placeholder ────────────────────────────────────────────────────── */
 .placeholder-wrap {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; padding: 60px 24px; text-align: center; gap: 12px;
@@ -210,6 +210,108 @@ nav.tab-bar {
   border: 1px solid var(--accent); color: var(--accent);
   text-transform: uppercase; letter-spacing: 1px;
 }
+
+/* ── Tab 2: Agents ────────────────────────────────────────────────────────── */
+.agent-form { display: flex; flex-direction: column; gap: 10px; }
+
+.date-row { display: flex; gap: 8px; align-items: center; }
+.date-row label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.date-row input[type=date] {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 6px 10px; font-size: 13px; outline: none;
+  flex: 1;
+}
+.date-row input[type=date]:focus { border-color: var(--accent); }
+
+.tier-header {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 6px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.tier-badge {
+  font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.tier1-badge { background: rgba(88,166,255,.15); color: var(--accent); border: 1px solid var(--accent); }
+.tier2-badge { background: rgba(139,148,158,.1);  color: var(--muted);  border: 1px solid var(--border); }
+
+.agent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+.agent-chip {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 10px;
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; transition: border-color .15s, background .15s;
+  user-select: none;
+}
+.agent-chip:hover { border-color: var(--accent); }
+.agent-chip.selected { border-color: var(--accent); background: rgba(88,166,255,.1); }
+.agent-chip.disabled { opacity: .4; cursor: not-allowed; }
+.agent-chip input[type=checkbox] { display: none; }
+.agent-chip-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.agent-chip-label { font-size: 12px; font-weight: 600; line-height: 1.3; }
+.agent-chip-sub   { font-size: 10px; color: var(--muted); }
+
+.run-btn {
+  width: 100%; padding: 12px;
+  background: var(--accent); color: #0d1117;
+  border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: opacity .15s;
+}
+.run-btn:disabled { opacity: .4; cursor: not-allowed; }
+.run-btn:active:not(:disabled) { opacity: .8; }
+
+/* Agent output cards */
+.agent-run-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; margin: 10px 10px 0; overflow: hidden;
+}
+.agent-run-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.agent-run-icon { font-size: 18px; flex-shrink: 0; }
+.agent-run-name { font-size: 13px; font-weight: 700; flex: 1; }
+.agent-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.dot-pending  { background: var(--muted); }
+.dot-running  { background: var(--neutral); animation: pulse 1s infinite; }
+.dot-done     { background: var(--bull); }
+.dot-error    { background: var(--bear); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.agent-run-body {
+  padding: 12px 14px;
+  font-size: 12px; line-height: 1.7; color: var(--text);
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 400px; overflow-y: auto;
+}
+.agent-run-body.collapsed { display: none; }
+
+.agent-run-ticker {
+  font-size: 10px; color: var(--muted); font-weight: 600;
+}
+
+/* Run history strip */
+.history-strip {
+  display: flex; gap: 6px; overflow-x: auto; padding: 4px 0;
+  scrollbar-width: none;
+}
+.history-strip::-webkit-scrollbar { display: none; }
+.hist-chip {
+  flex-shrink: 0; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 4px 10px; font-size: 11px; font-weight: 600;
+  color: var(--muted); cursor: pointer; white-space: nowrap;
+}
+.hist-chip:hover { border-color: var(--accent); color: var(--accent); }
+.hist-chip.current { border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
@@ -286,25 +388,45 @@ nav.tab-bar {
 
   <!-- ── Tab 2: Agents ──────────────────────────────────────────────────── -->
   <div id="tab-agents" class="tab-content">
-    <div class="placeholder-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5
-             4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5
-             4.5 0 00-3.09 3.09z"/>
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375
-             3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375
-             3.375 0 00-2.456 2.456z"/>
-      </svg>
-      <div class="placeholder-title">Agents</div>
-      <div class="placeholder-sub">
-        Select individual analysts to run — get targeted insights without
-        running the full pipeline. Tier&nbsp;1 analysts run immediately.
+
+    <!-- Config card -->
+    <div class="card">
+      <div class="card-title">Configure Run</div>
+      <div class="agent-form">
+
+        <!-- Date picker -->
+        <div class="date-row">
+          <label for="agents-date">Analysis date</label>
+          <input type="date" id="agents-date">
+        </div>
+
+        <!-- Tier 1 analysts -->
+        <div>
+          <div class="tier-header">
+            Analysts
+            <span class="tier-badge tier1-badge">Tier 1 · instant</span>
+          </div>
+          <div class="agent-grid" id="analyst-chips">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <button class="run-btn" id="agents-run-btn" onclick="submitAgentRun()">
+          Run Selected Analysts
+        </button>
       </div>
-      <span class="placeholder-badge">Coming in Step 3</span>
     </div>
-  </div>
+
+    <!-- Run history -->
+    <div class="card" id="agents-history-card" style="display:none">
+      <div class="card-title" style="margin-bottom:6px">Recent Runs</div>
+      <div class="history-strip" id="agents-history-strip"></div>
+    </div>
+
+    <!-- Output cards injected here by JS -->
+    <div id="agents-output"></div>
+
+  </div><!-- /tab-agents -->
 
   <!-- ── Tab 3: Analysis ────────────────────────────────────────────────── -->
   <div id="tab-analysis" class="tab-content">
@@ -670,6 +792,221 @@ function switchTab(tab) {
     $('btn-' + t).classList.toggle('active', t === tab);
   });
   _activeTab = tab;
+  if (tab === 'agents') agentsOnVisible();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 2 — AGENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const _TIER1_DEFS = [
+  { id: 'market',       label: 'Market Analyst',       icon: '📊', sub: 'Price action & tech' },
+  { id: 'social',       label: 'Social Analyst',        icon: '💬', sub: 'Sentiment & social' },
+  { id: 'news',         label: 'News Analyst',          icon: '📰', sub: 'Recent news events' },
+  { id: 'fundamentals', label: 'Fundamentals Analyst',  icon: '📋', sub: 'Financials & ratios' },
+];
+
+const REPORT_MAP = {
+  market:       'market_report',
+  social:       'sentiment_report',
+  news:         'news_report',
+  fundamentals: 'fundamentals_report',
+};
+
+// State for Tab 2
+let _agentSelected  = new Set();
+let _agentSessionId = null;
+let _agentWs        = null;
+let _agentSessions  = [];   // history (most recent first)
+
+function initAgentsTab() {
+  // Set today's date as default
+  const today = new Date().toISOString().slice(0, 10);
+  $('agents-date').value = localStorage.getItem('ta_agents_date') || today;
+
+  // Build agent chips
+  $('analyst-chips').innerHTML = _TIER1_DEFS.map(a => `
+    <label class="agent-chip" id="chip-${a.id}" onclick="toggleAgent('${a.id}')">
+      <input type="checkbox" id="cb-${a.id}">
+      <div class="agent-chip-icon">${a.icon}</div>
+      <div>
+        <div class="agent-chip-label">${a.label}</div>
+        <div class="agent-chip-sub">${a.sub}</div>
+      </div>
+    </label>`).join('');
+}
+
+function toggleAgent(id) {
+  if (_agentSelected.has(id)) _agentSelected.delete(id);
+  else                         _agentSelected.add(id);
+  $('chip-' + id).classList.toggle('selected', _agentSelected.has(id));
+  $('agents-run-btn').disabled = _agentSelected.size === 0;
+}
+
+async function submitAgentRun() {
+  if (_agentSelected.size === 0) return;
+  const date = $('agents-date').value;
+  if (!date) { alert('Please select an analysis date.'); return; }
+  localStorage.setItem('ta_agents_date', date);
+
+  $('agents-run-btn').disabled = true;
+  $('agents-run-btn').textContent = 'Starting…';
+
+  try {
+    const resp = await fetch(API + '/api/agents/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticker:        _ticker,
+        analysis_date: date,
+        analysts:      [..._agentSelected],
+      }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail || resp.status);
+    }
+    const { session_id } = await resp.json();
+    _agentSessionId = session_id;
+
+    // Push to history
+    _agentSessions.unshift({ session_id, ticker: _ticker, date, analysts: [..._agentSelected] });
+    if (_agentSessions.length > 10) _agentSessions.pop();
+    renderAgentsHistory();
+
+    // Build empty output cards
+    buildAgentOutputCards(session_id, _ticker, [..._agentSelected]);
+
+    // Connect WebSocket
+    connectAgentWs(session_id);
+
+  } catch (e) {
+    alert('Failed to start agent run: ' + e.message);
+    $('agents-run-btn').disabled = false;
+    $('agents-run-btn').textContent = 'Run Selected Analysts';
+  }
+}
+
+function buildAgentOutputCards(sessionId, ticker, analysts) {
+  const container = $('agents-output');
+  container.innerHTML = '';
+
+  for (const id of analysts) {
+    const def = _TIER1_DEFS.find(d => d.id === id);
+    if (!def) continue;
+    const reportKey = REPORT_MAP[id];
+
+    const card = document.createElement('div');
+    card.className = 'agent-run-card';
+    card.id = 'acard-' + id;
+    card.innerHTML = `
+      <div class="agent-run-header" onclick="toggleAgentCard('${id}')">
+        <span class="agent-run-icon">${def.icon}</span>
+        <div>
+          <div class="agent-run-name">${def.label}</div>
+          <div class="agent-run-ticker">${ticker} · ${sessionId.slice(0,8)}</div>
+        </div>
+        <div class="agent-status-dot dot-pending" id="adot-${id}"></div>
+      </div>
+      <div class="agent-run-body collapsed" id="abody-${id}">Waiting for agent to start…</div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+function toggleAgentCard(id) {
+  const body = $('abody-' + id);
+  body.classList.toggle('collapsed');
+}
+
+function setAgentDot(agentName, status) {
+  // Map agent display name back to id
+  const def = _TIER1_DEFS.find(d => d.label === agentName);
+  if (!def) return;
+  const dot = $('adot-' + def.id);
+  if (!dot) return;
+  dot.className = 'agent-status-dot dot-' + (status === 'running' ? 'running' : status === 'done' ? 'done' : status === 'error' ? 'error' : 'pending');
+}
+
+function setAgentReport(section, content) {
+  // Map report section → agent id
+  const id = Object.entries(REPORT_MAP).find(([, v]) => v === section)?.[0];
+  if (!id) return;
+  const body = $('abody-' + id);
+  if (!body) return;
+  body.textContent = content;
+  body.classList.remove('collapsed');
+}
+
+function connectAgentWs(sessionId) {
+  if (_agentWs) { _agentWs.close(); _agentWs = null; }
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws/${sessionId}`);
+  _agentWs = ws;
+
+  ws.onmessage = ev => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+
+    if (msg.type === 'agent_update') {
+      setAgentDot(msg.agent, msg.status);
+    } else if (msg.type === 'report_update') {
+      setAgentReport(msg.section, msg.content);
+    } else if (msg.type === 'done' || msg.type === 'error') {
+      $('agents-run-btn').disabled = false;
+      $('agents-run-btn').textContent = 'Run Selected Analysts';
+      ws.close();
+      _agentWs = null;
+    } else if (msg.type === 'snapshot') {
+      // Restore state from snapshot on reconnect
+      if (msg.agent_status) {
+        for (const row of msg.agent_status) setAgentDot(row.agent_name, row.status);
+      }
+      if (msg.reports) {
+        for (const [sec, content] of Object.entries(msg.reports)) {
+          if (content) setAgentReport(sec, content);
+        }
+      }
+    }
+  };
+
+  ws.onerror = () => {};
+  ws.onclose = () => { if (_agentWs === ws) _agentWs = null; };
+}
+
+function renderAgentsHistory() {
+  const card = $('agents-history-card');
+  const strip = $('agents-history-strip');
+  if (!_agentSessions.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  strip.innerHTML = _agentSessions.map((s, i) =>
+    `<div class="hist-chip${i === 0 ? ' current' : ''}"
+          onclick="loadAgentSession('${s.session_id}')">
+       ${s.ticker} · ${s.analysts.join('/')} · ${s.date.slice(5)}
+     </div>`
+  ).join('');
+}
+
+async function loadAgentSession(sessionId) {
+  try {
+    const d = await apiFetch(`/api/agents/run/${sessionId}`);
+    const session = d.session;
+    const analysts = session.config?.analysts || [];
+
+    buildAgentOutputCards(sessionId, session.ticker, analysts.length ? analysts : Object.keys(REPORT_MAP));
+
+    for (const row of d.agent_status || []) setAgentDot(row.agent_name, row.status);
+    for (const [sec, content] of Object.entries(d.reports || {})) {
+      if (content) setAgentReport(sec, content);
+    }
+    _agentSessionId = sessionId;
+  } catch (e) { console.error('loadAgentSession', e); }
+}
+
+function agentsOnVisible() {
+  // Keep run button in correct state
+  $('agents-run-btn').disabled = _agentSelected.size === 0;
 }
 
 // ── Timer management ──────────────────────────────────────────────────────────
@@ -689,6 +1026,7 @@ function init() {
   updateChart();
   loadAll();
   startTimers();
+  initAgentsTab();
 
   // Register service worker
   if ('serviceWorker' in navigator) {

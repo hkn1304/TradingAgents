@@ -423,11 +423,21 @@ async def websocket_endpoint(ws: WebSocket, session_id: str):
     # Send current state immediately so a reconnecting browser catches up
     session = session_get(session_id)
     if session:
+        all_reports = report_get_all(session_id)
+        # Tab 2 (agents mode) sends full text; Tab 3 sends boolean presence flags
+        if session.get("mode") == "agents":
+            reports_payload = {
+                k: v for k, v in all_reports.items()
+                if k in ("market_report", "sentiment_report",
+                         "news_report", "fundamentals_report")
+            }
+        else:
+            reports_payload = {k: bool(v) for k, v in all_reports.items()}
         await ws.send_json({
             "type":         "snapshot",
             "session":      session,
             "agent_status": agent_status_get_all(session_id),
-            "reports":      {k: bool(v) for k, v in report_get_all(session_id).items()},
+            "reports":      reports_payload,
         })
     try:
         while True:
