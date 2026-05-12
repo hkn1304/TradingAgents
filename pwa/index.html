@@ -197,19 +197,146 @@ nav.tab-bar {
   display: flex; align-items: center; gap: 6px;
 }
 
-/* ── Tab 3 placeholder ────────────────────────────────────────────────────── */
-.placeholder-wrap {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 60px 24px; text-align: center; gap: 12px;
+/* ── Tab 3: Analysis ──────────────────────────────────────────────────────── */
+
+/* Queue / status banner */
+.status-banner {
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 8px;
+  font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;
 }
-.placeholder-wrap svg { width: 48px; height: 48px; color: var(--muted); opacity: .4; }
-.placeholder-title { font-size: 18px; font-weight: 700; color: var(--text); }
-.placeholder-sub { font-size: 13px; color: var(--muted); line-height: 1.5; max-width: 280px; }
-.placeholder-badge {
-  font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
-  border: 1px solid var(--accent); color: var(--accent);
-  text-transform: uppercase; letter-spacing: 1px;
+.banner-queued   { background: rgba(210,153,34,.15);  color: var(--neutral); border: 1px solid var(--neutral); }
+.banner-running  { background: rgba(88,166,255,.12);  color: var(--accent);  border: 1px solid var(--accent); }
+.banner-done     { background: rgba(63,185,80,.12);   color: var(--bull);    border: 1px solid var(--bull); }
+.banner-failed   { background: rgba(248,81,73,.12);   color: var(--bear);    border: 1px solid var(--bear); }
+.banner-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.bdot-queued  { background: var(--neutral); animation: pulse 1.2s infinite; }
+.bdot-running { background: var(--accent);  animation: pulse 0.8s infinite; }
+.bdot-done    { background: var(--bull); }
+.bdot-failed  { background: var(--bear); }
+
+/* Analysis config form */
+.analysis-form { display: flex; flex-direction: column; gap: 10px; }
+.form-row { display: flex; gap: 8px; align-items: center; }
+.form-row label { font-size: 11px; color: var(--muted); white-space: nowrap; min-width: 90px; }
+.form-row select, .form-row input[type=date] {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 6px 10px; font-size: 13px; outline: none; flex: 1;
 }
+.form-row select:focus, .form-row input[type=date]:focus { border-color: var(--accent); }
+
+/* Analyst checkboxes in analysis form */
+.analyst-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.analyst-check {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 10px; cursor: pointer;
+  font-size: 12px; font-weight: 600; transition: border-color .15s;
+}
+.analyst-check.selected { border-color: var(--accent); background: rgba(88,166,255,.1); }
+.analyst-check input[type=checkbox] { display: none; }
+
+/* Pipeline timeline */
+.pipeline-timeline { display: flex; flex-direction: column; gap: 0; }
+.pipeline-agent {
+  display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
+  position: relative;
+}
+.pipeline-agent:not(:last-child)::after {
+  content:''; position:absolute; left:11px; top:30px; bottom:-4px;
+  width:2px; background: var(--border);
+}
+.pa-dot {
+  width:24px; height:24px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; border: 2px solid var(--border); background: var(--bg3);
+  position:relative; z-index:1;
+}
+.pa-dot.pending  { border-color: var(--border); color: var(--muted); }
+.pa-dot.running  { border-color: var(--accent);  background: rgba(88,166,255,.15); animation: pulse 1s infinite; }
+.pa-dot.completed { border-color: var(--bull); background: rgba(63,185,80,.15); }
+.pa-dot.error    { border-color: var(--bear); background: rgba(248,81,73,.15); }
+.pa-info { flex: 1; }
+.pa-name { font-size: 12px; font-weight: 700; line-height: 1.4; }
+.pa-sub  { font-size: 10px; color: var(--muted); }
+.pa-time { font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+/* Report sections */
+.report-section { margin-bottom: 0; }
+.report-section-header {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.report-section-header:last-child { border-bottom: none; }
+.report-section-icon { font-size: 16px; }
+.report-section-title { font-size: 13px; font-weight: 700; flex: 1; }
+.report-section-chevron { font-size: 11px; color: var(--muted); transition: transform .2s; }
+.report-section-chevron.open { transform: rotate(180deg); }
+.report-section-body {
+  font-size: 12px; line-height: 1.8; color: var(--text);
+  white-space: pre-wrap; word-break: break-word;
+  padding: 10px 0; display: none;
+}
+.report-section-body.open { display: block; }
+
+/* Final verdict card */
+.verdict-card {
+  background: var(--bg3); border: 2px solid var(--border);
+  border-radius: 12px; padding: 16px; text-align: center;
+}
+.verdict-rating {
+  font-size: 32px; font-weight: 900; margin-bottom: 4px;
+}
+.verdict-label { font-size: 12px; color: var(--muted); }
+.buy    { color: var(--bull); }
+.sell   { color: var(--bear); }
+.hold   { color: var(--neutral); }
+
+/* Chat */
+.chat-messages {
+  display: flex; flex-direction: column; gap: 10px;
+  padding-bottom: 8px;
+}
+.chat-msg {
+  max-width: 88%; padding: 9px 12px; border-radius: 12px;
+  font-size: 13px; line-height: 1.55; word-break: break-word;
+}
+.chat-msg.user {
+  align-self: flex-end;
+  background: var(--accent); color: #0d1117; border-radius: 12px 12px 3px 12px;
+}
+.chat-msg.assistant {
+  align-self: flex-start;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px 12px 12px 3px; white-space: pre-wrap;
+}
+.chat-msg.thinking {
+  align-self: flex-start; color: var(--muted); font-style: italic;
+  background: none; padding: 4px 0;
+}
+.chat-input-row {
+  display: flex; gap: 8px; align-items: flex-end; margin-top: 10px;
+}
+.chat-input-row textarea {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: 10px; padding: 8px 12px;
+  font-size: 13px; resize: none; min-height: 40px; max-height: 120px;
+  overflow-y: auto; outline: none; font-family: inherit;
+  line-height: 1.4;
+}
+.chat-input-row textarea:focus { border-color: var(--accent); }
+.chat-send-btn {
+  background: var(--accent); color: #0d1117; border: none;
+  border-radius: 10px; padding: 8px 14px; font-size: 14px; font-weight: 700;
+  cursor: pointer; flex-shrink: 0; align-self: flex-end;
+}
+.chat-send-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Analysis history strip */
+.analysis-history-strip {
+  display: flex; gap: 6px; overflow-x: auto; padding: 4px 0;
+  scrollbar-width: none;
+}
+.analysis-history-strip::-webkit-scrollbar { display: none; }
 
 /* ── Tab 2: Agents ────────────────────────────────────────────────────────── */
 .agent-form { display: flex; flex-direction: column; gap: 10px; }
@@ -430,22 +557,82 @@ nav.tab-bar {
 
   <!-- ── Tab 3: Analysis ────────────────────────────────────────────────── -->
   <div id="tab-analysis" class="tab-content">
-    <div class="placeholder-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5
-             7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5
-             2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125
-             1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
-      </svg>
-      <div class="placeholder-title">Analysis</div>
-      <div class="placeholder-sub">
-        Full 9-agent pipeline with bull/bear debate, risk management, and
-        portfolio decision. Chat with the report when it's done.
+
+    <!-- Config card -->
+    <div class="card" id="analysis-config-card">
+      <div class="card-title">Full Pipeline Analysis</div>
+      <div class="analysis-form">
+
+        <div class="form-row">
+          <label for="analysis-date">Analysis date</label>
+          <input type="date" id="analysis-date">
+        </div>
+
+        <div class="form-row">
+          <label>Analysts</label>
+          <div class="analyst-checks" id="analysis-analyst-chips"></div>
+        </div>
+
+        <div class="form-row">
+          <label for="analysis-depth">Research depth</label>
+          <select id="analysis-depth">
+            <option value="1">1 — Quick (1 debate round)</option>
+            <option value="3">3 — Standard (3 rounds)</option>
+            <option value="5">5 — Deep (5 rounds)</option>
+          </select>
+        </div>
+
+        <button class="run-btn" id="analysis-run-btn" onclick="submitAnalysis()">
+          Run Full Analysis
+        </button>
       </div>
-      <span class="placeholder-badge">Coming in Step 4</span>
     </div>
-  </div>
+
+    <!-- Queue / status banner (hidden until a job is active) -->
+    <div class="card" id="analysis-banner-card" style="display:none">
+      <div id="analysis-banner"></div>
+    </div>
+
+    <!-- Pipeline timeline -->
+    <div class="card" id="pipeline-card" style="display:none">
+      <div class="card-title">Agent Pipeline</div>
+      <div class="pipeline-timeline" id="pipeline-timeline"></div>
+    </div>
+
+    <!-- Final verdict -->
+    <div class="card" id="verdict-card" style="display:none">
+      <div class="card-title">Final Decision</div>
+      <div class="verdict-card">
+        <div class="verdict-rating" id="verdict-rating">—</div>
+        <div class="verdict-label" id="verdict-label">Awaiting portfolio manager…</div>
+      </div>
+    </div>
+
+    <!-- Report sections (expandable) -->
+    <div class="card" id="reports-card" style="display:none">
+      <div class="card-title">Analysis Report</div>
+      <div id="reports-body"></div>
+    </div>
+
+    <!-- Chat -->
+    <div class="card" id="chat-card" style="display:none; margin-bottom:8px">
+      <div class="card-title">Ask About This Report</div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <textarea id="chat-textarea" rows="1" placeholder="Ask a question about this analysis…"
+                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+                  oninput="autoGrow(this)"></textarea>
+        <button class="chat-send-btn" id="chat-send-btn" onclick="sendChat()">↑</button>
+      </div>
+    </div>
+
+    <!-- History strip -->
+    <div class="card" id="analysis-history-card" style="display:none; margin-bottom:8px">
+      <div class="card-title" style="margin-bottom:6px">Past Analyses</div>
+      <div class="analysis-history-strip" id="analysis-history-strip"></div>
+    </div>
+
+  </div><!-- /tab-analysis -->
 
 </main>
 
@@ -792,7 +979,8 @@ function switchTab(tab) {
     $('btn-' + t).classList.toggle('active', t === tab);
   });
   _activeTab = tab;
-  if (tab === 'agents') agentsOnVisible();
+  if (tab === 'agents')   agentsOnVisible();
+  if (tab === 'analysis') analysisOnVisible();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1017,6 +1205,406 @@ function startTimers() {
   _marketsTimer = setInterval(loadAll,     MARKETS_INTERVAL_MS);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 3 — ANALYSIS (full pipeline + chat)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const _PIPELINE_AGENTS = [
+  { name: 'Market Analyst',       icon: '📊', tier: 1 },
+  { name: 'Social Analyst',       icon: '💬', tier: 1 },
+  { name: 'News Analyst',         icon: '📰', tier: 1 },
+  { name: 'Fundamentals Analyst', icon: '📋', tier: 1 },
+  { name: 'Bull Researcher',      icon: '🐂', tier: 2 },
+  { name: 'Bear Researcher',      icon: '🐻', tier: 2 },
+  { name: 'Research Manager',     icon: '🧑‍💼', tier: 2 },
+  { name: 'Trader',               icon: '💹', tier: 2 },
+  { name: 'Aggressive Analyst',   icon: '⚡', tier: 2 },
+  { name: 'Neutral Analyst',      icon: '⚖️', tier: 2 },
+  { name: 'Conservative Analyst', icon: '🛡️', tier: 2 },
+  { name: 'Portfolio Manager',    icon: '🏦', tier: 2 },
+];
+
+const _REPORT_SECTIONS = [
+  { key: 'market_report',          icon: '📊', title: 'Market Analysis' },
+  { key: 'sentiment_report',       icon: '💬', title: 'Social Sentiment' },
+  { key: 'news_report',            icon: '📰', title: 'News Analysis' },
+  { key: 'fundamentals_report',    icon: '📋', title: 'Fundamentals' },
+  { key: 'investment_plan',        icon: '🐂🐻', title: 'Bull / Bear Debate' },
+  { key: 'trader_investment_plan', icon: '💹', title: 'Trader Plan' },
+  { key: 'final_trade_decision',   icon: '🏦', title: 'Risk & Portfolio Decision' },
+];
+
+// State for Tab 3
+let _analysisSessionId  = null;
+let _analysisWs         = null;
+let _analysisSessions   = [];   // history
+let _analysisSelected   = new Set(['market','social','news','fundamentals']);
+let _chatPending        = false;
+let _agentStatusMap     = {};   // name → status
+let _agentStartMap      = {};   // name → timestamp
+
+function initAnalysisTab() {
+  const today = new Date().toISOString().slice(0, 10);
+  $('analysis-date').value = localStorage.getItem('ta_analysis_date') || today;
+
+  // Build analyst checkboxes
+  $('analysis-analyst-chips').innerHTML = _TIER1_DEFS.map(a => `
+    <label class="analyst-check${_analysisSelected.has(a.id) ? ' selected' : ''}"
+           id="ancheck-${a.id}" onclick="toggleAnalysisAnalyst('${a.id}')">
+      <input type="checkbox" ${_analysisSelected.has(a.id) ? 'checked' : ''}>
+      ${a.icon} ${a.id.charAt(0).toUpperCase() + a.id.slice(1)}
+    </label>`).join('');
+}
+
+function toggleAnalysisAnalyst(id) {
+  if (_analysisSelected.has(id)) _analysisSelected.delete(id);
+  else                            _analysisSelected.add(id);
+  $('ancheck-' + id).classList.toggle('selected', _analysisSelected.has(id));
+}
+
+async function submitAnalysis() {
+  if (_analysisSelected.size === 0) { alert('Select at least one analyst.'); return; }
+  const date  = $('analysis-date').value;
+  const depth = parseInt($('analysis-depth').value) || 1;
+  if (!date) { alert('Please select an analysis date.'); return; }
+  localStorage.setItem('ta_analysis_date', date);
+
+  $('analysis-run-btn').disabled = true;
+  $('analysis-run-btn').textContent = 'Submitting…';
+
+  try {
+    const resp = await fetch(API + '/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticker:         _ticker,
+        analysis_date:  date,
+        analysts:       [..._analysisSelected],
+        research_depth: depth,
+      }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail || resp.status);
+    }
+    const { session_id, queue_position } = await resp.json();
+    _analysisSessionId = session_id;
+
+    _analysisSessions.unshift({ session_id, ticker: _ticker, date });
+    if (_analysisSessions.length > 10) _analysisSessions.pop();
+    renderAnalysisHistory();
+
+    showAnalysisBanner('queued', `Queue position #${queue_position}`);
+    showPipelineCard([..._analysisSelected]);
+    connectAnalysisWs(session_id);
+
+    $('analysis-run-btn').textContent = 'Run Full Analysis';
+    $('analysis-run-btn').disabled = false;
+
+  } catch (e) {
+    alert('Failed to submit: ' + e.message);
+    $('analysis-run-btn').disabled = false;
+    $('analysis-run-btn').textContent = 'Run Full Analysis';
+  }
+}
+
+function showAnalysisBanner(state, msg) {
+  const card = $('analysis-banner-card');
+  const banner = $('analysis-banner');
+  const map = {
+    queued:  ['banner-queued',  'bdot-queued',  '⏳'],
+    running: ['banner-running', 'bdot-running', '⚙️'],
+    done:    ['banner-done',    'bdot-done',    '✅'],
+    failed:  ['banner-failed',  'bdot-failed',  '❌'],
+  };
+  const [cls, dotCls, emoji] = map[state] || map.running;
+  card.style.display = '';
+  banner.className = 'status-banner ' + cls;
+  banner.innerHTML = `<div class="banner-dot ${dotCls}"></div>${emoji} ${msg}`;
+}
+
+function showPipelineCard(analysts) {
+  const card = $('pipeline-card');
+  card.style.display = '';
+  _agentStatusMap = {};
+  _agentStartMap  = {};
+
+  // Only show agents that make sense for chosen analysts
+  const tier1Names = new Set(analysts.map(a => {
+    const def = _TIER1_DEFS.find(d => d.id === a);
+    return def ? def.label : '';
+  }));
+  const visible = _PIPELINE_AGENTS.filter(a => {
+    if (a.tier === 1) return tier1Names.has(a.name);
+    return true; // always show tier-2 for full pipeline
+  });
+
+  $('pipeline-timeline').innerHTML = visible.map(a =>
+    `<div class="pipeline-agent" id="pa-${a.name.replace(/\s/g,'_')}">
+       <div class="pa-dot pending" id="padot-${a.name.replace(/\s/g,'_')}">${a.icon}</div>
+       <div class="pa-info">
+         <div class="pa-name">${a.name}</div>
+         <div class="pa-sub" id="pasub-${a.name.replace(/\s/g,'_')}">Pending</div>
+       </div>
+       <div class="pa-time" id="patime-${a.name.replace(/\s/g,'_')}"></div>
+     </div>`
+  ).join('');
+}
+
+function setPipelineAgent(agentName, status) {
+  const key = agentName.replace(/\s/g, '_');
+  const dot  = $('padot-' + key);
+  const sub  = $('pasub-' + key);
+  const time = $('patime-' + key);
+  if (!dot) return;
+
+  const prev = _agentStatusMap[agentName];
+  _agentStatusMap[agentName] = status;
+
+  const statusMap = {
+    pending:   'Pending',
+    in_progress: 'Running…',
+    running:   'Running…',
+    completed: 'Done',
+    done:      'Done',
+    error:     'Error',
+  };
+  const dotClass = status === 'in_progress' || status === 'running' ? 'running'
+                 : status === 'completed' || status === 'done' ? 'completed'
+                 : status === 'error' ? 'error' : 'pending';
+
+  dot.className = 'pa-dot ' + dotClass;
+  sub.textContent = statusMap[status] || status;
+
+  if ((status === 'in_progress' || status === 'running') && prev !== status) {
+    _agentStartMap[agentName] = Date.now();
+  }
+  if ((status === 'completed' || status === 'done') && _agentStartMap[agentName]) {
+    const secs = Math.round((Date.now() - _agentStartMap[agentName]) / 1000);
+    time.textContent = secs + 's';
+  }
+}
+
+function renderReportSection(key, content) {
+  $('reports-card').style.display = '';
+  const def = _REPORT_SECTIONS.find(s => s.key === key);
+  if (!def) return;
+
+  let section = $('rsec-' + key);
+  if (!section) {
+    section = document.createElement('div');
+    section.className = 'report-section';
+    section.id = 'rsec-' + key;
+    section.innerHTML = `
+      <div class="report-section-header" onclick="toggleReportSection('${key}')">
+        <span class="report-section-icon">${def.icon}</span>
+        <span class="report-section-title">${def.title}</span>
+        <span class="report-section-chevron" id="rchev-${key}">▼</span>
+      </div>
+      <div class="report-section-body" id="rbody-${key}"></div>`;
+    $('reports-body').appendChild(section);
+  }
+  $('rbody-' + key).textContent = content;
+}
+
+function toggleReportSection(key) {
+  const body = $('rbody-' + key);
+  const chev = $('rchev-' + key);
+  const open = body.classList.toggle('open');
+  if (chev) chev.classList.toggle('open', open);
+}
+
+function showVerdict(rating) {
+  const card = $('verdict-card');
+  card.style.display = '';
+  const rEl = $('verdict-rating');
+  const lEl = $('verdict-label');
+  rEl.textContent = rating;
+  const cls = /buy|overweight/i.test(rating) ? 'buy'
+            : /sell|underweight/i.test(rating) ? 'sell' : 'hold';
+  rEl.className = 'verdict-rating ' + cls;
+  lEl.textContent = 'Portfolio Manager Decision';
+}
+
+function connectAnalysisWs(sessionId) {
+  if (_analysisWs) { _analysisWs.close(); _analysisWs = null; }
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws/${sessionId}`);
+  _analysisWs = ws;
+
+  ws.onmessage = ev => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+
+    if (msg.type === 'agent_update') {
+      setPipelineAgent(msg.agent, msg.status);
+    } else if (msg.type === 'report_update') {
+      renderReportSection(msg.section, msg.content);
+    } else if (msg.type === 'done') {
+      showAnalysisBanner('done', 'Analysis complete');
+      $('chat-card').style.display = '';
+      loadChatHistory(sessionId);
+      ws.close(); _analysisWs = null;
+    } else if (msg.type === 'error') {
+      showAnalysisBanner('failed', msg.message || 'Pipeline failed');
+      ws.close(); _analysisWs = null;
+    } else if (msg.type === 'queue_update') {
+      showAnalysisBanner('queued', `Queue position #${msg.position}`);
+    } else if (msg.type === 'snapshot') {
+      // Reconnect: restore from snapshot
+      const session = msg.session || {};
+      const status = session.status || 'queued';
+      if (status === 'running')   showAnalysisBanner('running', 'Analysis running…');
+      else if (status === 'completed') showAnalysisBanner('done', 'Analysis complete');
+      else if (status === 'failed')    showAnalysisBanner('failed', session.error || 'Failed');
+      else showAnalysisBanner('queued', `Queued (#${session.queue_position || '?'})`);
+
+      // Restore pipeline dots
+      const analysts = session.config?.analysts || [..._analysisSelected];
+      showPipelineCard(analysts);
+      for (const row of msg.agent_status || []) setPipelineAgent(row.agent_name, row.status);
+
+      // Restore reports (booleans only — full text fetch separately)
+      const hasAny = Object.values(msg.reports || {}).some(Boolean);
+      if (hasAny) {
+        fetchAndRenderReports(sessionId);
+        if (status === 'completed') {
+          $('chat-card').style.display = '';
+          loadChatHistory(sessionId);
+        }
+      }
+      if (session.final_rating) showVerdict(session.final_rating);
+    }
+  };
+
+  ws.onerror = () => {};
+  ws.onclose = () => { if (_analysisWs === ws) _analysisWs = null; };
+}
+
+async function fetchAndRenderReports(sessionId) {
+  try {
+    const d = await apiFetch(`/api/sessions/${sessionId}`);
+    for (const [key, content] of Object.entries(d.reports || {})) {
+      if (content) renderReportSection(key, content);
+    }
+    if (d.session?.final_rating) showVerdict(d.session.final_rating);
+  } catch (e) { console.error('fetchAndRenderReports', e); }
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+
+async function loadChatHistory(sessionId) {
+  try {
+    const d = await apiFetch(`/api/sessions/${sessionId}/chat`);
+    const msgs = $('chat-messages');
+    msgs.innerHTML = '';
+    for (const m of d.messages || []) appendChatMsg(m.role, m.content);
+  } catch (_) {}
+}
+
+function appendChatMsg(role, content) {
+  const msgs = $('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.textContent = content;
+  msgs.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+async function sendChat() {
+  if (!_analysisSessionId || _chatPending) return;
+  const ta = $('chat-textarea');
+  const msg = ta.value.trim();
+  if (!msg) return;
+  ta.value = '';
+  ta.style.height = '';
+
+  _chatPending = true;
+  $('chat-send-btn').disabled = true;
+
+  appendChatMsg('user', msg);
+
+  const thinking = document.createElement('div');
+  thinking.className = 'chat-msg thinking';
+  thinking.textContent = 'Thinking…';
+  $('chat-messages').appendChild(thinking);
+  thinking.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+  try {
+    const resp = await fetch(API + `/api/sessions/${_analysisSessionId}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg }),
+    });
+    thinking.remove();
+    if (!resp.ok) throw new Error(resp.status);
+    const { reply } = await resp.json();
+    appendChatMsg('assistant', reply);
+  } catch (e) {
+    thinking.remove();
+    appendChatMsg('assistant', '⚠ Error: ' + e.message);
+  } finally {
+    _chatPending = false;
+    $('chat-send-btn').disabled = false;
+  }
+}
+
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ── Analysis history ──────────────────────────────────────────────────────────
+
+function renderAnalysisHistory() {
+  const card  = $('analysis-history-card');
+  const strip = $('analysis-history-strip');
+  if (!_analysisSessions.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  strip.innerHTML = _analysisSessions.map((s, i) =>
+    `<div class="hist-chip${i === 0 ? ' current' : ''}"
+          onclick="loadAnalysisSession('${s.session_id}')">
+       ${s.ticker} · ${s.date.slice(5)}
+     </div>`
+  ).join('');
+}
+
+async function loadAnalysisSession(sessionId) {
+  try {
+    const d = await apiFetch(`/api/sessions/${sessionId}`);
+    const session = d.session;
+    const analysts = session.config?.analysts || [..._analysisSelected];
+
+    _analysisSessionId = sessionId;
+    const status = session.status;
+
+    if (status === 'running')    showAnalysisBanner('running', 'Analysis running…');
+    else if (status === 'completed') showAnalysisBanner('done', 'Analysis complete');
+    else if (status === 'failed')    showAnalysisBanner('failed', session.error || 'Failed');
+    else showAnalysisBanner('queued', `Queued (#${session.queue_position || '?'})`);
+
+    showPipelineCard(analysts);
+    for (const row of d.agent_status || []) setPipelineAgent(row.agent_name, row.status);
+
+    for (const [key, content] of Object.entries(d.reports || {})) {
+      if (content) renderReportSection(key, content);
+    }
+    if (session.final_rating) showVerdict(session.final_rating);
+
+    if (status === 'completed') {
+      $('chat-card').style.display = '';
+      loadChatHistory(sessionId);
+    }
+    if (status === 'running') connectAnalysisWs(sessionId);
+
+  } catch (e) { console.error('loadAnalysisSession', e); }
+}
+
+function analysisOnVisible() {
+  // nothing special for now
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
   $('ticker-input').value = _ticker;
@@ -1027,6 +1615,7 @@ function init() {
   loadAll();
   startTimers();
   initAgentsTab();
+  initAnalysisTab();
 
   // Register service worker
   if ('serviceWorker' in navigator) {

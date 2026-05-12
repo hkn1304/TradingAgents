@@ -237,7 +237,7 @@ def _execute(session_id: str, ticker: str, analysis_date: str,
         logger.exception("Pipeline error for session %s", session_id)
         session_set_status(session_id, "failed", error=str(exc))
         ws_manager.broadcast_sync(session_id, {
-            "type": "status", "status": "failed", "error": str(exc)
+            "type": "error", "message": str(exc),
         })
         return
 
@@ -262,8 +262,8 @@ def _execute(session_id: str, ticker: str, analysis_date: str,
 
     session_set_status(session_id, "completed", final_rating=final_rating)
     ws_manager.broadcast_sync(session_id, {
-        "type": "status",
-        "status": "completed",
+        "type": "done",
+        "session_id": session_id,
         "final_rating": final_rating,
     })
     logger.info("Session %s completed — rating: %s", session_id, final_rating)
@@ -282,7 +282,7 @@ def _broadcast_queue_positions() -> None:
     for pos, sid in enumerate(order, start=1):
         session_set_queue_position(sid, pos)
         ws_manager.broadcast_sync(sid, {
-            "type": "queue_position",
+            "type": "queue_update",
             "position": pos,
             "total": len(order),
         })
