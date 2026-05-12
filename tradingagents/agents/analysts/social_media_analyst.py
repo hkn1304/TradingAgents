@@ -1,5 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from tradingagents.agents.utils.agent_utils import build_instrument_context, get_language_instruction, get_news
+from tradingagents.agents.utils.agent_utils import build_instrument_context, get_conclusion_template, get_language_instruction, get_news
 from tradingagents.dataflows.config import get_config
 
 
@@ -13,8 +13,25 @@ def create_social_media_analyst(llm):
         ]
 
         system_message = (
-            "You are a social media and company specific news researcher/analyst tasked with analyzing social media posts, recent company news, and public sentiment for a specific company over the past week. You will be given a company's name your objective is to write a comprehensive long report detailing your analysis, insights, and implications for traders and investors on this company's current state after looking at social media and what people are saying about that company, analyzing sentiment data of what people feel each day about the company, and looking at recent company news. Use the get_news(query, start_date, end_date) tool to search for company-specific news and social media discussions. Try to look at all sources possible from social media to sentiment to news. Provide specific, actionable insights with supporting evidence to help traders make informed decisions."
-            + """ Make sure to append a Markdown table at the end of the report to organize key points in the report, organized and easy to read."""
+            "Your task is to immediately analyse public sentiment, social media discussions, and recent news "
+            "for the instrument specified in the context as of the current date. "
+            "Do NOT ask any clarifying questions — begin with tool calls right away.\n\n"
+            "Search strategy (use the search terms listed in your context, NOT just the raw ticker symbol):\n"
+            "1. Search for public sentiment and social discussions using the asset's common name "
+            "(e.g. for XAGUSD use 'silver', 'silver price', 'silver forecast' — investors and traders "
+            "discuss commodities/crypto/forex by name, not by ticker code).\n"
+            "2. Search for recent news events driving sentiment: use the asset's common name "
+            "AND relevant macro/geopolitical keywords from your context "
+            "(e.g. 'Iran US tensions silver', 'Federal Reserve silver', 'Trump tariffs gold', etc.).\n"
+            "3. Include influential analyst opinions, social media trends, and market participant positioning.\n\n"
+            "Your report must cover:\n"
+            "- Overall sentiment (bullish / bearish / neutral) with evidence\n"
+            "- Key narratives and talking points driving market participants\n"
+            "- Geopolitical and macro events being discussed (conflicts, sanctions, speeches, tweets)\n"
+            "- Retail vs. institutional sentiment divergence if observable\n"
+            "- Recent news that is shifting market opinion\n\n"
+            "Provide specific, actionable insights. Append a Markdown table summarising sentiment signals and their implications."
+            + get_conclusion_template()
             + get_language_instruction()
         )
 

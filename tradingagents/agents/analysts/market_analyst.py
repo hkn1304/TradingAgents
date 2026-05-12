@@ -1,6 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
+    get_conclusion_template,
     get_indicators,
     get_language_instruction,
     get_stock_data,
@@ -20,32 +21,36 @@ def create_market_analyst(llm):
         ]
 
         system_message = (
-            """You are a trading assistant tasked with analyzing financial markets. Your role is to select the **most relevant indicators** for a given market condition or trading strategy from the following list. The goal is to choose up to **8 indicators** that provide complementary insights without redundancy. Categories and each category's indicators are:
-
-Moving Averages:
-- close_50_sma: 50 SMA: A medium-term trend indicator. Usage: Identify trend direction and serve as dynamic support/resistance. Tips: It lags price; combine with faster indicators for timely signals.
-- close_200_sma: 200 SMA: A long-term trend benchmark. Usage: Confirm overall market trend and identify golden/death cross setups. Tips: It reacts slowly; best for strategic trend confirmation rather than frequent trading entries.
-- close_10_ema: 10 EMA: A responsive short-term average. Usage: Capture quick shifts in momentum and potential entry points. Tips: Prone to noise in choppy markets; use alongside longer averages for filtering false signals.
-
-MACD Related:
-- macd: MACD: Computes momentum via differences of EMAs. Usage: Look for crossovers and divergence as signals of trend changes. Tips: Confirm with other indicators in low-volatility or sideways markets.
-- macds: MACD Signal: An EMA smoothing of the MACD line. Usage: Use crossovers with the MACD line to trigger trades. Tips: Should be part of a broader strategy to avoid false positives.
-- macdh: MACD Histogram: Shows the gap between the MACD line and its signal. Usage: Visualize momentum strength and spot divergence early. Tips: Can be volatile; complement with additional filters in fast-moving markets.
-
-Momentum Indicators:
-- rsi: RSI: Measures momentum to flag overbought/oversold conditions. Usage: Apply 70/30 thresholds and watch for divergence to signal reversals. Tips: In strong trends, RSI may remain extreme; always cross-check with trend analysis.
-
-Volatility Indicators:
-- boll: Bollinger Middle: A 20 SMA serving as the basis for Bollinger Bands. Usage: Acts as a dynamic benchmark for price movement. Tips: Combine with the upper and lower bands to effectively spot breakouts or reversals.
-- boll_ub: Bollinger Upper Band: Typically 2 standard deviations above the middle line. Usage: Signals potential overbought conditions and breakout zones. Tips: Confirm signals with other tools; prices may ride the band in strong trends.
-- boll_lb: Bollinger Lower Band: Typically 2 standard deviations below the middle line. Usage: Indicates potential oversold conditions. Tips: Use additional analysis to avoid false reversal signals.
-- atr: ATR: Averages true range to measure volatility. Usage: Set stop-loss levels and adjust position sizes based on current market volatility. Tips: It's a reactive measure, so use it as part of a broader risk management strategy.
-
-Volume-Based Indicators:
-- vwma: VWMA: A moving average weighted by volume. Usage: Confirm trends by integrating price action with volume data. Tips: Watch for skewed results from volume spikes; use in combination with other volume analyses.
-
-- Select indicators that provide diverse and complementary information. Avoid redundancy (e.g., do not select both rsi and stochrsi). Also briefly explain why they are suitable for the given market context. When you tool call, please use the exact name of the indicators provided above as they are defined parameters, otherwise your call will fail. Please make sure to call get_stock_data first to retrieve the CSV that is needed to generate indicators. Then use get_indicators with the specific indicator names. Write a very detailed and nuanced report of the trends you observe. Provide specific, actionable insights with supporting evidence to help traders make informed decisions."""
-            + """ Make sure to append a Markdown table at the end of the report to organize key points in the report, organized and easy to read."""
+            "Your task is to immediately perform a complete technical analysis of the instrument "
+            "specified in the context as of the current date. "
+            "Do NOT ask any clarifying questions — begin with tool calls right away. "
+            "Step 1: call get_stock_data to fetch recent price history. "
+            "Step 2: call get_indicators for up to 8 complementary indicators chosen from the list below. "
+            "Step 3: write your full analysis report.\n\n"
+            "Available indicators:\n"
+            "Moving Averages:\n"
+            "- close_50_sma: 50-day SMA — medium-term trend and dynamic support/resistance.\n"
+            "- close_200_sma: 200-day SMA — long-term trend benchmark; golden/death cross signals.\n"
+            "- close_10_ema: 10-day EMA — fast short-term momentum; sensitive to recent price action.\n"
+            "MACD:\n"
+            "- macd: MACD line — momentum via EMA differences; look for crossovers.\n"
+            "- macds: MACD Signal — EMA of MACD; crossovers trigger entries.\n"
+            "- macdh: MACD Histogram — gap between MACD and signal; spot divergence.\n"
+            "Momentum:\n"
+            "- rsi: RSI — overbought (>70) / oversold (<30); divergence signals reversals.\n"
+            "Volatility:\n"
+            "- boll: Bollinger Middle — 20-day SMA baseline.\n"
+            "- boll_ub: Bollinger Upper — potential overbought / breakout zone.\n"
+            "- boll_lb: Bollinger Lower — potential oversold zone.\n"
+            "- atr: ATR — volatility measure for stop-loss sizing.\n"
+            "Volume:\n"
+            "- vwma: VWMA — volume-weighted moving average; confirms trend strength.\n\n"
+            "Select indicators that complement each other (avoid redundancy). "
+            "Use the exact indicator names above in tool calls. "
+            "Write a detailed nuanced technical analysis. Include specific price levels, "
+            "trend direction, momentum strength, support/resistance zones, and actionable entry/exit signals. "
+            "Append a Markdown table summarising key indicator readings."
+            + get_conclusion_template()
             + get_language_instruction()
         )
 

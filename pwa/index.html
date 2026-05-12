@@ -412,6 +412,13 @@ nav.tab-bar {
 }
 .run-btn:disabled { opacity: .4; cursor: not-allowed; }
 .run-btn:active:not(:disabled) { opacity: .8; }
+.stop-btn {
+  padding: 12px 16px;
+  background: var(--bear); color: #fff;
+  border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: opacity .15s; white-space: nowrap;
+}
+.stop-btn:active { opacity: .8; }
 
 /* Agent output cards */
 .agent-run-card {
@@ -558,9 +565,31 @@ nav.tab-bar {
           </div>
         </div>
 
-        <button class="run-btn" id="agents-run-btn" onclick="submitAgentRun()">
-          Run Selected Analysts
-        </button>
+        <!-- Tier 2 info -->
+        <div>
+          <div class="tier-header">
+            Full Pipeline Agents
+            <span class="tier-badge tier2-badge">Tier 2 · Tab 3</span>
+          </div>
+          <div class="agent-grid" id="tier2-chips">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Model selection -->
+        <div class="form-row">
+          <label for="agents-quick-model">Quick model</label>
+          <select id="agents-quick-model"></select>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button class="run-btn" id="agents-run-btn" onclick="submitAgentRun()" style="flex:1">
+            Run Selected Analysts
+          </button>
+          <button class="stop-btn" id="agents-stop-btn" onclick="stopAgentRun()" style="display:none">
+            Stop
+          </button>
+        </div>
       </div>
     </div>
 
@@ -602,9 +631,24 @@ nav.tab-bar {
           </select>
         </div>
 
-        <button class="run-btn" id="analysis-run-btn" onclick="submitAnalysis()">
-          Run Full Analysis
-        </button>
+        <!-- Model selection -->
+        <div class="form-row">
+          <label for="analysis-quick-model">Quick model</label>
+          <select id="analysis-quick-model"></select>
+        </div>
+        <div class="form-row">
+          <label for="analysis-deep-model">Deep model</label>
+          <select id="analysis-deep-model"></select>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button class="run-btn" id="analysis-run-btn" onclick="submitAnalysis()" style="flex:1">
+            Run Full Analysis
+          </button>
+          <button class="stop-btn" id="analysis-stop-btn" onclick="stopAnalysis()" style="display:none">
+            Stop
+          </button>
+        </div>
       </div>
     </div>
 
@@ -709,7 +753,7 @@ const PRICE_INTERVAL_MS    = 6000;   // 6 s
 const MARKETS_INTERVAL_MS  = 5 * 60 * 1000;  // 5 min
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let _ticker      = (localStorage.getItem('ta_ticker') || 'AAPL').toUpperCase();
+let _ticker      = (localStorage.getItem('ta_ticker') || 'AAPL').toUpperCase().replace(/^\$+/, '');
 let _activeTab   = 'markets';
 let _currentPrice = null;
 let _chartExpanded = false;
@@ -782,7 +826,7 @@ async function apiFetch(path) {
 
 // ── Ticker management ─────────────────────────────────────────────────────────
 function applyTicker() {
-  const raw = $('ticker-input').value.trim().toUpperCase();
+  const raw = $('ticker-input').value.trim().toUpperCase().replace(/^\$+/, '');
   if (!raw) return;
   _ticker = raw;
   localStorage.setItem('ta_ticker', _ticker);
@@ -1036,21 +1080,40 @@ let _agentSessionId = null;
 let _agentWs        = null;
 let _agentSessions  = [];   // history (most recent first)
 
+const _TIER2_DEFS = [
+  { label: 'Bull Researcher',      icon: '🐂' },
+  { label: 'Bear Researcher',      icon: '🐻' },
+  { label: 'Research Manager',     icon: '🧑‍💼' },
+  { label: 'Trader',               icon: '💹' },
+  { label: 'Aggressive Analyst',   icon: '⚡' },
+  { label: 'Neutral Analyst',      icon: '⚖️' },
+  { label: 'Conservative Analyst', icon: '🛡️' },
+  { label: 'Portfolio Manager',    icon: '🏦' },
+];
+
 function initAgentsTab() {
-  // Set today's date as default
   const today = new Date().toISOString().slice(0, 10);
   $('agents-date').value = localStorage.getItem('ta_agents_date') || today;
 
-  // Build agent chips
+  // Build Tier 1 chips — use div not label to avoid checkbox double-fire
   $('analyst-chips').innerHTML = _TIER1_DEFS.map(a => `
-    <label class="agent-chip" id="chip-${a.id}" onclick="toggleAgent('${a.id}')">
-      <input type="checkbox" id="cb-${a.id}">
+    <div class="agent-chip" id="chip-${a.id}" onclick="toggleAgent('${a.id}')">
       <div class="agent-chip-icon">${a.icon}</div>
       <div>
         <div class="agent-chip-label">${a.label}</div>
         <div class="agent-chip-sub">${a.sub}</div>
       </div>
-    </label>`).join('');
+    </div>`).join('');
+
+  // Build Tier 2 info chips (non-selectable, just informational)
+  $('tier2-chips').innerHTML = _TIER2_DEFS.map(a => `
+    <div class="agent-chip" style="opacity:.5;cursor:default" title="Runs in Full Pipeline (Tab 3)">
+      <div class="agent-chip-icon">${a.icon}</div>
+      <div>
+        <div class="agent-chip-label">${a.label}</div>
+        <div class="agent-chip-sub">Full pipeline</div>
+      </div>
+    </div>`).join('');
 }
 
 function toggleAgent(id) {
@@ -1068,6 +1131,7 @@ async function submitAgentRun() {
 
   $('agents-run-btn').disabled = true;
   $('agents-run-btn').textContent = 'Starting…';
+  $('agents-stop-btn').style.display = 'inline-block';
 
   try {
     const resp = await fetch(API + '/api/agents/run', {
@@ -1077,6 +1141,12 @@ async function submitAgentRun() {
         ticker:        _ticker,
         analysis_date: date,
         analysts:      [..._agentSelected],
+        llm_provider:  'anthropic',
+        quick_llm:     (() => {
+          const v = $('agents-quick-model').value || null;
+          if (v) localStorage.setItem('ta_agents_quick_model', v);
+          return v;
+        })(),
       }),
     });
     if (!resp.ok) {
@@ -1101,7 +1171,18 @@ async function submitAgentRun() {
     alert('Failed to start agent run: ' + e.message);
     $('agents-run-btn').disabled = false;
     $('agents-run-btn').textContent = 'Run Selected Analysts';
+    $('agents-stop-btn').style.display = 'none';
   }
+}
+
+async function stopAgentRun() {
+  if (!_agentSessionId) return;
+  try {
+    await fetch(`${API}/api/agents/run/${_agentSessionId}`, { method: 'DELETE' });
+    $('agents-stop-btn').style.display = 'none';
+    $('agents-run-btn').disabled = false;
+    $('agents-run-btn').textContent = 'Run Selected Analysts';
+  } catch (e) { console.error('Stop failed:', e); }
 }
 
 function buildAgentOutputCards(sessionId, ticker, analysts) {
@@ -1170,9 +1251,10 @@ function connectAgentWs(sessionId) {
       setAgentDot(msg.agent, msg.status);
     } else if (msg.type === 'report_update') {
       setAgentReport(msg.section, msg.content);
-    } else if (msg.type === 'done' || msg.type === 'error') {
+    } else if (msg.type === 'done' || msg.type === 'error' || msg.type === 'status' && msg.status === 'cancelled') {
       $('agents-run-btn').disabled = false;
       $('agents-run-btn').textContent = 'Run Selected Analysts';
+      $('agents-stop-btn').style.display = 'none';
       ws.close();
       _agentWs = null;
     } else if (msg.type === 'snapshot') {
@@ -1299,9 +1381,14 @@ async function submitAnalysis() {
   const depth = parseInt($('analysis-depth').value) || 1;
   if (!date) { alert('Please select an analysis date.'); return; }
   localStorage.setItem('ta_analysis_date', date);
+  const quickModel = $('analysis-quick-model').value || null;
+  const deepModel  = $('analysis-deep-model').value  || null;
+  if (quickModel) localStorage.setItem('ta_analysis_quick_model', quickModel);
+  if (deepModel)  localStorage.setItem('ta_analysis_deep_model',  deepModel);
 
   $('analysis-run-btn').disabled = true;
   $('analysis-run-btn').textContent = 'Submitting…';
+  $('analysis-stop-btn').style.display = 'inline-block';
 
   try {
     const resp = await fetch(API + '/api/jobs', {
@@ -1312,6 +1399,9 @@ async function submitAnalysis() {
         analysis_date:  date,
         analysts:       [..._analysisSelected],
         research_depth: depth,
+        llm_provider:   'anthropic',
+        quick_llm:      quickModel,
+        deep_llm:       deepModel,
       }),
     });
     if (!resp.ok) {
@@ -1336,7 +1426,16 @@ async function submitAnalysis() {
     alert('Failed to submit: ' + e.message);
     $('analysis-run-btn').disabled = false;
     $('analysis-run-btn').textContent = 'Run Full Analysis';
+    $('analysis-stop-btn').style.display = 'none';
   }
+}
+
+async function stopAnalysis() {
+  if (!_analysisSessionId) return;
+  try {
+    await fetch(`${API}/api/jobs/${_analysisSessionId}`, { method: 'DELETE' });
+    $('analysis-stop-btn').style.display = 'none';
+  } catch (e) { console.error('Stop failed:', e); }
 }
 
 function showAnalysisBanner(state, msg) {
@@ -1476,9 +1575,15 @@ function connectAnalysisWs(sessionId) {
       showAnalysisBanner('done', 'Analysis complete');
       $('chat-card').style.display = '';
       loadChatHistory(sessionId);
+      $('analysis-stop-btn').style.display = 'none';
       ws.close(); _analysisWs = null;
     } else if (msg.type === 'error') {
       showAnalysisBanner('failed', msg.message || 'Pipeline failed');
+      $('analysis-stop-btn').style.display = 'none';
+      ws.close(); _analysisWs = null;
+    } else if (msg.type === 'status' && msg.status === 'cancelled') {
+      showAnalysisBanner('failed', 'Cancelled by user');
+      $('analysis-stop-btn').style.display = 'none';
       ws.close(); _analysisWs = null;
     } else if (msg.type === 'queue_update') {
       showAnalysisBanner('queued', `Queue position #${msg.position}`);
@@ -1726,6 +1831,34 @@ function analysisOnVisible() {
   loadTemplates();
 }
 
+// ── Model selector ────────────────────────────────────────────────────────────
+async function loadModelOptions() {
+  try {
+    const res = await fetch(API + '/api/models');
+    if (!res.ok) return;
+    const catalog = await res.json();
+    const ant = catalog['anthropic'] || {};
+    const quickOpts = ant['quick'] || [];
+    const deepOpts  = ant['deep']  || [];
+
+    function fillSelect(elId, opts, savedKey) {
+      const el = $(elId);
+      if (!el) return;
+      const saved = localStorage.getItem(savedKey);
+      el.innerHTML = opts.map(o =>
+        `<option value="${o.value}"${o.value === saved ? ' selected' : ''}>${o.label}</option>`
+      ).join('');
+      if (saved && opts.some(o => o.value === saved)) el.value = saved;
+    }
+
+    fillSelect('agents-quick-model',   quickOpts, 'ta_agents_quick_model');
+    fillSelect('analysis-quick-model', quickOpts, 'ta_analysis_quick_model');
+    fillSelect('analysis-deep-model',  deepOpts,  'ta_analysis_deep_model');
+  } catch (e) {
+    console.warn('Could not load model catalog:', e);
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
   $('ticker-input').value = _ticker;
@@ -1737,6 +1870,7 @@ function init() {
   startTimers();
   initAgentsTab();
   initAnalysisTab();
+  loadModelOptions();
 
   // Register service worker
   if ('serviceWorker' in navigator) {

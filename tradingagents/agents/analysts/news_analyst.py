@@ -1,6 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
+    get_conclusion_template,
     get_global_news,
     get_language_instruction,
     get_news,
@@ -19,8 +20,26 @@ def create_news_analyst(llm):
         ]
 
         system_message = (
-            "You are a news researcher tasked with analyzing recent news and trends over the past week. Please write a comprehensive report of the current state of the world that is relevant for trading and macroeconomics. Use the available tools: get_news(query, start_date, end_date) for company-specific or targeted news searches, and get_global_news(curr_date, look_back_days, limit) for broader macroeconomic news. Provide specific, actionable insights with supporting evidence to help traders make informed decisions."
-            + """ Make sure to append a Markdown table at the end of the report to organize key points in the report, organized and easy to read."""
+            "Your task is to immediately research and write a comprehensive news report for the instrument "
+            "specified in the context as of the current date. "
+            "Do NOT ask any clarifying questions — begin with tool calls right away.\n\n"
+            "Search strategy (perform ALL of these):\n"
+            "1. Use get_news with the asset's common name and related terms listed in your context "
+            "(e.g. for XAGUSD search 'silver', 'silver price', 'precious metals' — NOT just the ticker symbol). "
+            "Run multiple get_news calls with different queries to be thorough.\n"
+            "2. Use get_news to search for macro and geopolitical factors from your context "
+            "(e.g. Federal Reserve, inflation, Iran sanctions, Trump tariffs, trade wars, OPEC, "
+            "central bank policy — whatever is listed as relevant macro drivers for this asset).\n"
+            "3. Use get_global_news to capture broad macroeconomic and geopolitical events from the past 7 days.\n\n"
+            "Your report must cover:\n"
+            "- Specific news events and how they affect the instrument's price\n"
+            "- Geopolitical risks and tensions (wars, sanctions, government policy, political speeches/tweets)\n"
+            "- Central bank and monetary policy developments\n"
+            "- Economic data releases (CPI, GDP, employment, PMI, etc.)\n"
+            "- Supply/demand dynamics specific to the asset class\n"
+            "- Market sentiment and risk-on/risk-off signals\n\n"
+            "Provide specific, actionable insights. Append a Markdown table summarising key news events and their price implications."
+            + get_conclusion_template()
             + get_language_instruction()
         )
 

@@ -30,6 +30,32 @@ from web.stream import manager as ws_manager
 
 logger = logging.getLogger(__name__)
 
+# ── Cancellation registry ─────────────────────────────────────────────────────
+_cancel_events: dict[str, threading.Event] = {}
+_cancel_lock = threading.Lock()
+
+
+def register_cancel(session_id: str) -> threading.Event:
+    ev = threading.Event()
+    with _cancel_lock:
+        _cancel_events[session_id] = ev
+    return ev
+
+
+def cancel_session(session_id: str) -> bool:
+    with _cancel_lock:
+        ev = _cancel_events.get(session_id)
+    if ev:
+        ev.set()
+        return True
+    return False
+
+
+def deregister_cancel(session_id: str) -> None:
+    with _cancel_lock:
+        _cancel_events.pop(session_id, None)
+
+
 # ── Agent ordering constants (mirrors cli/main.py) ────────────────────────────
 
 ANALYST_ORDER = ["market", "social", "news", "fundamentals"]
@@ -60,14 +86,30 @@ ALL_AGENTS = [
 
 # ── Config builder ─────────────────────────────────────────────────────────────
 
+_PROVIDER_MODEL_DEFAULTS: dict[str, tuple[str, str]] = {
+    # (quick_model, deep_model) — used when frontend sends no model selection
+    "anthropic": ("claude-haiku-4-5-20251001", "claude-opus-4-7"),
+    "openai":    ("gpt-4o-mini",               "gpt-4o"),
+    "google":    ("gemini-2.0-flash",           "gemini-2.5-pro"),
+}
+
+
 def build_graph_config(job_config: dict) -> dict:
     """Merge job-level config on top of DEFAULT_CONFIG."""
     cfg = DEFAULT_CONFIG.copy()
-    cfg["max_debate_rounds"]      = job_config.get("research_depth", 1)
+    cfg["max_debate_rounds"]       = job_config.get("research_depth", 1)
     cfg["max_risk_discuss_rounds"] = job_config.get("research_depth", 1)
-    cfg["llm_provider"]            = job_config.get("llm_provider", "anthropic")
-    cfg["quick_think_llm"]         = job_config.get("quick_llm", cfg["quick_think_llm"])
-    cfg["deep_think_llm"]          = job_config.get("deep_llm",  cfg["deep_think_llm"])
+
+    provider = job_config.get("llm_provider") or "anthropic"
+    cfg["llm_provider"] = provider
+
+    quick_default, deep_default = _PROVIDER_MODEL_DEFAULTS.get(
+        provider, _PROVIDER_MODEL_DEFAULTS["anthropic"]
+    )
+    # Use `or` so an explicit None from the frontend falls back to the default
+    cfg["quick_think_llm"] = job_config.get("quick_llm") or quick_default
+    cfg["deep_think_llm"]  = job_config.get("deep_llm")  or deep_default
+
     cfg["backend_url"]             = job_config.get("backend_url")
     cfg["output_language"]         = job_config.get("output_language", "English")
     cfg["google_thinking_level"]   = job_config.get("google_thinking_level")
@@ -228,9 +270,14 @@ def _execute(session_id: str, ticker: str, analysis_date: str,
     init_state = graph.propagator.create_initial_state(ticker, analysis_date)
     args = graph.propagator.get_graph_args()
 
+    cancel_ev = register_cancel(session_id)
     trace: list[dict] = []
     try:
         for chunk in graph.graph.stream(init_state, **args):
+            if cancel_ev.is_set():
+                session_set_status(session_id, "cancelled")
+                ws_manager.broadcast_sync(session_id, {"type": "status", "status": "cancelled"})
+                return
             processor.process(chunk)
             trace.append(chunk)
     except Exception as exc:
@@ -267,6 +314,7 @@ def _execute(session_id: str, ticker: str, analysis_date: str,
         "final_rating": final_rating,
     })
     logger.info("Session %s completed — rating: %s", session_id, final_rating)
+    deregister_cancel(session_id)
 
 
 # ── Full pipeline queue (Tab 3) ────────────────────────────────────────────────

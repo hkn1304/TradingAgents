@@ -45,6 +45,34 @@ def _clean_dataframe(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
+# Canonical → yfinance symbol map for non-equity instruments.
+# Agents pass canonical tickers (XAGUSD, BTCUSD, EURUSD) which yfinance
+# does not understand directly — map them to their native yfinance format.
+_YF_SYMBOL_MAP: dict[str, str] = {
+    # Metals (futures)
+    "XAUUSD": "GC=F",
+    "XAGUSD": "SI=F",
+    "XPTUSD": "PL=F",
+    "XPDUSD": "PA=F",
+    # Energy
+    "USOIL":  "CL=F",
+    "UKOIL":  "BZ=F",
+    # Crypto
+    "BTCUSD": "BTC-USD",
+    "ETHUSD": "ETH-USD",
+    "BNBUSD": "BNB-USD",
+    # Forex
+    "EURUSD": "EURUSD=X",
+    "GBPUSD": "GBPUSD=X",
+    "USDJPY": "USDJPY=X",
+}
+
+
+def _normalize_yf_symbol(symbol: str) -> str:
+    """Map canonical ticker to yfinance-native format if needed."""
+    return _YF_SYMBOL_MAP.get(symbol.upper().lstrip("$"), symbol.upper().lstrip("$"))
+
+
 def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     """Fetch OHLCV data with caching, filtered to prevent look-ahead bias.
 
@@ -52,6 +80,9 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     subsequent calls the cache is reused. Rows after curr_date are
     filtered out so backtests never see future prices.
     """
+    # Map canonical tickers to yfinance format (e.g. XAGUSD → SI=F)
+    symbol = _normalize_yf_symbol(symbol)
+
     # Reject ticker values that would escape the cache directory when
     # interpolated into the cache filename (e.g. ``../../tmp/x``).
     safe_symbol = safe_ticker_component(symbol)

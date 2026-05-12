@@ -79,6 +79,7 @@ from web.job_runner import (
     start_worker,
     enqueue_full_pipeline,
     run_agents_immediate,
+    cancel_session,
 )
 from web.chat import chat as chat_handler
 
@@ -151,6 +152,20 @@ class TemplateUpdate(BaseModel):
     name:   str
     ticker: str
     config: dict = {}
+
+
+# ── /api/models ────────────────────────────────────────────────────────────────
+
+@app.get("/api/models")
+def get_models():
+    from tradingagents.llm_clients.model_catalog import MODEL_OPTIONS
+    result = {}
+    for provider, modes in MODEL_OPTIONS.items():
+        result[provider] = {
+            mode: [{"label": label, "value": value} for label, value in options]
+            for mode, options in modes.items()
+        }
+    return result
 
 
 # ── /api/config ────────────────────────────────────────────────────────────────
@@ -290,6 +305,14 @@ def get_job(session_id: str):
     }
 
 
+@app.delete("/api/jobs/{session_id}", status_code=200)
+def cancel_job(session_id: str):
+    cancelled = cancel_session(session_id)
+    if not cancelled:
+        raise HTTPException(404, detail="Session not found or already finished")
+    return {"session_id": session_id, "status": "cancelling"}
+
+
 # ── /api/agents/run/* (Tab 2 — selective agents) ───────────────────────────────
 
 @app.post("/api/agents/run", status_code=202)
@@ -341,6 +364,15 @@ def get_agent_run(session_id: str):
         "agent_status": agent_status_get_all(session_id),
         "reports":      analyst_sections,
     }
+
+
+@app.delete("/api/agents/run/{session_id}", status_code=200)
+def cancel_agent_run(session_id: str):
+    cancelled = cancel_session(session_id)
+    if not cancelled:
+        raise HTTPException(404, detail="Session not found or already finished")
+    return {"session_id": session_id, "status": "cancelling"}
+
 
 
 # ── /api/sessions/* (history) ──────────────────────────────────────────────────

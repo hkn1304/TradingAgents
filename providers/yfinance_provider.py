@@ -97,7 +97,8 @@ class YFinanceProvider(DataProvider):
 
     def normalize_ticker(self, ticker: str) -> str:
         """Return the yfinance-native symbol for a canonical ticker."""
-        return _TICKER_MAP.get(ticker.upper(), ticker.upper())
+        canonical = ticker.upper().lstrip("$")
+        return _TICKER_MAP.get(canonical, canonical)
 
     # ── Live price ────────────────────────────────────────────────────────────
 

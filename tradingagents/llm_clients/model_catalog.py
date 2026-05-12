@@ -25,15 +25,14 @@ MODEL_OPTIONS: ProviderModeOptions = {
     },
     "anthropic": {
         "quick": [
+            ("Claude Haiku 4.5 - Fast, near-instant responses", "claude-haiku-4-5-20251001"),
             ("Claude Sonnet 4.6 - Best speed and intelligence balance", "claude-sonnet-4-6"),
-            ("Claude Haiku 4.5 - Fast, near-instant responses", "claude-haiku-4-5"),
-            ("Claude Sonnet 4.5 - Agents and coding", "claude-sonnet-4-5"),
+            ("Claude Opus 4.7 - Most intelligent, latest flagship", "claude-opus-4-7"),
         ],
         "deep": [
-            ("Claude Opus 4.6 - Most intelligent, agents and coding", "claude-opus-4-6"),
-            ("Claude Opus 4.5 - Premium, max intelligence", "claude-opus-4-5"),
+            ("Claude Opus 4.7 - Most intelligent, latest flagship", "claude-opus-4-7"),
             ("Claude Sonnet 4.6 - Best speed and intelligence balance", "claude-sonnet-4-6"),
-            ("Claude Sonnet 4.5 - Agents and coding", "claude-sonnet-4-5"),
+            ("Claude Haiku 4.5 - Fast, near-instant responses", "claude-haiku-4-5-20251001"),
         ],
     },
     "google": {
