@@ -393,6 +393,14 @@ def get_templates():
     return {"templates": template_list()}
 
 
+@app.get("/api/templates/{template_id}")
+def get_template(template_id: str):
+    t = template_get(template_id)
+    if not t:
+        raise HTTPException(404, detail="Template not found")
+    return {"template": t}
+
+
 @app.post("/api/templates", status_code=201)
 def create_template(body: TemplateCreate):
     tid = str(uuid.uuid4())

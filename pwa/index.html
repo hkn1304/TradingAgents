@@ -338,6 +338,26 @@ nav.tab-bar {
 }
 .analysis-history-strip::-webkit-scrollbar { display: none; }
 
+/* Templates */
+.template-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 0; border-bottom: 1px solid var(--border);
+}
+.template-row:last-child { border-bottom: none; }
+.template-info { flex: 1; }
+.template-name { font-size: 13px; font-weight: 700; }
+.template-sub  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.template-load-btn {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--accent);
+  border-radius: 7px; padding: 4px 10px; font-size: 11px; font-weight: 600;
+  cursor: pointer;
+}
+.template-del-btn {
+  background: none; border: none; color: var(--muted);
+  font-size: 14px; cursor: pointer; padding: 2px 4px;
+}
+.template-del-btn:hover { color: var(--bear); }
+
 /* ── Tab 2: Agents ────────────────────────────────────────────────────────── */
 .agent-form { display: flex; flex-direction: column; gap: 10px; }
 
@@ -586,6 +606,15 @@ nav.tab-bar {
           Run Full Analysis
         </button>
       </div>
+    </div>
+
+    <!-- Templates card -->
+    <div class="card" id="templates-card">
+      <div class="card-title" style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+        Templates
+        <button class="chart-btn" onclick="saveTemplate()">+ Save current</button>
+      </div>
+      <div id="templates-list" style="font-size:12px;color:var(--muted)">Loading…</div>
     </div>
 
     <!-- Queue / status banner (hidden until a job is active) -->
@@ -1254,6 +1283,8 @@ function initAnalysisTab() {
       <input type="checkbox" ${_analysisSelected.has(a.id) ? 'checked' : ''}>
       ${a.icon} ${a.id.charAt(0).toUpperCase() + a.id.slice(1)}
     </label>`).join('');
+
+  loadTemplates();
 }
 
 function toggleAnalysisAnalyst(id) {
@@ -1601,8 +1632,98 @@ async function loadAnalysisSession(sessionId) {
   } catch (e) { console.error('loadAnalysisSession', e); }
 }
 
+// ── Templates ─────────────────────────────────────────────────────────────────
+
+async function loadTemplates() {
+  try {
+    const d = await apiFetch('/api/templates');
+    renderTemplates(d.templates || []);
+  } catch (_) {
+    $('templates-list').textContent = 'Could not load templates.';
+  }
+}
+
+function renderTemplates(templates) {
+  const el = $('templates-list');
+  if (!templates.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:4px 0">No templates yet. Run an analysis and save it.</div>';
+    return;
+  }
+  el.innerHTML = templates.map(t => {
+    const cfg = t.config || {};
+    const analysts = (cfg.analysts || []).join(', ') || 'all';
+    const depth    = cfg.research_depth || 1;
+    return `<div class="template-row">
+      <div class="template-info">
+        <div class="template-name">${escHtml(t.name)}</div>
+        <div class="template-sub">${escHtml(t.ticker)} · ${analysts} · depth ${depth}</div>
+      </div>
+      <button class="template-load-btn" onclick="applyTemplate('${t.id}')">Load</button>
+      <button class="template-del-btn" title="Delete" onclick="deleteTemplate('${t.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function saveTemplate() {
+  const name = prompt('Template name:', `${_ticker} analysis`);
+  if (!name) return;
+  const cfg = {
+    analysts:       [..._analysisSelected],
+    research_depth: parseInt($('analysis-depth').value) || 1,
+  };
+  try {
+    await fetch(API + '/api/templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, ticker: _ticker, config: cfg }),
+    });
+    await loadTemplates();
+  } catch (e) { alert('Save failed: ' + e.message); }
+}
+
+async function deleteTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  try {
+    await fetch(API + `/api/templates/${id}`, { method: 'DELETE' });
+    await loadTemplates();
+  } catch (e) { alert('Delete failed: ' + e.message); }
+}
+
+async function applyTemplate(id) {
+  try {
+    const d = await apiFetch(`/api/templates/${id}`);
+    const t = d.template;
+    const cfg = t.config || {};
+
+    // Apply ticker
+    _ticker = t.ticker;
+    localStorage.setItem('ta_ticker', _ticker);
+    $('ticker-input').value = _ticker;
+    $('asset-badge').textContent = detectAssetClass(_ticker);
+    $('price-card-title').textContent = _ticker;
+    updateChart();
+
+    // Apply analysts
+    _analysisSelected = new Set(cfg.analysts || ['market','social','news','fundamentals']);
+    _TIER1_DEFS.forEach(a => {
+      const el = $('ancheck-' + a.id);
+      if (el) el.classList.toggle('selected', _analysisSelected.has(a.id));
+    });
+
+    // Apply depth
+    if (cfg.research_depth) $('analysis-depth').value = String(cfg.research_depth);
+
+    // Switch to analysis tab
+    switchTab('analysis');
+  } catch (e) { alert('Apply failed: ' + e.message); }
+}
+
 function analysisOnVisible() {
-  // nothing special for now
+  loadTemplates();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

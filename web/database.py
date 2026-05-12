@@ -332,12 +332,18 @@ def template_update(template_id: str, name: str, ticker: str, config: dict) -> N
         )
 
 
+def _parse_template(row) -> dict:
+    d = dict(row)
+    d["config"] = json.loads(d.pop("config_json", "{}") or "{}")
+    return d
+
+
 def template_get(template_id: str) -> Optional[dict]:
     with _conn() as con:
         row = con.execute(
             "SELECT * FROM templates WHERE id=?", (template_id,)
         ).fetchone()
-    return dict(row) if row else None
+    return _parse_template(row) if row else None
 
 
 def template_list(user_id: str = "default") -> list[dict]:
@@ -346,7 +352,7 @@ def template_list(user_id: str = "default") -> list[dict]:
             "SELECT * FROM templates WHERE user_id=? ORDER BY updated_at DESC",
             (user_id,),
         ).fetchall()
-    return [dict(r) for r in rows]
+    return [_parse_template(r) for r in rows]
 
 
 def template_delete(template_id: str) -> None:
