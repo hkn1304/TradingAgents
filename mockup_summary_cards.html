@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TradingAgents — Summary Card Mockup</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #0d1117;
+  --bg2:     #161b22;
+  --bg3:     #1f2937;
+  --border:  #30363d;
+  --text:    #e6edf3;
+  --muted:   #8b949e;
+  --bull:    #3fb950;
+  --bear:    #f85149;
+  --neutral: #d29922;
+  --accent:  #58a6ff;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px; padding: 16px; max-width: 480px; margin: 0 auto;
+}
+h2 { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--muted);
+     text-transform: uppercase; margin: 20px 0 8px; }
+
+/* ── Consensus bar (top of Tab 3) ─────────────────────────────── */
+.consensus-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+}
+.consensus-title {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.4px;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 10px;
+}
+.consensus-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.consensus-agent { font-size: 11px; font-weight: 600; width: 90px; flex-shrink: 0;
+                   display: flex; align-items: center; gap: 5px; }
+.consensus-bar-wrap {
+  flex: 1; height: 8px; background: var(--bg3); border-radius: 4px;
+  position: relative; overflow: hidden;
+}
+.consensus-bar-fill {
+  height: 100%; border-radius: 4px;
+  transition: width .6s ease;
+}
+.consensus-label { font-size: 10px; font-weight: 700; width: 52px;
+                   text-align: right; flex-shrink: 0; }
+.sentiment-avg {
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.sentiment-avg-label { font-size: 11px; color: var(--muted); }
+.gauge-wrap { flex: 1; }
+
+/* ── Gauge SVG ─────────────────────────────────────────────────── */
+.gauge-container { position: relative; width: 100%; }
+
+/* ── Analyst summary card ──────────────────────────────────────── */
+.analyst-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; margin-bottom: 10px;
+}
+.analyst-header {
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.analyst-icon { font-size: 18px; flex-shrink: 0; }
+.analyst-name { font-size: 13px; font-weight: 700; flex: 1; }
+.analyst-ticker { font-size: 10px; color: var(--muted); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-done { background: var(--bull); }
+.dot-running { background: var(--accent); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+/* Bias meter inside card */
+.bias-section {
+  padding: 10px 14px 6px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.bias-label { font-size: 10px; color: var(--muted); width: 34px; flex-shrink: 0; }
+.bias-track {
+  flex: 1; height: 6px; background: var(--bg3); border-radius: 3px;
+  position: relative; overflow: visible;
+}
+.bias-fill {
+  height: 100%; border-radius: 3px; position: absolute; top: 0;
+}
+.bias-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  border: 2px solid var(--bg2);
+}
+.bias-score {
+  font-size: 12px; font-weight: 700; width: 52px; text-align: right;
+  flex-shrink: 0;
+}
+
+/* Sparkline row */
+.sparkline-section {
+  padding: 8px 14px 8px; border-bottom: 1px solid var(--border);
+  display: flex; gap: 8px; align-items: flex-end;
+}
+.spark-col { flex: 1; }
+.spark-label { font-size: 9px; color: var(--muted); text-transform: uppercase;
+               letter-spacing: 0.8px; margin-bottom: 4px; }
+.outlook-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  margin-top: 2px;
+}
+.pill-bull { background: rgba(63,185,80,.15); color: var(--bull); border: 1px solid rgba(63,185,80,.35); }
+.pill-bear { background: rgba(248,81,73,.15);  color: var(--bear); border: 1px solid rgba(248,81,73,.35); }
+.pill-neutral { background: rgba(210,153,34,.15); color: var(--neutral); border: 1px solid rgba(210,153,34,.35); }
+.spark-detail { font-size: 10px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+
+/* Key highlights */
+.highlights-section { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.section-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.highlight-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.highlight-item {
+  display: flex; align-items: flex-start; gap: 7px;
+  font-size: 12px; line-height: 1.45;
+}
+.hi-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+}
+.hi-bull { background: var(--bull); }
+.hi-bear { background: var(--bear); }
+.hi-neutral { background: var(--neutral); }
+
+/* Strategy chips */
+.strategy-section { padding: 10px 14px; }
+.strategy-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.strategy-chip {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600;
+  color: var(--text);
+}
+.chip-entry { border-color: rgba(88,166,255,.4); color: var(--accent); }
+.chip-stop  { border-color: rgba(248,81,73,.4);  color: var(--bear); }
+.chip-target { border-color: rgba(63,185,80,.4); color: var(--bull); }
+
+/* Full report toggle */
+.report-toggle {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px; background: var(--bg3); border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); cursor: pointer;
+  transition: color .15s;
+}
+.report-toggle:hover { color: var(--accent); }
+.report-body {
+  padding: 12px 14px; font-size: 12px; line-height: 1.75; color: var(--muted);
+  white-space: pre-wrap; display: none; border-top: 1px solid var(--border);
+  max-height: 260px; overflow-y: auto;
+}
+.report-body.open { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION 1 — TAB 3 STYLE: Consensus overview (top of report)
+═══════════════════════════════════════════════════════════ -->
+<h2>Tab 3 · Analyst Consensus Overview</h2>
+
+<div class="consensus-card">
+  <div class="consensus-title">Sentiment by Analyst · XAGUSD</div>
+
+  <!-- Per-analyst bias bars -->
+  <div class="consensus-row">
+    <div class="consensus-agent"><span>📊</span> Market</div>
+    <div class="consensus-bar-wrap">
+      <div class="consensus-bar-fill" style="width:30%;background:var(--bear)"></div>
+    </div>
+    <div class="consensus-label" style="color:var(--bear)">Bearish</div>
+  </div>
+  <div class="consensus-row">
+    <div class="consensus-agent"><span>💬</span> Social</div>
+    <div class="consensus-bar-wrap">
+      <div class="consensus-bar-fill" style="width:62%;background:var(--neutral)"></div>
+    </div>
+    <div class="consensus-label" style="color:var(--neutral)">Neutral</div>
+  </div>
+  <div class="consensus-row">
+    <div class="consensus-agent"><span>📰</span> News</div>
+    <div class="consensus-bar-wrap">
+      <div class="consensus-bar-fill" style="width:22%;background:var(--bear)"></div>
+    </div>
+    <div class="consensus-label" style="color:var(--bear)">Bearish</div>
+  </div>
+  <div class="consensus-row">
+    <div class="consensus-agent"><span>📋</span> Fundament.</div>
+    <div class="consensus-bar-wrap">
+      <div class="consensus-bar-fill" style="width:78%;background:var(--bull)"></div>
+    </div>
+    <div class="consensus-label" style="color:var(--bull)">Bullish</div>
+  </div>
+
+  <!-- Aggregate gauge -->
+  <div class="sentiment-avg">
+    <div class="sentiment-avg-label">Overall</div>
+    <div class="gauge-wrap">
+      <!-- SVG half-arc gauge -->
+      <svg viewBox="0 0 180 100" xmlns="http://www.w3.org/2000/svg" width="100%" style="max-height:80px">
+        <!-- track -->
+        <path d="M 20 90 A 70 70 0 0 1 160 90" fill="none" stroke="#1f2937" stroke-width="14" stroke-linecap="round"/>
+        <!-- bear zone (left third) -->
+        <path d="M 20 90 A 70 70 0 0 1 67 27" fill="none" stroke="rgba(248,81,73,.35)" stroke-width="14" stroke-linecap="round"/>
+        <!-- neutral zone (middle) -->
+        <path d="M 67 27 A 70 70 0 0 1 113 27" fill="none" stroke="rgba(210,153,34,.35)" stroke-width="14" stroke-linecap="round"/>
+        <!-- bull zone (right third) -->
+        <path d="M 113 27 A 70 70 0 0 1 160 90" fill="none" stroke="rgba(63,185,80,.35)" stroke-width="14" stroke-linecap="round"/>
+        <!-- needle (48% = slightly bearish/neutral) -->
+        <line x1="90" y1="90" x2="55" y2="38" stroke="var(--neutral)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="90" cy="90" r="5" fill="var(--neutral)"/>
+        <!-- labels -->
+        <text x="14" y="106" font-size="9" fill="var(--bear)" font-family="system-ui">Bear</text>
+        <text x="75" y="18" font-size="9" fill="var(--neutral)" font-family="system-ui" text-anchor="middle">Neutral</text>
+        <text x="156" y="106" font-size="9" fill="var(--bull)" font-family="system-ui" text-anchor="end">Bull</text>
+        <text x="90" y="78" font-size="14" font-weight="800" fill="var(--neutral)" font-family="system-ui" text-anchor="middle">48</text>
+        <text x="90" y="91" font-size="8" fill="var(--muted)" font-family="system-ui" text-anchor="middle">/ 100</text>
+      </svg>
+    </div>
+    <div style="text-align:right; flex-shrink:0">
+      <div style="font-size:11px;font-weight:700;color:var(--neutral)">Neutral</div>
+      <div style="font-size:10px;color:var(--muted)">2 bear · 1 neutral · 1 bull</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION 2 — TAB 2 STYLE: Individual analyst cards
+═══════════════════════════════════════════════════════════ -->
+<h2>Tab 2 · Individual Analyst Cards</h2>
+
+<!-- ── Card 1: Market Analyst (Bearish) ── -->
+<div class="analyst-card">
+  <div class="analyst-header">
+    <span class="analyst-icon">📊</span>
+    <div>
+      <div class="analyst-name">Market Analyst</div>
+      <div class="analyst-ticker">XAGUSD · 2026-05-17</div>
+    </div>
+    <div class="status-dot dot-done"></div>
+  </div>
+
+  <!-- Bias meter -->
+  <div class="bias-section">
+    <div class="bias-label" style="color:var(--bear)">Bear</div>
+    <div class="bias-track">
+      <!-- gradient from bear(left) to bull(right) -->
+      <div class="bias-fill" style="
+        width:100%; left:0;
+        background: linear-gradient(to right, var(--bear), var(--neutral), var(--bull));
+        border-radius: 3px;
+      "></div>
+      <!-- thumb at 28% = bearish -->
+      <div class="bias-thumb" style="left:28%; background:var(--bear)"></div>
+    </div>
+    <div class="bias-label" style="color:var(--bull); text-align:right">Bull</div>
+    <div class="bias-score" style="color:var(--bear)">28 / 100</div>
+  </div>
+
+  <!-- Short / Long term outlook sparklines -->
+  <div class="sparkline-section">
+    <div class="spark-col">
+      <div class="spark-label">Short-term</div>
+      <!-- Mini SVG sparkline: downtrend -->
+      <svg viewBox="0 0 80 32" width="100%" style="max-height:32px;display:block;margin-bottom:4px">
+        <polyline points="0,8 15,10 28,14 40,20 55,24 70,28 80,30"
+          fill="none" stroke="var(--bear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="80" cy="30" r="3" fill="var(--bear)"/>
+      </svg>
+      <div class="outlook-pill pill-bear">↓ Bearish</div>
+      <div class="spark-detail">Resistance at $32.80 · Support $31.20</div>
+    </div>
+    <div style="width:1px;background:var(--border);flex-shrink:0"></div>
+    <div class="spark-col">
+      <div class="spark-label">Long-term</div>
+      <!-- Mini SVG sparkline: slight recovery -->
+      <svg viewBox="0 0 80 32" width="100%" style="max-height:32px;display:block;margin-bottom:4px">
+        <polyline points="0,28 20,24 35,22 50,18 65,15 80,12"
+          fill="none" stroke="var(--neutral)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="80" cy="12" r="3" fill="var(--neutral)"/>
+      </svg>
+      <div class="outlook-pill pill-neutral">→ Neutral</div>
+      <div class="spark-detail">Watch $33.50 breakout over 2–4 wks</div>
+    </div>
+  </div>
+
+  <!-- Key Highlights -->
+  <div class="highlights-section">
+    <div class="section-label">Key Highlights</div>
+    <ul class="highlight-list">
+      <li class="highlight-item">
+        <div class="hi-dot hi-bear"></div>
+        <span>RSI at 38 — approaching oversold but momentum still down</span>
+      </li>
+      <li class="highlight-item">
+        <div class="hi-dot hi-bear"></div>
+        <span>Price below 50-day MA ($32.40) — bearish structure intact</span>
+      </li>
+      <li class="highlight-item">
+        <div class="hi-dot hi-neutral"></div>
+        <span>MACD histogram narrowing — early divergence possible</span>
+      </li>
+      <li class="highlight-item">
+        <div class="hi-dot hi-bull"></div>
+        <span>Strong floor at $31.00 — historically well-defended support</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Strategy -->
+  <div class="strategy-section">
+    <div class="section-label">Recommended Strategy</div>
+    <div class="strategy-chips">
+      <span class="strategy-chip chip-entry">Entry ≤ $32.10</span>
+      <span class="strategy-chip chip-stop">Stop $33.20</span>
+      <span class="strategy-chip chip-target">Target $30.40</span>
+      <span class="strategy-chip">Bias: Short</span>
+    </div>
+  </div>
+
+  <!-- Full report toggle -->
+  <div class="report-toggle" onclick="toggleReport(this)">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+    Full report
+  </div>
+  <div class="report-body">Silver (XAGUSD) Technical Analysis — 2026-05-17
+
+Price Action:
+Silver is trading at $31.95, down 1.2% on the session. The pair has been in a corrective
+phase since the April high of $34.20. Current structure remains bearish below the 50-day
+moving average...
+
+[Full report text appears here when expanded]
+  </div>
+</div>
+
+
+<!-- ── Card 2: Fundamentals Analyst (Bullish) ── -->
+<div class="analyst-card">
+  <div class="analyst-header">
+    <span class="analyst-icon">📋</span>
+    <div>
+      <div class="analyst-name">Fundamentals Analyst</div>
+      <div class="analyst-ticker">XAGUSD · 2026-05-17</div>
+    </div>
+    <div class="status-dot dot-done"></div>
+  </div>
+
+  <!-- Bias meter -->
+  <div class="bias-section">
+    <div class="bias-label" style="color:var(--bear)">Bear</div>
+    <div class="bias-track">
+      <div class="bias-fill" style="
+        width:100%; left:0;
+        background: linear-gradient(to right, var(--bear), var(--neutral), var(--bull));
+        border-radius: 3px;
+      "></div>
+      <div class="bias-thumb" style="left:78%; background:var(--bull)"></div>
+    </div>
+    <div class="bias-label" style="color:var(--bull); text-align:right">Bull</div>
+    <div class="bias-score" style="color:var(--bull)">78 / 100</div>
+  </div>
+
+  <!-- Short / Long term -->
+  <div class="sparkline-section">
+    <div class="spark-col">
+      <div class="spark-label">Short-term</div>
+      <svg viewBox="0 0 80 32" width="100%" style="max-height:32px;display:block;margin-bottom:4px">
+        <polyline points="0,22 18,20 35,18 50,16 65,14 80,13"
+          fill="none" stroke="var(--neutral)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="80" cy="13" r="3" fill="var(--neutral)"/>
+      </svg>
+      <div class="outlook-pill pill-neutral">→ Sideways</div>
+      <div class="spark-detail">Consolidation near industrial demand zone</div>
+    </div>
+    <div style="width:1px;background:var(--border);flex-shrink:0"></div>
+    <div class="spark-col">
+      <div class="spark-label">Long-term</div>
+      <svg viewBox="0 0 80 32" width="100%" style="max-height:32px;display:block;margin-bottom:4px">
+        <polyline points="0,28 15,24 30,20 45,14 62,9 80,5"
+          fill="none" stroke="var(--bull)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="80" cy="5" r="3" fill="var(--bull)"/>
+      </svg>
+      <div class="outlook-pill pill-bull">↑ Bullish</div>
+      <div class="spark-detail">Target $36–38 on industrial re-stocking</div>
+    </div>
+  </div>
+
+  <!-- Key Highlights -->
+  <div class="highlights-section">
+    <div class="section-label">Key Highlights</div>
+    <ul class="highlight-list">
+      <li class="highlight-item">
+        <div class="hi-dot hi-bull"></div>
+        <span>Solar panel demand driving structural silver deficit in 2026</span>
+      </li>
+      <li class="highlight-item">
+        <div class="hi-dot hi-bull"></div>
+        <span>Gold/silver ratio at 88x — historically signals silver undervaluation</span>
+      </li>
+      <li class="highlight-item">
+        <div class="hi-dot hi-bull"></div>
+        <span>Fed pause expected; real yields falling — supports precious metals</span>
+      </li>
+      <li class="highlight-item">
+        <div class="hi-dot hi-neutral"></div>
+        <span>Industrial demand strong but ETF outflows capping near-term upside</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Strategy -->
+  <div class="strategy-section">
+    <div class="section-label">Recommended Strategy</div>
+    <div class="strategy-chips">
+      <span class="strategy-chip chip-entry">Accumulate $31–32</span>
+      <span class="strategy-chip chip-stop">Stop $29.80</span>
+      <span class="strategy-chip chip-target">Target $36.00</span>
+      <span class="strategy-chip">Bias: Long</span>
+    </div>
+  </div>
+
+  <div class="report-toggle" onclick="toggleReport(this)">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+    Full report
+  </div>
+  <div class="report-body">
+Silver Fundamentals Analysis — 2026-05-17
+
+Supply-Demand Balance:
+The silver market is expected to record a structural deficit for the fourth consecutive year...
+
+[Full report text appears here when expanded]
+  </div>
+</div>
+
+
+<!-- ── Card 3: News Analyst (Running...) ── -->
+<div class="analyst-card">
+  <div class="analyst-header">
+    <span class="analyst-icon">📰</span>
+    <div>
+      <div class="analyst-name">News Analyst</div>
+      <div class="analyst-ticker">XAGUSD · 2026-05-17</div>
+    </div>
+    <div class="status-dot dot-running"></div>
+  </div>
+  <!-- Skeleton while running -->
+  <div style="padding:14px 16px; display:flex;flex-direction:column;gap:8px">
+    <div style="height:8px;border-radius:4px;background:linear-gradient(90deg,#1f2937 25%,#161b22 50%,#1f2937 75%);background-size:200%;animation:shimmer 1.5s infinite"></div>
+    <div style="height:8px;border-radius:4px;width:75%;background:linear-gradient(90deg,#1f2937 25%,#161b22 50%,#1f2937 75%);background-size:200%;animation:shimmer 1.5s infinite"></div>
+    <div style="height:8px;border-radius:4px;width:55%;background:linear-gradient(90deg,#1f2937 25%,#161b22 50%,#1f2937 75%);background-size:200%;animation:shimmer 1.5s infinite"></div>
+    <div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:2px">Analysing news & geopolitical events…</div>
+  </div>
+  @keyframes shimmer { 0%{background-position:200%}100%{background-position:-200%} }
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION 3 — NOTES
+═══════════════════════════════════════════════════════════ -->
+<div style="margin-top:20px;padding:12px 14px;background:var(--bg2);border:1px dashed var(--border);border-radius:10px;font-size:11px;color:var(--muted);line-height:1.6">
+  <strong style="color:var(--accent)">Design notes:</strong><br>
+  • Bias meter — gradient bar with thumb; score parsed from CONCLUSION text<br>
+  • Sparklines — tiny SVG trend lines; direction derived from Short/Long-term text<br>
+  • Highlight bullets — color-coded bull 🟢 / bear 🔴 / neutral 🟡 by keyword scan<br>
+  • Strategy chips — entry / stop / target extracted via regex from Recommended Strategy<br>
+  • Consensus gauge — arc SVG, needle position = average of all analyst bias scores<br>
+  • "Full report" toggle — collapses to summary by default, raw text on demand
+</div>
+
+<script>
+function toggleReport(btn) {
+  const body = btn.nextElementSibling;
+  const isOpen = body.classList.toggle('open');
+  btn.querySelector('svg').style.transform = isOpen ? 'rotate(180deg)' : '';
+}
+</script>
+</body>
+</html>
