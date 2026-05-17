@@ -3,7 +3,7 @@ from tradingagents.agents.utils.agent_utils import build_instrument_context, get
 from tradingagents.dataflows.config import get_config
 
 
-def create_social_media_analyst(llm):
+def create_social_media_analyst(llm, forecast_horizon: str = "1week"):
     def social_media_analyst_node(state):
         current_date = state["trade_date"]
         instrument_context = build_instrument_context(state["company_of_interest"])
@@ -31,7 +31,7 @@ def create_social_media_analyst(llm):
             "- Retail vs. institutional sentiment divergence if observable\n"
             "- Recent news that is shifting market opinion\n\n"
             "Provide specific, actionable insights. Append a Markdown table summarising sentiment signals and their implications."
-            + get_conclusion_template()
+            + get_conclusion_template(forecast_horizon)
             + get_language_instruction()
         )
 

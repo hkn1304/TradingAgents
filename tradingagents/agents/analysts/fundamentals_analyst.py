@@ -12,7 +12,7 @@ from tradingagents.agents.utils.agent_utils import (
 from tradingagents.dataflows.config import get_config
 
 
-def create_fundamentals_analyst(llm):
+def create_fundamentals_analyst(llm, forecast_horizon: str = "1week"):
     def fundamentals_analyst_node(state):
         current_date = state["trade_date"]
         instrument_context = build_instrument_context(state["company_of_interest"])
@@ -40,7 +40,7 @@ def create_fundamentals_analyst(llm):
             "profitability, debt levels, cash flow strength, and forward outlook for equities; "
             "or supply/demand balance, major producers/consumers, and structural price drivers for non-equity assets. "
             "Append a Markdown table summarising key fundamental metrics."
-            + get_conclusion_template()
+            + get_conclusion_template(forecast_horizon)
             + get_language_instruction()
         )
 

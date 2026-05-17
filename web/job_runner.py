@@ -112,6 +112,7 @@ def build_graph_config(job_config: dict) -> dict:
 
     cfg["backend_url"]             = job_config.get("backend_url")
     cfg["output_language"]         = job_config.get("output_language", "English")
+    cfg["forecast_horizon"]        = job_config.get("forecast_horizon", "1week")
     cfg["google_thinking_level"]   = job_config.get("google_thinking_level")
     cfg["openai_reasoning_effort"] = job_config.get("openai_reasoning_effort")
     cfg["anthropic_effort"]        = job_config.get("anthropic_effort")

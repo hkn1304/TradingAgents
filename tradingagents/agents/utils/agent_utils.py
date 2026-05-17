@@ -28,8 +28,72 @@ __all__ = [
 ]
 
 
-def get_conclusion_template() -> str:
-    return _CONCLUSION_TEMPLATE
+_HORIZON_GUIDANCE: dict[str, tuple[str, str]] = {
+    "intraday": (
+        "Intraday (today)",
+        "Focus on the next 4–8 hours. Use 1H/4H price action, intraday key levels, "
+        "and immediate catalysts only. Targets should be reachable within the session.",
+    ),
+    "1day": (
+        "1 Day",
+        "Focus on the next 24 hours. Reference daily chart structure, overnight news "
+        "catalysts, and today's key levels. Targets should be reachable within 1–2 sessions.",
+    ),
+    "1week": (
+        "1 Week",
+        "Focus on the next 5–7 trading days. Reference weekly pivots, any scheduled macro "
+        "events (FOMC, CPI, earnings), and the multi-day trend.",
+    ),
+    "1month": (
+        "1 Month",
+        "Focus on the next 3–4 weeks. Reference monthly trend, key macro data releases, "
+        "and medium-term support/resistance zones.",
+    ),
+    "longterm": (
+        "Long-term (3+ months)",
+        "Focus on the next 3 or more months. Reference structural fundamentals, the "
+        "long-term trend, and major macro/geopolitical drivers.",
+    ),
+}
+
+
+def get_conclusion_template(horizon: str = "1week") -> str:
+    key = horizon.lower().replace(" ", "").replace("-", "")
+    label, guidance = _HORIZON_GUIDANCE.get(key, _HORIZON_GUIDANCE["1week"])
+    return _build_conclusion_template(label, guidance)
+
+
+def _build_conclusion_template(label: str, guidance: str) -> str:
+    return (
+        f"\n\n---\n**Forecast Horizon: {label}** — {guidance}\n\n"
+        "At the end of your report you MUST include a structured **CONCLUSION** section "
+        "using EXACTLY the headings below (do not rename or skip any):\n\n"
+        "## CONCLUSION\n\n"
+        "### Key Highlights\n"
+        "- [3–5 concise bullet points summarising the most critical findings for this horizon]\n\n"
+        f"### {label} Price Outlook\n"
+        "**Directional Bias:** [Bullish / Bearish / Neutral — one sentence with the primary reason]\n\n"
+        "**Key Levels:** Support $X.XX · Resistance $X.XX · Pivot / Breakout trigger $X.XX\n\n"
+        "### 🐂 Bull Scenario\n"
+        "**Trigger:** [The specific condition or price level that would confirm the bullish case]\n"
+        "**Entry Zone:** $X.XX – $X.XX\n"
+        "**Target:** $X.XX\n"
+        "**Invalidated if:** [price level or event that cancels this scenario]\n\n"
+        "### 🐻 Bear Scenario\n"
+        "**Trigger:** [The specific condition or price level that confirms the bearish case]\n"
+        "**Entry Zone:** $X.XX – $X.XX\n"
+        "**Target:** $X.XX\n"
+        "**Invalidated if:** [price level or event that cancels this scenario]\n\n"
+        "### ⚡ Geopolitical & Event Risk\n"
+        "- [List SPECIFIC named events that could materially move price: active conflicts, "
+        "sanctions, central bank meetings with dates, trade disputes, elections, political "
+        "statements from key figures. Do NOT use generic placeholders — name the actual events "
+        "you know about as of today.]\n\n"
+        "### Recommended Strategy\n"
+        f"- [2–3 actionable bullets calibrated to the **{label}** horizon: "
+        "entry zone, stop-loss level, price target, and overall bias]\n"
+        "---"
+    )
 
 
 def get_language_instruction() -> str:

@@ -548,10 +548,20 @@ nav.tab-bar {
       <div class="card-title">Configure Run</div>
       <div class="agent-form">
 
-        <!-- Date picker -->
+        <!-- Date picker + horizon -->
         <div class="date-row">
-          <label for="agents-date">Analysis date</label>
+          <label for="agents-date">Date</label>
           <input type="date" id="agents-date">
+        </div>
+        <div class="date-row">
+          <label for="agents-horizon">Horizon</label>
+          <select id="agents-horizon" onchange="localStorage.setItem('ta_agents_horizon',this.value)">
+            <option value="intraday">Intraday (today)</option>
+            <option value="1day">1 Day</option>
+            <option value="1week" selected>1 Week</option>
+            <option value="1month">1 Month</option>
+            <option value="longterm">Long-term (3+ months)</option>
+          </select>
         </div>
 
         <!-- Tier 1 analysts -->
@@ -613,8 +623,19 @@ nav.tab-bar {
       <div class="analysis-form">
 
         <div class="form-row">
-          <label for="analysis-date">Analysis date</label>
+          <label for="analysis-date">Date</label>
           <input type="date" id="analysis-date">
+        </div>
+
+        <div class="form-row">
+          <label for="analysis-horizon">Horizon</label>
+          <select id="analysis-horizon" onchange="localStorage.setItem('ta_analysis_horizon',this.value)">
+            <option value="intraday">Intraday (today)</option>
+            <option value="1day">1 Day</option>
+            <option value="1week" selected>1 Week</option>
+            <option value="1month">1 Month</option>
+            <option value="longterm">Long-term (3+ months)</option>
+          </select>
         </div>
 
         <div class="form-row">
@@ -1094,6 +1115,7 @@ const _TIER2_DEFS = [
 function initAgentsTab() {
   const today = new Date().toISOString().slice(0, 10);
   $('agents-date').value = localStorage.getItem('ta_agents_date') || today;
+  $('agents-horizon').value = localStorage.getItem('ta_agents_horizon') || '1week';
 
   // Build Tier 1 chips — use div not label to avoid checkbox double-fire
   $('analyst-chips').innerHTML = _TIER1_DEFS.map(a => `
@@ -1138,11 +1160,12 @@ async function submitAgentRun() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ticker:        _ticker,
-        analysis_date: date,
-        analysts:      [..._agentSelected],
-        llm_provider:  'anthropic',
-        quick_llm:     (() => {
+        ticker:           _ticker,
+        analysis_date:    date,
+        analysts:         [..._agentSelected],
+        forecast_horizon: $('agents-horizon').value || '1week',
+        llm_provider:     'anthropic',
+        quick_llm:        (() => {
           const v = $('agents-quick-model').value || null;
           if (v) localStorage.setItem('ta_agents_quick_model', v);
           return v;
@@ -1357,6 +1380,7 @@ let _agentStartMap      = {};   // name → timestamp
 function initAnalysisTab() {
   const today = new Date().toISOString().slice(0, 10);
   $('analysis-date').value = localStorage.getItem('ta_analysis_date') || today;
+  $('analysis-horizon').value = localStorage.getItem('ta_analysis_horizon') || '1week';
 
   // Build analyst checkboxes
   $('analysis-analyst-chips').innerHTML = _TIER1_DEFS.map(a => `
@@ -1395,13 +1419,14 @@ async function submitAnalysis() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ticker:         _ticker,
-        analysis_date:  date,
-        analysts:       [..._analysisSelected],
-        research_depth: depth,
-        llm_provider:   'anthropic',
-        quick_llm:      quickModel,
-        deep_llm:       deepModel,
+        ticker:           _ticker,
+        analysis_date:    date,
+        analysts:         [..._analysisSelected],
+        research_depth:   depth,
+        forecast_horizon: $('analysis-horizon').value || '1week',
+        llm_provider:     'anthropic',
+        quick_llm:        quickModel,
+        deep_llm:         deepModel,
       }),
     });
     if (!resp.ok) {
@@ -1777,8 +1802,9 @@ async function saveTemplate() {
   const name = prompt('Template name:', `${_ticker} analysis`);
   if (!name) return;
   const cfg = {
-    analysts:       [..._analysisSelected],
-    research_depth: parseInt($('analysis-depth').value) || 1,
+    analysts:         [..._analysisSelected],
+    research_depth:   parseInt($('analysis-depth').value) || 1,
+    forecast_horizon: $('analysis-horizon').value || '1week',
   };
   try {
     await fetch(API + '/api/templates', {
@@ -1819,8 +1845,9 @@ async function applyTemplate(id) {
       if (el) el.classList.toggle('selected', _analysisSelected.has(a.id));
     });
 
-    // Apply depth
-    if (cfg.research_depth) $('analysis-depth').value = String(cfg.research_depth);
+    // Apply depth + horizon
+    if (cfg.research_depth)   $('analysis-depth').value   = String(cfg.research_depth);
+    if (cfg.forecast_horizon) $('analysis-horizon').value = cfg.forecast_horizon;
 
     // Switch to analysis tab
     switchTab('analysis');

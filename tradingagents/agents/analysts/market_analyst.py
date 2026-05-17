@@ -9,7 +9,7 @@ from tradingagents.agents.utils.agent_utils import (
 from tradingagents.dataflows.config import get_config
 
 
-def create_market_analyst(llm):
+def create_market_analyst(llm, forecast_horizon: str = "1week"):
 
     def market_analyst_node(state):
         current_date = state["trade_date"]
@@ -50,7 +50,7 @@ def create_market_analyst(llm):
             "Write a detailed nuanced technical analysis. Include specific price levels, "
             "trend direction, momentum strength, support/resistance zones, and actionable entry/exit signals. "
             "Append a Markdown table summarising key indicator readings."
-            + get_conclusion_template()
+            + get_conclusion_template(forecast_horizon)
             + get_language_instruction()
         )
 

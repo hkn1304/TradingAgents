@@ -9,7 +9,7 @@ from tradingagents.agents.utils.agent_utils import (
 from tradingagents.dataflows.config import get_config
 
 
-def create_news_analyst(llm):
+def create_news_analyst(llm, forecast_horizon: str = "1week"):
     def news_analyst_node(state):
         current_date = state["trade_date"]
         instrument_context = build_instrument_context(state["company_of_interest"])
@@ -39,7 +39,7 @@ def create_news_analyst(llm):
             "- Supply/demand dynamics specific to the asset class\n"
             "- Market sentiment and risk-on/risk-off signals\n\n"
             "Provide specific, actionable insights. Append a Markdown table summarising key news events and their price implications."
-            + get_conclusion_template()
+            + get_conclusion_template(forecast_horizon)
             + get_language_instruction()
         )
 

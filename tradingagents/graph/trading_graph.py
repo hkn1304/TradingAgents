@@ -114,6 +114,7 @@ class TradingAgentsGraph:
             self.deep_thinking_llm,
             self.tool_nodes,
             self.conditional_logic,
+            forecast_horizon=self.config.get("forecast_horizon", "1week"),
         )
 
         self.propagator = Propagator()

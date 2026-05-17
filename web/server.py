@@ -114,6 +114,7 @@ class JobSubmit(BaseModel):
     analysis_date:    str
     analysts:         list[str]          # e.g. ["market","fundamentals"]
     research_depth:   int   = 1          # 1 | 3 | 5
+    forecast_horizon: str   = "1week"    # intraday|1day|1week|1month|longterm
     llm_provider:     str   = "anthropic"
     quick_llm:        Optional[str] = None
     deep_llm:         Optional[str] = None
@@ -128,6 +129,7 @@ class AgentRunSubmit(BaseModel):
     ticker:          str
     analysis_date:   str
     analysts:        list[str]           # Tier 1 only: market/social/news/fundamentals
+    forecast_horizon: str  = "1week"    # intraday|1day|1week|1month|longterm
     llm_provider:    str   = "anthropic"
     quick_llm:       Optional[str] = None
     deep_llm:        Optional[str] = None
