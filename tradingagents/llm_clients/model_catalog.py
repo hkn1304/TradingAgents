@@ -75,6 +75,15 @@ MODEL_OPTIONS: ProviderModeOptions = {
             ("Custom model ID", "custom"),
         ],
     },
+    "deepseek_anthropic": {
+        "quick": [
+            ("DeepSeek V4 Flash - Fast, Anthropic-compat endpoint", "deepseek-v4-flash"),
+        ],
+        "deep": [
+            ("DeepSeek V4 Pro [1M ctx] - Flagship, Anthropic-compat endpoint", "deepseek-v4-pro[1m]"),
+            ("DeepSeek V4 Flash - Fast, Anthropic-compat endpoint", "deepseek-v4-flash"),
+        ],
+    },
     "qwen": {
         "quick": [
             ("Qwen 3.5 Flash", "qwen3.5-flash"),

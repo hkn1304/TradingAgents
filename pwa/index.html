@@ -586,7 +586,11 @@ nav.tab-bar {
           </div>
         </div>
 
-        <!-- Model selection -->
+        <!-- Provider + model selection -->
+        <div class="form-row">
+          <label for="agents-provider">Provider</label>
+          <select id="agents-provider" onchange="onAgentsProviderChange(this.value)"></select>
+        </div>
         <div class="form-row">
           <label for="agents-quick-model">Quick model</label>
           <select id="agents-quick-model"></select>
@@ -652,7 +656,11 @@ nav.tab-bar {
           </select>
         </div>
 
-        <!-- Model selection -->
+        <!-- Provider + model selection -->
+        <div class="form-row">
+          <label for="analysis-provider">Provider</label>
+          <select id="analysis-provider" onchange="onAnalysisProviderChange(this.value)"></select>
+        </div>
         <div class="form-row">
           <label for="analysis-quick-model">Quick model</label>
           <select id="analysis-quick-model"></select>
@@ -1164,7 +1172,7 @@ async function submitAgentRun() {
         analysis_date:    date,
         analysts:         [..._agentSelected],
         forecast_horizon: $('agents-horizon').value || '1week',
-        llm_provider:     'anthropic',
+        llm_provider:     $('agents-provider').value || 'anthropic',
         quick_llm:        (() => {
           const v = $('agents-quick-model').value || null;
           if (v) localStorage.setItem('ta_agents_quick_model', v);
@@ -1424,7 +1432,7 @@ async function submitAnalysis() {
         analysts:         [..._analysisSelected],
         research_depth:   depth,
         forecast_horizon: $('analysis-horizon').value || '1week',
-        llm_provider:     'anthropic',
+        llm_provider:     $('analysis-provider').value || 'anthropic',
         quick_llm:        quickModel,
         deep_llm:         deepModel,
       }),
@@ -1859,28 +1867,67 @@ function analysisOnVisible() {
 }
 
 // ── Model selector ────────────────────────────────────────────────────────────
+let _modelCatalog = {};
+
+const _PROVIDER_LABELS = {
+  anthropic:          'Anthropic (Claude)',
+  openai:             'OpenAI (GPT)',
+  google:             'Google (Gemini)',
+  xai:                'xAI (Grok)',
+  deepseek:           'DeepSeek (OpenAI-compat)',
+  deepseek_anthropic: 'DeepSeek (Anthropic-compat)',
+  qwen:               'Qwen (Alibaba)',
+  glm:                'GLM (Zhipu)',
+  ollama:             'Ollama (Local)',
+  openrouter:         'OpenRouter',
+  azure:              'Azure OpenAI',
+};
+
+function fillSelect(elId, opts, savedKey) {
+  const el = $(elId);
+  if (!el) return;
+  const saved = localStorage.getItem(savedKey);
+  el.innerHTML = opts.map(o =>
+    `<option value="${o.value}"${o.value === saved ? ' selected' : ''}>${o.label}</option>`
+  ).join('');
+  if (saved && opts.some(o => o.value === saved)) el.value = saved;
+}
+
+function fillProviderSelect(elId, savedKey) {
+  const el = $(elId);
+  if (!el) return;
+  const providers = Object.keys(_modelCatalog);
+  const saved = localStorage.getItem(savedKey) || 'anthropic';
+  el.innerHTML = providers.map(p =>
+    `<option value="${p}"${p === saved ? ' selected' : ''}>${_PROVIDER_LABELS[p] || p}</option>`
+  ).join('');
+  el.value = providers.includes(saved) ? saved : (providers[0] || 'anthropic');
+}
+
+function onAgentsProviderChange(provider) {
+  localStorage.setItem('ta_agents_provider', provider);
+  const opts = _modelCatalog[provider] || {};
+  fillSelect('agents-quick-model', opts.quick || [], 'ta_agents_quick_model');
+}
+
+function onAnalysisProviderChange(provider) {
+  localStorage.setItem('ta_analysis_provider', provider);
+  const opts = _modelCatalog[provider] || {};
+  fillSelect('analysis-quick-model', opts.quick || [], 'ta_analysis_quick_model');
+  fillSelect('analysis-deep-model',  opts.deep  || [], 'ta_analysis_deep_model');
+}
+
 async function loadModelOptions() {
   try {
     const res = await fetch(API + '/api/models');
     if (!res.ok) return;
-    const catalog = await res.json();
-    const ant = catalog['anthropic'] || {};
-    const quickOpts = ant['quick'] || [];
-    const deepOpts  = ant['deep']  || [];
+    _modelCatalog = await res.json();
 
-    function fillSelect(elId, opts, savedKey) {
-      const el = $(elId);
-      if (!el) return;
-      const saved = localStorage.getItem(savedKey);
-      el.innerHTML = opts.map(o =>
-        `<option value="${o.value}"${o.value === saved ? ' selected' : ''}>${o.label}</option>`
-      ).join('');
-      if (saved && opts.some(o => o.value === saved)) el.value = saved;
-    }
+    fillProviderSelect('agents-provider',   'ta_agents_provider');
+    fillProviderSelect('analysis-provider', 'ta_analysis_provider');
 
-    fillSelect('agents-quick-model',   quickOpts, 'ta_agents_quick_model');
-    fillSelect('analysis-quick-model', quickOpts, 'ta_analysis_quick_model');
-    fillSelect('analysis-deep-model',  deepOpts,  'ta_analysis_deep_model');
+    onAgentsProviderChange($('agents-provider').value   || 'anthropic');
+    onAnalysisProviderChange($('analysis-provider').value || 'anthropic');
   } catch (e) {
     console.warn('Could not load model catalog:', e);
   }

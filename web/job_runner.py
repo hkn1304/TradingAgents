@@ -88,9 +88,10 @@ ALL_AGENTS = [
 
 _PROVIDER_MODEL_DEFAULTS: dict[str, tuple[str, str]] = {
     # (quick_model, deep_model) — used when frontend sends no model selection
-    "anthropic": ("claude-haiku-4-5-20251001", "claude-opus-4-7"),
-    "openai":    ("gpt-4o-mini",               "gpt-4o"),
-    "google":    ("gemini-2.0-flash",           "gemini-2.5-pro"),
+    "anthropic":          ("claude-haiku-4-5-20251001", "claude-opus-4-7"),
+    "openai":             ("gpt-4o-mini",               "gpt-4o"),
+    "google":             ("gemini-2.0-flash",           "gemini-2.5-pro"),
+    "deepseek_anthropic": ("deepseek-v4-flash",          "deepseek-v4-pro[1m]"),
 }
 
 
