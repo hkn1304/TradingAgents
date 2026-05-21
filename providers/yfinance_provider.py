@@ -188,7 +188,16 @@ class YFinanceProvider(DataProvider):
 
         stock_df = wrap(df.copy())
 
-        # Find the row matching the requested date (or fall back to last row)
+        # Trigger all stockstats computations first — they add columns to stock_df in-place.
+        # Row selection must happen AFTER this loop; a slice taken before the columns exist
+        # is a pandas copy and won't receive the new columns.
+        for ind in _STOCKSTATS_INDICATORS:
+            try:
+                stock_df[ind]
+            except Exception:
+                pass
+
+        # Now select the target row (after all columns exist on stock_df)
         date_str = pd.to_datetime(date).strftime("%Y-%m-%d")
         mask = stock_df["Date"].dt.strftime("%Y-%m-%d") == date_str
         row = stock_df[mask] if mask.any() else stock_df.iloc[[-1]]
@@ -196,7 +205,6 @@ class YFinanceProvider(DataProvider):
         result: dict = {}
         for ind in _STOCKSTATS_INDICATORS:
             try:
-                stock_df[ind]           # triggers stockstats lazy calculation
                 val = row[ind].values[0]
                 result[ind] = round(float(val), 4) if not pd.isna(val) else None
             except Exception:
