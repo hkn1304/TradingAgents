@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Fiyat Karşılaştırma</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a;
+    --border: #2e3350; --accent: #6c63ff; --accent2: #00d4aa;
+    --text: #e8eaf6; --muted: #8892b0; --danger: #ff6b6b;
+    --green: #00d4aa; --yellow: #ffd166;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 380px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+  .main { padding: 24px; overflow-y: auto; }
+
+  /* Header */
+  .logo { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  .logo span { color: var(--accent2); }
+
+  /* Search */
+  .search-box { display: flex; gap: 8px; }
+  .search-box input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 14px; outline: none; transition: border-color .2s; }
+  .search-box input:focus { border-color: var(--accent); }
+  .search-box input::placeholder { color: var(--muted); }
+  button { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; transition: opacity .2s; white-space: nowrap; }
+  button:hover { opacity: .85; }
+  button.secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  button.danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 6px 10px; font-size: 12px; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Location */
+  .location-row { display: flex; gap: 8px; align-items: center; }
+  .location-row label { font-size: 12px; color: var(--muted); }
+  .location-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; color: var(--text); font-size: 12px; outline: none; }
+  .loc-preset { font-size: 11px; padding: 5px 10px; }
+
+  /* Search results */
+  .results-list { display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; }
+  .result-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; cursor: pointer; transition: border-color .2s, background .2s; }
+  .result-card:hover { border-color: var(--accent); background: #1e2235; }
+  .result-card .r-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .result-card .r-meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .result-card .r-add { float: right; font-size: 11px; padding: 4px 10px; background: var(--accent); color: #fff; border-radius: 6px; cursor: pointer; }
+
+  /* Shopping list */
+  .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  .list-items { display: flex; flex-direction: column; gap: 6px; }
+  .list-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; }
+  .list-item .li-name { flex: 1; font-size: 13px; }
+  .list-item .li-brand { font-size: 11px; color: var(--muted); }
+  .list-item .li-unit { font-size: 11px; color: var(--accent2); background: rgba(0,212,170,.1); padding: 2px 6px; border-radius: 4px; }
+
+  .empty-state { text-align: center; color: var(--muted); font-size: 13px; padding: 20px; }
+
+  /* Template controls */
+  .tmpl-row { display: flex; gap: 8px; }
+  .tmpl-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 13px; outline: none; }
+  select { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; color: var(--text); font-size: 13px; outline: none; flex: 1; }
+
+  /* Compare button */
+  .compare-btn { width: 100%; padding: 14px; font-size: 15px; font-weight: 700; background: linear-gradient(135deg, var(--accent), #8b5cf6); border-radius: 10px; letter-spacing: .3px; }
+
+  /* Commission slider */
+  .commission-row { display: flex; align-items: center; gap: 10px; }
+  .commission-row label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .commission-row input[type=range] { flex: 1; accent-color: var(--accent); }
+  .commission-row span { font-size: 13px; font-weight: 700; color: var(--yellow); min-width: 36px; }
+
+  /* Results panel */
+  .results-panel { display: none; }
+  .results-panel.visible { display: block; }
+
+  /* Summary cards */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .summary-card.winner { border-color: var(--green); background: rgba(0,212,170,.06); }
+  .summary-card .sc-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+  .summary-card .sc-value { font-size: 26px; font-weight: 800; }
+  .summary-card .sc-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .winner-badge { display: inline-block; background: var(--green); color: #000; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; margin-bottom: 6px; }
+
+  /* Chain table */
+  .chain-table { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
+  .chain-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .chain-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .chain-table tr.best-row { background: rgba(0,212,170,.05); }
+  .chain-table tr.best-row td:first-child { color: var(--green); font-weight: 700; }
+  .chain-badge { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 10px; font-size: 12px; text-transform: capitalize; }
+  .missing-pill { display: inline-block; background: rgba(255,107,107,.1); border: 1px solid rgba(255,107,107,.3); color: var(--danger); font-size: 11px; padding: 2px 8px; border-radius: 20px; margin: 2px; }
+
+  /* Item breakdown table */
+  .breakdown-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+  .breakdown-table { width: 100%; border-collapse: collapse; }
+  .breakdown-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .breakdown-table td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .breakdown-table .price-cell { font-weight: 600; }
+  .breakdown-table .cheapest-cell { color: var(--green); }
+  .breakdown-table .na { color: var(--muted); font-style: italic; }
+
+  /* Spinner */
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 2px; background: var(--surface2); border-radius: 8px; padding: 3px; margin-bottom: 20px; width: fit-content; }
+  .tab { padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--muted); border: none; background: none; transition: all .2s; }
+  .tab.active { background: var(--accent); color: #fff; }
+
+  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .sidebar { border-right: none; border-bottom: 1px solid var(--border); } }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="logo">market<span>compare</span></div>
+
+  <!-- Location -->
+  <div>
+    <div class="section-title">📍 Konum</div>
+    <div class="location-row">
+      <label>Lat</label><input id="lat" type="number" step="0.0001" value="41.0370">
+      <label>Lon</label><input id="lon" type="number" step="0.0001" value="28.9850">
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+      <button class="secondary loc-preset" onclick="setLoc(41.0370,28.9850)">İstanbul (T)</button>
+      <button class="secondary loc-preset" onclick="setLoc(40.9855,29.0249)">Kadıköy</button>
+      <button class="secondary loc-preset" onclick="setLoc(39.9208,32.8541)">Ankara</button>
+      <button class="secondary loc-preset" onclick="setLoc(38.4237,27.1428)">İzmir</button>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div>
+    <div class="section-title">🔍 Ürün Ara</div>
+    <div class="search-box">
+      <input id="search-input" type="text" placeholder="örn: süt, yumurta, ekmek…" onkeydown="if(event.key==='Enter')doSearch()">
+      <button onclick="doSearch()" id="search-btn">Ara</button>
+    </div>
+    <div id="search-results" class="results-list" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- Shopping List -->
+  <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="section-title">🛒 Alışveriş Listesi</div>
+      <button class="danger" onclick="clearList()" style="padding:4px 10px;font-size:11px;">Temizle</button>
+    </div>
+    <div id="shopping-list" class="list-items">
+      <div class="empty-state">Ürün eklemek için arama yapın</div>
+    </div>
+  </div>
+
+  <!-- Templates -->
+  <div>
+    <div class="section-title">📋 Şablonlar</div>
+    <div class="tmpl-row" style="margin-bottom:8px;">
+      <input id="tmpl-name" type="text" placeholder="Şablon adı…">
+      <button onclick="saveTemplate()" class="secondary">Kaydet</button>
+    </div>
+    <div class="tmpl-row">
+      <select id="tmpl-select" onchange="loadTemplate(this.value)">
+        <option value="">-- Şablon yükle --</option>
+      </select>
+      <button onclick="deleteTemplate()" class="danger" style="padding:8px 12px;">Sil</button>
+    </div>
+  </div>
+
+  <!-- Commission + Compare -->
+  <div>
+    <div class="section-title">💰 Komisyon Oranı</div>
+    <div class="commission-row">
+      <label>%</label>
+      <input type="range" id="commission" min="5" max="60" step="5" value="30" oninput="document.getElementById('comm-val').textContent=this.value+'%'">
+      <span id="comm-val">30%</span>
+    </div>
+  </div>
+
+  <button class="compare-btn" onclick="runCompare()" id="compare-btn">
+    Fiyatları Karşılaştır →
+  </button>
+</aside>
+
+<!-- ── Main panel ──────────────────────────────────────────────────── -->
+<main class="main">
+  <div id="placeholder" style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px;color:var(--muted);text-align:center;">
+    <div style="font-size:48px;">🛒</div>
+    <div style="font-size:18px;font-weight:600;color:var(--text);">Alışveriş listeni oluştur</div>
+    <div style="font-size:14px;max-width:320px;line-height:1.6;">Soldan ürün ara ve listeye ekle.<br>Karşılaştır butonuna bas, hangi marketten almak daha ucuz görelim.</div>
+  </div>
+
+  <div id="results-panel" class="results-panel">
+    <!-- summary cards -->
+    <div class="summary-grid" id="summary-grid"></div>
+
+    <!-- tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('chains')">Market Özeti</button>
+      <button class="tab" onclick="showTab('breakdown')">Ürün Bazlı</button>
+    </div>
+
+    <!-- chains tab -->
+    <div id="tab-chains">
+      <table class="chain-table" id="chain-table"></table>
+    </div>
+
+    <!-- breakdown tab -->
+    <div id="tab-breakdown" style="display:none;">
+      <div class="breakdown-title">Her markette hangi üründen ne kadar ödüyorsunuz?</div>
+      <table class="breakdown-table" id="breakdown-table"></table>
+    </div>
+  </div>
+</main>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let shoppingList = []; // [{id, name, brand, unit, category}]
+let lastCompare = null;
+
+// ── Location helpers ───────────────────────────────────────────────────────
+function setLoc(lat, lon) {
+  document.getElementById('lat').value = lat;
+  document.getElementById('lon').value = lon;
+}
+function getLoc() {
+  return { lat: parseFloat(document.getElementById('lat').value), lon: parseFloat(document.getElementById('lon').value) };
+}
+
+// ── Search ─────────────────────────────────────────────────────────────────
+async function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('search-btn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+  const { lat, lon } = getLoc();
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=8&lat=${lat}&lon=${lon}`);
+    const data = await res.json();
+    renderSearchResults(data);
+  } catch(e) {
+    document.getElementById('search-results').innerHTML = `<div class="empty-state">Hata: ${e.message}</div>`;
+  } finally {
+    btn.innerHTML = 'Ara';
+    btn.disabled = false;
+  }
+}
+
+function renderSearchResults(items) {
+  const el = document.getElementById('search-results');
+  if (!items.length) { el.innerHTML = '<div class="empty-state">Sonuç bulunamadı</div>'; return; }
+  el.innerHTML = items.map(r => `
+    <div class="result-card" onclick="addItem(${JSON.stringify(r).replace(/"/g,'&quot;')})">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="r-name">${r.name}</div>
+          <div class="r-meta">${r.brand||''} ${r.brand&&r.unit?'·':''} ${r.unit} ${r.category?'· '+r.category:''}</div>
+        </div>
+        <span class="r-add">+ Ekle</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Shopping list ──────────────────────────────────────────────────────────
+function addItem(item) {
+  if (shoppingList.find(i => i.id === item.id)) return; // already added
+  shoppingList.push(item);
+  renderList();
+}
+
+function removeItem(id) {
+  shoppingList = shoppingList.filter(i => i.id !== id);
+  renderList();
+}
+
+function clearList() {
+  shoppingList = [];
+  renderList();
+  document.getElementById('results-panel').classList.remove('visible');
+  document.getElementById('placeholder').style.display = 'flex';
+}
+
+function renderList() {
+  const el = document.getElementById('shopping-list');
+  if (!shoppingList.length) {
+    el.innerHTML = '<div class="empty-state">Ürün eklemek için arama yapın</div>';
+    return;
+  }
+  el.innerHTML = shoppingList.map(i => `
+    <div class="list-item">
+      <div style="flex:1;">
+        <div class="li-name">${i.name}</div>
+        <div class="li-brand">${i.brand||''}</div>
+      </div>
+      ${i.unit ? `<span class="li-unit">${i.unit}</span>` : ''}
+      <button class="danger" onclick="removeItem('${i.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+// ── Compare ────────────────────────────────────────────────────────────────
+async function runCompare() {
+  if (!shoppingList.length) { alert('Lütfen en az bir ürün ekleyin.'); return; }
+  const btn = document.getElementById('compare-btn');
+  btn.innerHTML = '<span class="spinner"></span> Karşılaştırılıyor…';
+  btn.disabled = true;
+  const { lat, lon } = getLoc();
+  const commission = parseInt(document.getElementById('commission').value);
+
+  try {
+    const res = await fetch('/api/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_ids: shoppingList.map(i=>i.id), latitude: lat, longitude: lon, commission_pct: commission }),
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail||'Sunucu hatası'); }
+    lastCompare = await res.json();
+    renderResults(lastCompare, commission);
+  } catch(e) {
+    alert('Hata: ' + e.message);
+  } finally {
+    btn.innerHTML = 'Fiyatları Karşılaştır →';
+    btn.disabled = false;
+  }
+}
+
+function renderResults(data, commPct) {
+  document.getElementById('placeholder').style.display = 'none';
+  document.getElementById('results-panel').classList.add('visible');
+
+  const best = data.chains[0];
+  const second = data.chains[1];
+
+  // Summary cards
+  document.getElementById('summary-grid').innerHTML = `
+    <div class="summary-card winner">
+      <div class="winner-badge">✓ Önerilen</div>
+      <div class="sc-label">En Ucuz Market</div>
+      <div class="sc-value" style="color:var(--green);text-transform:capitalize;">${best.chain}</div>
+      <div class="sc-sub">${best.total.toFixed(2)} ₺ · ${best.items ? Object.keys(best.items).length : 0} ürün</div>
+    </div>
+    ${second ? `
+    <div class="summary-card">
+      <div class="sc-label">2. En Ucuz</div>
+      <div class="sc-value" style="text-transform:capitalize;">${second.chain}</div>
+      <div class="sc-sub">${second.total.toFixed(2)} ₺</div>
+    </div>` : ''}
+    <div class="summary-card">
+      <div class="sc-label">Tasarruf</div>
+      <div class="sc-value" style="color:var(--yellow);">${data.savings.toFixed(2)} ₺</div>
+      <div class="sc-sub">2. vs. 1. market farkı</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Komisyon (%${commPct})</div>
+      <div class="sc-value" style="color:var(--accent);">${data.commission.toFixed(2)} ₺</div>
+      <div class="sc-sub">Kullanıcı kazancı: ${data.user_net_saving.toFixed(2)} ₺</div>
+    </div>
+  `;
+
+  // Chain table
+  const thead = `<tr><th>Market</th><th>Toplam</th><th>Bulunan</th><th>Eksik Ürünler</th></tr>`;
+  const tbody = data.chains.map((c,i) => `
+    <tr class="${i===0?'best-row':''}">
+      <td><span class="chain-badge">${c.chain}</span>${i===0?' 🏆':''}</td>
+      <td style="font-weight:700;">${c.total.toFixed(2)} ₺</td>
+      <td>${Object.keys(c.items).length} / ${Object.keys(c.items).length + c.missing.length}</td>
+      <td>${c.missing.map(m=>`<span class="missing-pill">${shortName(m)}</span>`).join('') || '<span style="color:var(--green);font-size:12px;">✓ Hepsi var</span>'}</td>
+    </tr>
+  `).join('');
+  document.getElementById('chain-table').innerHTML = thead + tbody;
+
+  // Breakdown table
+  const allItems = [...new Set(data.chains.flatMap(c => Object.keys(c.items)))];
+  const chains = data.chains.map(c => c.chain);
+  const bhead = `<tr><th>Ürün</th>${chains.map(c=>`<th style="text-transform:capitalize;">${c}</th>`).join('')}</tr>`;
+  const brows = allItems.map(item => {
+    const prices = chains.map(c => {
+      const chain = data.chains.find(ch => ch.chain === c);
+      return chain?.items?.[item];
+    });
+    const minPrice = Math.min(...prices.filter(p => p !== undefined));
+    const cells = prices.map(p =>
+      p !== undefined
+        ? `<td class="price-cell ${p===minPrice?'cheapest-cell':''}">${p.toFixed(2)} ₺</td>`
+        : `<td class="na">N/A</td>`
+    ).join('');
+    return `<tr><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${item}">${shortName(item)}</td>${cells}</tr>`;
+  }).join('');
+  document.getElementById('breakdown-table').innerHTML = bhead + brows;
+}
+
+function shortName(s) {
+  return s.length > 30 ? s.substring(0, 28) + '…' : s;
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-chains').style.display = tab==='chains'?'block':'none';
+  document.getElementById('tab-breakdown').style.display = tab==='breakdown'?'block':'none';
+}
+
+// ── Templates ──────────────────────────────────────────────────────────────
+async function loadTemplateList() {
+  const res = await fetch('/api/templates');
+  const data = await res.json();
+  const sel = document.getElementById('tmpl-select');
+  sel.innerHTML = '<option value="">-- Şablon yükle --</option>' +
+    data.templates.map(n => `<option value="${n}">${n}</option>`).join('');
+}
+
+async function loadTemplate(name) {
+  if (!name) return;
+  const res = await fetch(`/api/templates/${encodeURIComponent(name)}`);
+  if (!res.ok) return;
+  const tmpl = await res.json();
+  shoppingList = tmpl.items.map(i => ({ id: i.product_id, name: i.name, brand: i.brand, unit: i.unit, category: i.category }));
+  renderList();
+  document.getElementById('tmpl-name').value = name;
+}
+
+async function saveTemplate() {
+  const name = document.getElementById('tmpl-name').value.trim();
+  if (!name) { alert('Şablon adı girin.'); return; }
+  if (!shoppingList.length) { alert('Liste boş.'); return; }
+  await fetch('/api/templates', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, items: shoppingList.map(i => ({ product_id: i.id, name: i.name, brand: i.brand||null, unit: i.unit, category: i.category })) }),
+  });
+  await loadTemplateList();
+  document.getElementById('tmpl-select').value = name;
+}
+
+async function deleteTemplate() {
+  const name = document.getElementById('tmpl-select').value;
+  if (!name) return;
+  if (!confirm(`"${name}" şablonunu sil?`)) return;
+  await fetch(`/api/templates/${encodeURIComponent(name)}`, { method: 'DELETE' });
+  await loadTemplateList();
+  document.getElementById('tmpl-name').value = '';
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadTemplateList();
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1615 @@
+[
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/",
+    "post": null,
+    "headers": {
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/env.js?1.0.0-f-atl-4277-193719d",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/tag/js/gpt.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/globals.js?1.0.0-f-atl-4277-193719d",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-JSJX7LKN.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/polyfills-OQ3ENV3N.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/scripts-YK7LJD5Q.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/efilli_20260115.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/user-bff/custom-texts",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": [
+      "version",
+      "customTextMap"
+    ],
+    "response_snippet": "{\"version\": 996, \"customTextMap\": {\"DARK_KITCHEN\": [{\"type\": \"checkoutTitle\", \"value\": \"Siparişi Tamamla\"}, {\"type\": \"checkoutRingBell\", \"value\": \"Zili Çalma\"}, {\"type\": \"checkoutContactless\", \"value\": \"Temassız Teslimat\"}, {\"type\": \"checkoutDeliveryAddress\", \"value\": \"Teslimat Adresin\"}, {\"type\": \"checkoutDeliveryTime\", \"value\": \"Teslimat Zamanın\"}, {\"type\": \"checkoutPaymentMethod\", \"value\": \"Ödeme Yöntemin\"}, {\"type\": \"checkoutPoints\", \"value\": \"Puanlarım\"}, {\"type\": \"checkoutCouponsCode\", \"value\": \"Kupon Kodu Kullan\"}, {\"type\": \"checkoutCouponsCodeUse\", \"value\": \"Kullan\"}, {\"type\": \"checkou"
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.googletagmanager.com/gtm.js?id=GTM-NKFR7KK",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/user-bff/users",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": [
+      "stateInfo"
+    ],
+    "response_snippet": "{\"stateInfo\": {\"cartMode\": \"MAIN\", \"showEmailVerificationReminder\": false, \"showLocationPermissionRequest\": true, \"showAgreementAcceptReminder\": false}}"
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/delivery-bff/locations/info/current",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": [
+      "storeDeliveryModel"
+    ]
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/api/trend-keywords",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/marketing-bff/banners/main-page-inline",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/marketing-bff/banners/main-page-inline",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": "list[0]"
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/user-bff/faqs",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": "list[2]",
+    "response_snippet": "[{\"data\": {\"id\": 776, \"question\": \"Öne Çıkan Sorular\", \"depth\": 1, \"priority\": 1}, \"children\": [{\"data\": {\"id\": 784, \"question\": \"Siparişimi nasıl güncelleyebilirim?\", \"answer\": \"Oluşturduğunuz ve ödemesini online ya da kapıda ödeme olarak tamamladığınız siparişinizi, siparişinizin hazırlanma aşaması öncesine kadar güncelleyebilirsiniz. Sipariş güncelleme ekranında; Mevcut siparişinize ek yapabilir, teslimat gün veya saatinizi değiştirebilirsiniz.\", \"parentId\": 776, \"depth\": 2, \"priority\": 1}, \"children\": []}, {\"data\": {\"id\": 788, \"question\": \"Tamamladığım siparişime nasıl ek yapabilirim?\", \"a"
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-RTBEPAKF.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FCRSKM4W.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FP5G7JFY.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/rest/screen-views",
+    "post": "{\"eventId\":\"1779475203617000001\",\"screenName\":\"Home\",\"url\":\"https://www.migros.com.tr/\"}",
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/search-area-promotes?reid=1779475203617000001",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/marketing-bff/banners/main-page-top?reid=1779475203617000001",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": "list[3]",
+    "response_snippet": "[{\"source\": \"INTERNAL\", \"id\": 161397, \"companyId\": 20, \"identifier\": \"Kurban 2026 - bonus - topline\", \"placeholder\": \"MAIN_PAGE_TOP\", \"callToActionType\": \"REDIRECT\", \"callToActionUrl\": \"/kurban\", \"imageUrl\": \"https://images.migrosone.com/sanalmarket/banner/main_page_top/159363/161397-banner-20260427184956-094993.jpg\", \"referrerEventId\": \"1779475203710698893\", \"placeholderCapacity\": 3, \"campaignDetails\": {}}, {\"source\": \"INTERNAL\", \"id\": 164766, \"companyId\": 20, \"identifier\": \"ALO / 211621\", \"placeholder\": \"MAIN_PAGE_TOP\", \"callToActionType\": \"REDIRECT\", \"callToActionUrl\": \"/pg-urunleri-l-bbca6"
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/marketing-bff/banners/main-page-slider?isGoogleAdsEnabled=true&reid=1779475203617000001",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": "list[40]",
+    "response_snippet": "[{\"source\": \"INTERNAL\", \"id\": 164745, \"companyId\": 20, \"identifier\": \"Dondurmalarda Aynı Üründen 2 Al 1 Öde! \", \"placeholder\": \"MAIN_PAGE_SLIDER\", \"callToActionType\": \"REDIRECT\", \"callToActionUrl\": \"/dondurmalarda-ayni-urunden-2-al-1-ode-l-bbca5e0\", \"imageUrl\": \"https://images.migrosone.com/sanalmarket/banner/main_page_slider/162711/164745-banner-20260520155742-2fe17d.jpg\", \"referrerEventId\": \"1779475203762538329\", \"placeholderCapacity\": 30, \"campaignDetails\": {}}, {\"source\": \"INTERNAL\", \"id\": 165487, \"companyId\": 20, \"identifier\": \"Bayram Çikolata Anasayfa\", \"placeholder\": \"MAIN_PAGE_SLIDER\","
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/marketing-bff/banners/main-page-under-slider?reid=1779475203617000001",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": "list[5]",
+    "response_snippet": "[{\"source\": \"INTERNAL\", \"id\": 164893, \"companyId\": 20, \"identifier\": \"Seç Al Ürünleri Freebox\", \"placeholder\": \"MAIN_PAGE_UNDER_SLIDER\", \"callToActionType\": \"REDIRECT\", \"callToActionUrl\": \"/sec-al-kampanyasi-l-bbca3e0\", \"imageUrl\": \"https://images.migrosone.com/sanalmarket/banner/main_page_under_slider/162859/164893-banner-20260521095921-cf84f6.jpg\", \"referrerEventId\": \"1779475203758698894\", \"placeholderCapacity\": 5, \"campaignDetails\": {}}, {\"source\": \"INTERNAL\", \"id\": 164846, \"companyId\": 20, \"identifier\": \"Böcek ve Sinek Kovucu Ürünleri\", \"placeholder\": \"MAIN_PAGE_UNDER_SLIDER\", \"callToActio"
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/categories/top-level?reid=1779475203617000001",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/user-bff/statepacks?reid=1779475203617000001",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": "list[25]",
+    "response_snippet": "[{\"key\": \"suratLogoUrl\", \"value\": \"https://images.migrosone.com/sanalmarket/custom/surat-kargo-2x-53cb7d19.png\", \"lastUpdatedAt\": 1690810210313}, {\"key\": \"smartLifeAssistantEnabled\", \"value\": \"0\", \"lastUpdatedAt\": 1772694364036}, {\"key\": \"cartCampaignSuggestionEnabled\", \"value\": \"1\", \"lastUpdatedAt\": 1748863555073}, {\"key\": \"MayaBeautyCategoryId\", \"value\": \"3\", \"lastUpdatedAt\": 1767959896541}, {\"key\": \"MayaNutritionStorylyToken\", \"value\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2NfaWQiOjEwOTgsImFwcF9pZCI6MTg1MzgsImluc19pZCI6MjA4MDJ9.PQhpGJvfUOzYhHiBm42zibNxQ2Pl_1SKXjC1rEFNF_4\", \"lastUpdated"
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/pagead/managed/js/gpt/m202605130201/pubads_impl.js?cb=95391993",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.googletagmanager.com/gtag/destination?id=AW-715674769&cx=c&gtm=4e65k1h1",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.googletagmanager.com/gtag/js?id=G-KTN3ZLW2R5&cx=c&gtm=4e65k1h1",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "POST",
+    "url": "https://pagead2.googlesyndication.com/ccm/collect?rcb=14&frm=0&ae=g&en=page_view&dl=https%3A%2F%2Fwww.migros.com.tr%2F&scrsrc=www.googletagmanager.com&rnd=741478557.1779475204&navt=n&npa=1&ep.ads_data_redaction=0&gtm=45He65k1h1v811483837za200zd811483837xea&gcs=G100&gcd=13p3p3p3p5l1&dma_cps=-&dma=0&tag_exp=0~115938465~115938468~119169248&apve=1&apvf=f&apvc=1&tft=1779475204352&tfd=5770",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "POST",
+    "url": "https://pagead2.googlesyndication.com/ccm/collect?rcb=14&frm=0&ae=g&dl=https%3A%2F%2Fwww.migros.com.tr%2F&scrsrc=www.googletagmanager.com&rnd=741478557.1779475204&navt=n&npa=1&_tu=CA&gtm=45be65k1h1v889281616z8811483837za20gzb811483837zd811483837xea&gcs=G100&gcd=13p3p3p3p5l1&dma_cps=-&dma=0&tag_exp=0~115938465~115938469~119169248&apve=1&apvf=f&apvc=0&tids=AW-715674769&tid=AW-715674769&tft=1779475204642&tfd=6061",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "POST",
+    "url": "https://pagead2.googlesyndication.com/measurement/conversion?random=1779475204998&cv=11&tid=G-KTN3ZLW2R5&fst=1779475204998&fmt=8&en=session_start&gtm=45je65k1h1v877754329z8811483837za20gzb811483837zd811483837xec&gcs=G100&gcd=13p3p3p3p5l1&dma_cps=-&dma=0&tag_exp=0~115616985~115938465~115938469~118694324~119034491~119169248&u_w=1366&u_h=768&url=https%3A%2F%2Fwww.migros.com.tr%2F&gacid=958131051.1779475205&frm=0&tiba=Migros%20Sanal%20Market%20%7C%20Online%20Market%20Al%C4%B1%C5%9Fveri%C5%9Fi&npa=1&pscdl=denied&uaa=x86&uab=64&uafvl=HeadlessChrome%3B147.0.7727.15%7CNot.A%252FBrand%3B8.0.0.0%7CChromium%3B147.0.7727.15&uamb=0&uam=&uap=Windows&uapv=10.0&uaw=0&_tu=CA&rcb=7",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "POST",
+    "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-KTN3ZLW2R5&gtm=45je65k1h1v877754329z8811483837za20gzb811483837zd811483837&_p=1779475202891&gcs=G100&gcd=13p3p3p3p5l1&npa=1&dma_cps=-&dma=0&_eu=AAAAAGAC&_prs=ok&are=1&cid=958131051.1779475205&frm=0&pscdl=denied&rcb=7&sr=1366x768&uaa=x86&uab=64&uafvl=HeadlessChrome%3B147.0.7727.15%7CNot.A%252FBrand%3B8.0.0.0%7CChromium%3B147.0.7727.15&uam=&uamb=0&uap=Windows&uapv=10.0&uaw=0&ul=tr-tr&gaf=2&_s=1&tag_exp=0~115616985~115938465~115938469~118694324~119034491~119169248&sid=1779475204&sct=1&seg=0&dl=https%3A%2F%2Fwww.migros.com.tr%2F&dt=Migros%20Sanal%20Market%20%7C%20Online%20Market%20Al%C4%B1%C5%9Fveri%C5%9Fi&en=page_view&_fv=1&_nsi=1&_ss=2&epn.ep_sessionid=1779475204341&ep.ep_cryptoid=8f43e95a-7ae9-4b23-9942-1044a55087fc&up.company=sanalmarket&up.up_cryptoid=8f43e95a-7ae9-4b23-9942-1044a55087fc&tfd=6484",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/cdn-cgi/rum?",
+    "post": "{\"memory\":{\"totalJSHeapSize\":56800000,\"usedJSHeapSize\":42100000,\"jsHeapSizeLimit\":2330000000},\"resources\":[],\"referrer\":\"\",\"eventType\":1,\"firstPaint\":3756,\"firstContentfulPaint\":3756,\"startTime\":1779475198582.3,\"versions\":{\"fl\":\"2024.11.0\",\"js\":\"2026.5.0\",\"timings\":2},\"pageloadId\":\"0e8fb20f-b46a-4c26-8a1f-60d016aa265b\",\"location\":\"https://www.migros.com.tr/\",\"nt\":\"navigate\",\"timingsV2\":{\"nextHopProtocol\":\"h2\",\"domainLookupStart\":2735.9000000059605,\"domainLookupEnd\":2865.5999999940395,\"connectStart\":2865.5999999940395,\"connectEnd\":3198,\"requestStart\":3198.699999988079,\"responseStart\":3290.300000011921,\"responseEnd\":3297.5,\"domInteractive\":3945.800000011921,\"domComplete\":6500.0999999940395,\"loadEventStart\":6500.5999999940395,\"loadEventEnd\":6501.699999988079,\"finalResponseHeadersStart\":3290.300000011921,\"firstInterimResponseStart\":0,\"transferSize\":27001,\"decodedBodySize\":197130},\"dt\":\"\",\"siteToken\":\"9341cbf513954834b406c4b23b064434\",\"st\":2}",
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/marketing-bff/banners/main-page-top-popup?reid=1779475203617000001",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": "list[0]"
+  },
+  {
+    "phase": "homepage",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/pagead/managed/dict/m202605210101/gpt",
+    "post": null,
+    "headers": {
+      "referer": "",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "POST",
+    "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-KTN3ZLW2R5&gtm=45je65k1h1v877754329z8811483837za20gzb811483837zd811483837&_p=1779475202891&gcs=G100&gcd=13p3p3p3p5l1&npa=1&dma_cps=-&dma=0&_eu=YAAAAGAC&are=1&cid=958131051.1779475205&frm=0&pscdl=denied&rcb=7&sr=1366x768&uaa=x86&uab=64&uafvl=HeadlessChrome%3B147.0.7727.15%7CNot.A%252FBrand%3B8.0.0.0%7CChromium%3B147.0.7727.15&uam=&uamb=0&uap=Windows&uapv=10.0&uaw=0&ul=tr-tr&gaf=2&tag_exp=0~115616985~115938465~115938469~118694324~119034491~119169248&sid=1779475204&sct=1&seg=0&dl=https%3A%2F%2Fwww.migros.com.tr%2F&dt=Migros%20Sanal%20Market%20%7C%20Online%20Market%20Al%C4%B1%C5%9Fveri%C5%9Fi&_s=2&tfd=11564",
+    "post": "en=view_promotion&epn.ep_sessionid=1779475204341&ep.ep_cryptoid=8f43e95a-7ae9-4b23-9942-1044a55087fc&ep.company=sanalmarket&epn.promotion_id=164745&ep.promotion_name=Dondurmalarda%20Ayn%C4%B1%20%C3%9Cr%C3%BCnden%202%20Al%201%20%C3%96de!%20&epn.creative_slot=1&_et=66\r\nen=view_promotion&epn.ep_sessionid=1779475204341&ep.ep_cryptoid=8f43e95a-7ae9-4b23-9942-1044a55087fc&ep.company=sanalmarket&epn.promotion_id=165487&ep.promotion_name=Bayram%20%C3%87ikolata%20Anasayfa&epn.creative_slot=2&_et=3872",
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "text/plain;charset=UTF-8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/search?q=s%C3%BCt",
+    "post": null,
+    "headers": {
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "POST",
+    "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-KTN3ZLW2R5&gtm=45je65k1h1v877754329z8811483837za20gzb811483837zd811483837&_p=1779475202891&gcs=G100&gcd=13p3p3p3p5l1&npa=1&dma_cps=-&dma=0&_eu=YAAAAGAC&are=1&cid=958131051.1779475205&frm=0&pscdl=denied&rcb=7&sr=1366x768&uaa=x86&uab=64&uafvl=HeadlessChrome%3B147.0.7727.15%7CNot.A%252FBrand%3B8.0.0.0%7CChromium%3B147.0.7727.15&uam=&uamb=0&uap=Windows&uapv=10.0&uaw=0&ul=tr-tr&gaf=2&_s=3&tag_exp=0~115616985~115938465~115938469~118694324~119034491~119169248&sid=1779475204&sct=1&seg=0&dl=https%3A%2F%2Fwww.migros.com.tr%2F&dt=Migros%20Sanal%20Market%20%7C%20Online%20Market%20Al%C4%B1%C5%9Fveri%C5%9Fi&en=view_promotion&epn.ep_sessionid=1779475204341&ep.ep_cryptoid=8f43e95a-7ae9-4b23-9942-1044a55087fc&ep.company=sanalmarket&epn.promotion_id=165393&ep.promotion_name=TAZEL%C4%B0K%20B%C4%B0%20TIK%20UZA%C4%9EINDA!%20(22-25%20MAYIS)&epn.creative_slot=3&_et=5372&tfd=17800",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "POST",
+    "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-KTN3ZLW2R5&gtm=45je65k1h1v877754329za20gzb811483837zd811483837&_p=1779475202891&gcs=G100&gcd=13p3p3p3p5l1&npa=1&dma_cps=-&dma=0&_eu=AAAAAGAC&are=1&cid=958131051.1779475205&frm=0&pscdl=denied&rcb=7&sr=1366x768&uaa=x86&uab=64&uafvl=HeadlessChrome%3B147.0.7727.15%7CNot.A%252FBrand%3B8.0.0.0%7CChromium%3B147.0.7727.15&uam=&uamb=0&uap=Windows&uapv=10.0&uaw=0&ul=tr-tr&gaf=2&_s=4&tag_exp=0~115616985~115938465~115938469~118694324~119034491~119169248&sid=1779475204&sct=1&seg=1&dl=https%3A%2F%2Fwww.migros.com.tr%2F&dt=Migros%20Sanal%20Market%20%7C%20Online%20Market%20Al%C4%B1%C5%9Fveri%C5%9Fi&en=user_engagement&epn.ep_sessionid=1779475204341&ep.ep_cryptoid=8f43e95a-7ae9-4b23-9942-1044a55087fc&_et=1957&tfd=17802",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/cdn-cgi/rum?",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "POST",
+    "url": "https://www.google.com/g/collect?v=2&tid=G-KTN3ZLW2R5&gtm=45je65k1h1v877754329z8811483837za20gzb811483837zd811483837&_p=1779475202891&gcs=G100&gcd=13p3p3p3p5l1&npa=1&dma_cps=-&dma=0&_eu=YAAAAGAC&are=1&cid=958131051.1779475205&frm=0&pscdl=denied&rcb=7&sr=1366x768&uaa=x86&uab=64&uafvl=HeadlessChrome%3B147.0.7727.15%7CNot.A%252FBrand%3B8.0.0.0%7CChromium%3B147.0.7727.15&uam=&uamb=0&uap=Windows&uapv=10.0&uaw=0&ul=tr-tr&gaf=3&_s=3&tag_exp=0%7E115616985%7E115938465%7E115938469%7E118694324%7E119034491%7E119169248&sid=1779475204&sct=1&seg=0&dl=https%3A%2F%2Fwww.migros.com.tr%2F&dt=Migros+Sanal+Market+%7C+Online+Market+Al%C4%B1%C5%9Fveri%C5%9Fi&en=view_promotion&epn.ep_sessionid=1779475204341&ep.ep_cryptoid=8f43e95a-7ae9-4b23-9942-1044a55087fc&ep.company=sanalmarket&epn.promotion_id=165393&ep.promotion_name=TAZEL%C4%B0K+B%C4%B0+TIK+UZA%C4%9EINDA%21+%2822-25+MAYIS%29&epn.creative_slot=3&_et=5372&tfd=17800",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "POST",
+    "url": "https://www.google.com/g/collect?v=2&tid=G-KTN3ZLW2R5&gtm=45je65k1h1v877754329za20gzb811483837zd811483837&_p=1779475202891&gcs=G100&gcd=13p3p3p3p5l1&npa=1&dma_cps=-&dma=0&_eu=AAAAAGAC&are=1&cid=958131051.1779475205&frm=0&pscdl=denied&rcb=7&sr=1366x768&uaa=x86&uab=64&uafvl=HeadlessChrome%3B147.0.7727.15%7CNot.A%252FBrand%3B8.0.0.0%7CChromium%3B147.0.7727.15&uam=&uamb=0&uap=Windows&uapv=10.0&uaw=0&ul=tr-tr&gaf=3&_s=4&tag_exp=0%7E115616985%7E115938465%7E115938469%7E118694324%7E119034491%7E119169248&sid=1779475204&sct=1&seg=1&dl=https%3A%2F%2Fwww.migros.com.tr%2F&dt=Migros+Sanal+Market+%7C+Online+Market+Al%C4%B1%C5%9Fveri%C5%9Fi&en=user_engagement&epn.ep_sessionid=1779475204341&ep.ep_cryptoid=8f43e95a-7ae9-4b23-9942-1044a55087fc&_et=1957&tfd=17802",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/env.js?1.0.0-f-atl-4277-193719d",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/tag/js/gpt.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/globals.js?1.0.0-f-atl-4277-193719d",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-JSJX7LKN.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/polyfills-OQ3ENV3N.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/scripts-YK7LJD5Q.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/efilli_20260115.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/user-bff/custom-texts?version=996",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://www.googletagmanager.com/gtm.js?id=GTM-NKFR7KK",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/user-bff/users",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": [
+      "stateInfo"
+    ],
+    "response_snippet": "{\"stateInfo\": {\"cartMode\": \"MAIN\", \"showEmailVerificationReminder\": false, \"showLocationPermissionRequest\": true, \"showAgreementAcceptReminder\": false}}"
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/delivery-bff/locations/info/current",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": [
+      "storeDeliveryModel"
+    ]
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-RTBEPAKF.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FCRSKM4W.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FP5G7JFY.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FV6N2VRL.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-WO46X23Y.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-VYWKAR7V.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-SG37HR6C.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-CMLVP4O4.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/pagead/managed/js/gpt/m202605130201/pubads_impl.js?cb=95391993",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-SC2FIAQK.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://www.googletagmanager.com/gtag/destination?id=AW-715674769&cx=c&gtm=4e65k1h1",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "POST",
+    "url": "https://pagead2.googlesyndication.com/ccm/collect?rcb=6&frm=0&ae=g&en=page_view&dl=https%3A%2F%2Fwww.migros.com.tr%2Fsearch&scrsrc=www.googletagmanager.com&rnd=1668153320.1779475217&navt=n&npa=1&ep.ads_data_redaction=0&gtm=45He65k1h1v811483837za200zd811483837xea&gcs=G100&gcd=13p3p3p3p5l1&dma_cps=-&dma=0&tag_exp=0~115938465~115938468&apve=1&apvf=f&apvc=1&tft=1779475217365&tfd=1102",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-NSUF4SVW.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-WQWSP4DV.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "POST",
+    "url": "https://pagead2.googlesyndication.com/ccm/collect?rcb=6&frm=0&ae=g&dl=https%3A%2F%2Fwww.migros.com.tr%2Fsearch&scrsrc=www.googletagmanager.com&rnd=1668153320.1779475217&navt=n&npa=1&_tu=CA&gtm=45be65k1h1v889281616z8811483837za20gzb811483837zd811483837xea&gcs=G100&gcd=13p3p3p3p5l1&dma_cps=-&dma=0&tag_exp=0~115616986~115938465~115938468~118689381&apve=1&apvf=f&apvc=0&tids=AW-715674769&tid=AW-715674769&tft=1779475217507&tfd=1244",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/cdn-cgi/rum?",
+    "post": "{\"memory\":{\"totalJSHeapSize\":56800000,\"usedJSHeapSize\":42100000,\"jsHeapSizeLimit\":2330000000},\"resources\":[],\"referrer\":\"\",\"eventType\":1,\"firstPaint\":664,\"firstContentfulPaint\":664,\"startTime\":1779475216263.5,\"versions\":{\"fl\":\"2024.11.0\",\"js\":\"2026.5.0\",\"timings\":2},\"pageloadId\":\"4c58a7df-e731-4c8c-932a-da6687e03c48\",\"location\":\"https://www.migros.com.tr/search\",\"nt\":\"navigate\",\"timingsV2\":{\"nextHopProtocol\":\"h2\",\"domainLookupStart\":3,\"domainLookupEnd\":3,\"connectStart\":3,\"connectEnd\":3,\"requestStart\":14.200000017881393,\"responseStart\":96.60000002384186,\"responseEnd\":98.80000001192093,\"domInteractive\":201.90000000596046,\"domComplete\":1266.800000011921,\"loadEventStart\":1266.800000011921,\"loadEventEnd\":1267.5,\"finalResponseHeadersStart\":96.60000002384186,\"firstInterimResponseStart\":0,\"transferSize\":2144,\"decodedBodySize\":5683},\"dt\":\"\",\"siteToken\":\"9341cbf513954834b406c4b23b064434\",\"st\":2}",
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/rest/screen-views",
+    "post": "{\"eventId\":\"1779475217576000001\",\"screenName\":\"404\",\"url\":\"https://www.migros.com.tr/404\"}",
+    "headers": {
+      "referer": "https://www.migros.com.tr/search?q=s%C3%BCt",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "search",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/pagead/managed/dict/m202605210101/gpt",
+    "post": null,
+    "headers": {
+      "referer": "",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/sepet",
+    "post": null,
+    "headers": {
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/cdn-cgi/rum?",
+    "post": "{\"memory\":{\"totalJSHeapSize\":56800000,\"usedJSHeapSize\":42100000,\"jsHeapSizeLimit\":2330000000},\"resources\":[],\"referrer\":\"\",\"eventType\":1,\"firstPaint\":664,\"firstContentfulPaint\":664,\"startTime\":1779475216263.5,\"versions\":{\"fl\":\"2024.11.0\",\"js\":\"2026.5.0\",\"timings\":2},\"pageloadId\":\"4c58a7df-e731-4c8c-932a-da6687e03c48\",\"location\":\"https://www.migros.com.tr/404\",\"nt\":\"navigate\",\"timingsV2\":{\"nextHopProtocol\":\"h2\",\"domainLookupStart\":3,\"domainLookupEnd\":3,\"connectStart\":3,\"connectEnd\":3,\"requestStart\":14.200000017881393,\"responseStart\":96.60000002384186,\"responseEnd\":98.80000001192093,\"domInteractive\":201.90000000596046,\"domComplete\":1266.800000011921,\"loadEventStart\":1266.800000011921,\"loadEventEnd\":1267.5,\"finalResponseHeadersStart\":96.60000002384186,\"firstInterimResponseStart\":0,\"transferSize\":2144,\"decodedBodySize\":5683},\"dt\":\"\",\"siteToken\":\"9341cbf513954834b406c4b23b064434\",\"st\":2}",
+    "headers": {
+      "referer": "https://www.migros.com.tr/404",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/cdn-cgi/rum?",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/404",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/env.js?1.0.0-f-atl-4277-193719d",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/tag/js/gpt.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/globals.js?1.0.0-f-atl-4277-193719d",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-JSJX7LKN.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/polyfills-OQ3ENV3N.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/scripts-YK7LJD5Q.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/efilli_20260115.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/user-bff/custom-texts?version=996",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://www.googletagmanager.com/gtm.js?id=GTM-NKFR7KK",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/user-bff/users",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": [
+      "stateInfo"
+    ],
+    "response_snippet": "{\"stateInfo\": {\"cartMode\": \"MAIN\", \"showEmailVerificationReminder\": false, \"showLocationPermissionRequest\": true, \"showAgreementAcceptReminder\": false}}"
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/delivery-bff/locations/info/current",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": [
+      "storeDeliveryModel"
+    ]
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/pagead/managed/js/gpt/m202605130201/pubads_impl.js?cb=95391993",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://www.googletagmanager.com/gtag/destination?id=AW-715674769&cx=c&gtm=4e65k1h1",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "POST",
+    "url": "https://pagead2.googlesyndication.com/ccm/collect?rcb=2&frm=0&ae=g&en=page_view&dl=https%3A%2F%2Fwww.migros.com.tr%2Fsepet&scrsrc=www.googletagmanager.com&rnd=546934170.1779475234&navt=n&npa=1&ep.ads_data_redaction=0&gtm=45He65k1h1v811483837za200zd811483837xea&gcs=G100&gcd=13p3p3p3p5l1&dma_cps=-&dma=0&tag_exp=0~115616985~115938466~115938469&apve=1&apvf=f&apvc=1&tft=1779475233788&tfd=456",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-RTBEPAKF.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FCRSKM4W.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FP5G7JFY.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FV6N2VRL.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-WO46X23Y.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-VYWKAR7V.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-SG37HR6C.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-CMLVP4O4.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-SC2FIAQK.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-NSUF4SVW.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-WQWSP4DV.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/rest/screen-views",
+    "post": "{\"eventId\":\"1779475234069000001\",\"screenName\":\"404\",\"url\":\"https://www.migros.com.tr/404\"}",
+    "headers": {
+      "referer": "https://www.migros.com.tr/sepet",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "POST",
+    "url": "https://pagead2.googlesyndication.com/ccm/collect?rcb=2&frm=0&ae=g&dl=https%3A%2F%2Fwww.migros.com.tr%2F404&scrsrc=www.googletagmanager.com&rnd=546934170.1779475234&navt=n&npa=1&_tu=CA&gtm=45be65k1h1v889281616z8811483837za20gzb811483837zd811483837xea&gcs=G100&gcd=13p3p3p3p5l1&dma_cps=-&dma=0&tag_exp=0~115616986~115938466~115938469~118128922&apve=1&apvf=f&apvc=0&tids=AW-715674769&tid=AW-715674769&tft=1779475234121&tfd=790",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/404",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/cdn-cgi/rum?",
+    "post": "{\"memory\":{\"totalJSHeapSize\":56800000,\"usedJSHeapSize\":42100000,\"jsHeapSizeLimit\":2330000000},\"resources\":[],\"referrer\":\"\",\"eventType\":1,\"firstPaint\":388,\"firstContentfulPaint\":388,\"startTime\":1779475233331.8,\"versions\":{\"fl\":\"2024.11.0\",\"js\":\"2026.5.0\",\"timings\":2},\"pageloadId\":\"f272225c-89de-45cb-aadf-af84e73a6e91\",\"location\":\"https://www.migros.com.tr/404\",\"nt\":\"navigate\",\"timingsV2\":{\"nextHopProtocol\":\"h2\",\"domainLookupStart\":1.4000000059604645,\"domainLookupEnd\":1.4000000059604645,\"connectStart\":1.4000000059604645,\"connectEnd\":1.4000000059604645,\"requestStart\":6.5999999940395355,\"responseStart\":97,\"responseEnd\":101,\"domInteractive\":184.59999999403954,\"domComplete\":791.2000000178814,\"loadEventStart\":791.2000000178814,\"loadEventEnd\":791.7000000178814,\"finalResponseHeadersStart\":97,\"firstInterimResponseStart\":0,\"transferSize\":2144,\"decodedBodySize\":5683},\"dt\":\"\",\"siteToken\":\"9341cbf513954834b406c4b23b064434\",\"st\":2}",
+    "headers": {
+      "referer": "https://www.migros.com.tr/404",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "cart",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/pagead/managed/dict/m202605210101/gpt",
+    "post": null,
+    "headers": {
+      "referer": "",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/odeme",
+    "post": null,
+    "headers": {
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/cdn-cgi/rum?",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/404",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/env.js?1.0.0-f-atl-4277-193719d",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/tag/js/gpt.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/globals.js?1.0.0-f-atl-4277-193719d",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-JSJX7LKN.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/polyfills-OQ3ENV3N.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/scripts-YK7LJD5Q.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/efilli_20260115.js",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/user-bff/custom-texts?version=996",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://www.googletagmanager.com/gtm.js?id=GTM-NKFR7KK",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/user-bff/users",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": [
+      "stateInfo"
+    ],
+    "response_snippet": "{\"stateInfo\": {\"cartMode\": \"MAIN\", \"showEmailVerificationReminder\": false, \"showLocationPermissionRequest\": true, \"showAgreementAcceptReminder\": false}}"
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://www.migros.com.tr/rest/delivery-bff/locations/info/current",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "response_keys": [
+      "storeDeliveryModel"
+    ]
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/pagead/managed/js/gpt/m202605130201/pubads_impl.js?cb=95391993",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://www.googletagmanager.com/gtag/destination?id=AW-715674769&cx=c&gtm=4e65k1h1",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "POST",
+    "url": "https://pagead2.googlesyndication.com/ccm/collect?rcb=9&frm=0&ae=g&en=page_view&dl=https%3A%2F%2Fwww.migros.com.tr%2Fodeme&scrsrc=www.googletagmanager.com&rnd=813853541.1779475240&navt=n&npa=1&ep.ads_data_redaction=0&gtm=45He65k1h1v811483837za200zd811483837xea&gcs=G100&gcd=13p3p3p3p5l1&dma_cps=-&dma=0&tag_exp=0~115616986~115938466~115938469~118694324&apve=1&apvf=f&apvc=1&tft=1779475239792&tfd=3046",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "POST",
+    "url": "https://pagead2.googlesyndication.com/ccm/collect?rcb=5&frm=0&ae=g&dl=https%3A%2F%2Fwww.migros.com.tr%2Fodeme&scrsrc=www.googletagmanager.com&rnd=813853541.1779475240&navt=n&npa=1&_tu=CA&gtm=45be65k1h1v889281616z8811483837za20gzb811483837zd811483837xea&gcs=G100&gcd=13p3p3p3p5l1&dma_cps=-&dma=0&tag_exp=0~115938466~115938469~118689381&apve=1&apvf=f&apvc=0&tids=AW-715674769&tid=AW-715674769&tft=1779475239858&tfd=3112",
+    "post": null,
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/cdn-cgi/rum?",
+    "post": "{\"memory\":{\"totalJSHeapSize\":56800000,\"usedJSHeapSize\":42100000,\"jsHeapSizeLimit\":2330000000},\"resources\":[],\"referrer\":\"\",\"eventType\":1,\"firstPaint\":2972,\"firstContentfulPaint\":2972,\"startTime\":1779475236746.3,\"versions\":{\"fl\":\"2024.11.0\",\"js\":\"2026.5.0\",\"timings\":2},\"pageloadId\":\"5dda7044-67fc-4c54-93fa-3cab61419b2a\",\"location\":\"https://www.migros.com.tr/odeme\",\"nt\":\"navigate\",\"timingsV2\":{\"nextHopProtocol\":\"h2\",\"domainLookupStart\":0.9000000059604645,\"domainLookupEnd\":0.9000000059604645,\"connectStart\":0.9000000059604645,\"connectEnd\":0.9000000059604645,\"requestStart\":2629.4000000059605,\"responseStart\":2710,\"responseEnd\":2713.5999999940395,\"domInteractive\":2755.9000000059605,\"domComplete\":3115.7000000178814,\"loadEventStart\":3115.7000000178814,\"loadEventEnd\":3116.5,\"finalResponseHeadersStart\":2710,\"firstInterimResponseStart\":0,\"transferSize\":2144,\"decodedBodySize\":5683},\"dt\":\"\",\"siteToken\":\"9341cbf513954834b406c4b23b064434\",\"st\":2}",
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://pagead2.googlesyndication.com/pagead/managed/dict/m202605210101/gpt",
+    "post": null,
+    "headers": {
+      "referer": "",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-RTBEPAKF.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FCRSKM4W.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FP5G7JFY.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-UMASL5JU.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-FV6N2VRL.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-WO46X23Y.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-VYWKAR7V.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-SG37HR6C.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-CMLVP4O4.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-PG5BUDAJ.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-SC2FIAQK.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-NSUF4SVW.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "GET",
+    "url": "https://assets.migrosone.com/sanalmarket-pweb-app/chunk-WQWSP4DV.js",
+    "post": null,
+    "headers": {
+      "origin": "https://www.migros.com.tr",
+      "referer": "https://assets.migrosone.com/sanalmarket-pweb-app/main-YMWKFJ3G.js",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  },
+  {
+    "phase": "delivery",
+    "method": "POST",
+    "url": "https://www.migros.com.tr/rest/screen-views",
+    "post": "{\"eventId\":\"1779475244404000001\",\"screenName\":\"404\",\"url\":\"https://www.migros.com.tr/404\"}",
+    "headers": {
+      "referer": "https://www.migros.com.tr/odeme",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "content-type": "application/json"
+    }
+  }
+]
