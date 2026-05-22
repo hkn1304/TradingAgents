@@ -2,6 +2,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
     get_conclusion_template,
+    get_horizon_instruction,
     get_indicators,
     get_language_instruction,
     get_stock_data,
@@ -9,7 +10,7 @@ from tradingagents.agents.utils.agent_utils import (
 from tradingagents.dataflows.config import get_config
 
 
-def create_market_analyst(llm, forecast_horizon: str = "1week"):
+def create_market_analyst(llm):
 
     def market_analyst_node(state):
         current_date = state["trade_date"]
@@ -23,34 +24,35 @@ def create_market_analyst(llm, forecast_horizon: str = "1week"):
         system_message = (
             "Your task is to immediately perform a complete technical analysis of the instrument "
             "specified in the context as of the current date. "
-            "Do NOT ask any clarifying questions — begin with tool calls right away. "
+            "Do NOT ask any clarifying questions -- begin with tool calls right away. "
             "Step 1: call get_stock_data to fetch recent price history. "
             "Step 2: call get_indicators for up to 8 complementary indicators chosen from the list below. "
             "Step 3: write your full analysis report.\n\n"
             "Available indicators:\n"
             "Moving Averages:\n"
-            "- close_50_sma: 50-day SMA — medium-term trend and dynamic support/resistance.\n"
-            "- close_200_sma: 200-day SMA — long-term trend benchmark; golden/death cross signals.\n"
-            "- close_10_ema: 10-day EMA — fast short-term momentum; sensitive to recent price action.\n"
+            "- close_50_sma: 50-day SMA -- medium-term trend and dynamic support/resistance.\n"
+            "- close_200_sma: 200-day SMA -- long-term trend benchmark; golden/death cross signals.\n"
+            "- close_10_ema: 10-day EMA -- fast short-term momentum; sensitive to recent price action.\n"
             "MACD:\n"
-            "- macd: MACD line — momentum via EMA differences; look for crossovers.\n"
-            "- macds: MACD Signal — EMA of MACD; crossovers trigger entries.\n"
-            "- macdh: MACD Histogram — gap between MACD and signal; spot divergence.\n"
+            "- macd: MACD line -- momentum via EMA differences; look for crossovers.\n"
+            "- macds: MACD Signal -- EMA of MACD; crossovers trigger entries.\n"
+            "- macdh: MACD Histogram -- gap between MACD and signal; spot divergence.\n"
             "Momentum:\n"
-            "- rsi: RSI — overbought (>70) / oversold (<30); divergence signals reversals.\n"
+            "- rsi: RSI -- overbought (>70) / oversold (<30); divergence signals reversals.\n"
             "Volatility:\n"
-            "- boll: Bollinger Middle — 20-day SMA baseline.\n"
-            "- boll_ub: Bollinger Upper — potential overbought / breakout zone.\n"
-            "- boll_lb: Bollinger Lower — potential oversold zone.\n"
-            "- atr: ATR — volatility measure for stop-loss sizing.\n"
+            "- boll: Bollinger Middle -- 20-day SMA baseline.\n"
+            "- boll_ub: Bollinger Upper -- potential overbought / breakout zone.\n"
+            "- boll_lb: Bollinger Lower -- potential oversold zone.\n"
+            "- atr: ATR -- volatility measure for stop-loss sizing.\n"
             "Volume:\n"
-            "- vwma: VWMA — volume-weighted moving average; confirms trend strength.\n\n"
+            "- vwma: VWMA -- volume-weighted moving average; confirms trend strength.\n\n"
             "Select indicators that complement each other (avoid redundancy). "
             "Use the exact indicator names above in tool calls. "
             "Write a detailed nuanced technical analysis. Include specific price levels, "
             "trend direction, momentum strength, support/resistance zones, and actionable entry/exit signals. "
             "Append a Markdown table summarising key indicator readings."
-            + get_conclusion_template(forecast_horizon)
+            + get_horizon_instruction()
+            + get_conclusion_template()
             + get_language_instruction()
         )
 

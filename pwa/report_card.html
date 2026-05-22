@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Analysis Card</title>
+<style>
+:root{
+  --bg:#0f172a;--surface:#1e293b;--border:#334155;
+  --text:#f1f5f9;--muted:#94a3b8;--dim:#64748b;
+  --bull:#22c55e;--bear:#ef4444;--neutral:#f59e0b;
+  --blue:#3b82f6;--purple:#a855f7;
+  --card-r:14px;
+  font-size:15px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:12px}
+.page{max-width:480px;margin:0 auto}
+
+/* ── Header ── */
+.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.ticker{font-size:22px;font-weight:800;letter-spacing:.5px}
+.asset-name{font-size:11px;color:var(--muted);margin-top:2px}
+.date-badge{font-size:11px;color:var(--dim);background:var(--surface);padding:4px 9px;border-radius:20px;border:1px solid var(--border)}
+
+/* ── Signal hero ── */
+.signal-hero{background:var(--surface);border-radius:var(--card-r);padding:16px;margin-bottom:12px;border:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.signal-badge{font-size:22px;font-weight:900;padding:10px 18px;border-radius:10px;letter-spacing:1px;min-width:90px;text-align:center}
+.signal-badge.bull{background:#14532d;color:var(--bull);border:1.5px solid var(--bull)}
+.signal-badge.bear{background:#450a0a;color:var(--bear);border:1.5px solid var(--bear)}
+.signal-badge.neutral{background:#422006;color:var(--neutral);border:1.5px solid var(--neutral)}
+.signal-meta{flex:1}
+.signal-conf{font-size:12px;color:var(--muted);margin-top:3px}
+.signal-horizon{font-size:12px;color:var(--blue);margin-top:4px;font-style:italic}
+
+/* ── Horizon tabs ── */
+.tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.tab{flex:0 0 auto;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:var(--surface);transition:.15s}
+.tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* ── Outlook card ── */
+.outlook-card{background:var(--surface);border-radius:var(--card-r);padding:14px;margin-bottom:12px;border:1px solid var(--border)}
+.outlook-card .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px}
+.outlook-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.direction-chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px}
+.direction-chip.bullish{background:#14532d;color:var(--bull)}
+.direction-chip.bearish{background:#450a0a;color:var(--bear)}
+.direction-chip.neutral{background:#422006;color:var(--neutral)}
+.price-range{font-size:14px;font-weight:700;color:var(--text)}
+.price-range span{color:var(--muted);font-size:12px;font-weight:400}
+.outlook-summary{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:6px}
+.key-event{font-size:11px;color:var(--blue);background:#1e3a5f33;padding:5px 9px;border-radius:7px;border-left:2px solid var(--blue)}
+
+/* ── Price level bar ── */
+.price-section{background:var(--surface);border-radius:var(--card-r);padding:14px;margin-bottom:12px;border:1px solid var(--border)}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:10px}
+.price-bar-wrap{position:relative;height:8px;background:var(--border);border-radius:4px;margin:16px 0 24px}
+.price-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--bear),var(--neutral),var(--bull))}
+.price-dot{position:absolute;width:14px;height:14px;border-radius:50%;border:2.5px solid var(--bg);top:-3px;transform:translateX(-50%)}
+.price-dot.current{background:var(--blue)}
+.price-dot.entry{background:var(--bull)}
+.price-dot.stop{background:var(--bear)}
+.price-dot.target{background:var(--neutral)}
+.price-label{position:absolute;font-size:10px;top:14px;transform:translateX(-50%);white-space:nowrap;color:var(--muted);font-weight:600}
+.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.price-cell{background:var(--bg);border-radius:9px;padding:9px 10px;border:1px solid var(--border)}
+.price-cell .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.price-cell .val{font-size:15px;font-weight:700;margin-top:2px}
+.price-cell .val.bull{color:var(--bull)}
+.price-cell .val.bear{color:var(--bear)}
+.price-cell .val.blue{color:var(--blue)}
+
+/* ── Indicator table ── */
+.indicators-section{background:var(--surface);border-radius:var(--card-r);padding:14px;margin-bottom:12px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;color:var(--muted);font-weight:600;padding:5px 6px;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+td{padding:7px 6px;border-bottom:1px solid #1e293b;color:var(--text)}
+tr:last-child td{border-bottom:none}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.tag.bull{background:#14532d;color:var(--bull)}
+.tag.bear{background:#450a0a;color:var(--bear)}
+.tag.warn{background:#422006;color:var(--neutral)}
+.tag.neutral{background:#1e293b;color:var(--muted)}
+.bar-wrap{width:80px;height:6px;background:var(--border);border-radius:3px;display:inline-block;vertical-align:middle;margin-right:5px}
+.bar-inner{height:100%;border-radius:3px}
+
+/* ── Analyst grid ── */
+.analyst-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.analyst-card{background:var(--surface);border-radius:var(--card-r);padding:11px 12px;border:1px solid var(--border)}
+.analyst-card .name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:4px}
+.analyst-card .sig{font-size:13px;font-weight:800;margin-bottom:5px}
+.analyst-card .sig.bull{color:var(--bull)}
+.analyst-card .sig.bear{color:var(--bear)}
+.analyst-card .sig.neutral{color:var(--neutral)}
+.analyst-card .sig.blue{color:var(--blue)}
+.score-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:7px}
+.score-fill{height:100%;border-radius:2px;background:var(--blue)}
+.analyst-card ul{padding-left:11px;color:var(--muted);font-size:11px;line-height:1.6}
+
+/* ── Debate verdict ── */
+.debate-card{background:var(--surface);border-radius:var(--card-r);padding:14px;margin-bottom:12px;border:1px solid var(--border)}
+.verdict-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.verdict-chip{font-size:13px;font-weight:800;padding:5px 14px;border-radius:20px;background:#1e3a5f;color:var(--blue);border:1.5px solid var(--blue)}
+.score-row{display:flex;gap:12px;margin-bottom:10px;font-size:12px}
+.score-row .s{padding:4px 10px;border-radius:8px;font-weight:700}
+.score-row .bull{background:#14532d;color:var(--bull)}
+.score-row .bear{background:#450a0a;color:var(--bear)}
+.key-points{padding-left:14px;color:var(--text);font-size:12.5px;line-height:1.7}
+.stop-thesis{margin-top:8px;font-size:11px;color:var(--bear);background:#450a0a33;padding:6px 9px;border-radius:7px;border-left:2px solid var(--bear)}
+
+/* ── Risk + risks ── */
+.risk-card{background:var(--surface);border-radius:var(--card-r);padding:14px;margin-bottom:12px;border:1px solid var(--border)}
+.risk-gauge-wrap{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.risk-score-num{font-size:28px;font-weight:900;width:46px;text-align:center}
+.gauge-col{flex:1}
+.gauge-track{height:8px;background:linear-gradient(90deg,var(--bull),var(--neutral),var(--bear));border-radius:4px;position:relative;margin-bottom:4px}
+.gauge-thumb{position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:-3px;transform:translateX(-50%);box-shadow:0 0 0 2px var(--bg)}
+.gauge-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+.risks-list{padding-left:14px;font-size:12.5px;line-height:1.7;color:var(--muted)}
+.risks-list li{margin-bottom:3px}
+.catalysts{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px}
+.catalyst-tag{font-size:11px;padding:3px 8px;border-radius:10px;background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+
+/* ── Trade plan ── */
+.trade-card{background:#0f3460;border-radius:var(--card-r);padding:16px;margin-bottom:12px;border:1px solid var(--blue)}
+.trade-action{font-size:20px;font-weight:900;color:var(--blue);margin-bottom:4px}
+.trade-note{font-size:12px;color:var(--muted);margin-bottom:12px;font-style:italic}
+.trade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.trade-cell{background:#0b2447;border-radius:9px;padding:9px 10px;text-align:center}
+.trade-cell .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.trade-cell .val{font-size:14px;font-weight:800;margin-top:3px}
+.trade-cell .val.green{color:var(--bull)}
+.trade-cell .val.red{color:var(--bear)}
+.trade-cell .val.gold{color:var(--neutral)}
+
+.spin{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="page" id="app">
+  <div class="spin">Loading analysis…</div>
+</div>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const bias2class = b => ({bullish:'bull',bearish:'bear',neutral:'neutral',mixed:'warn'}[b]||'neutral');
+const sig2class  = s => {
+  const u = (s||'').toUpperCase();
+  if(['BUY','OVERWEIGHT'].includes(u)) return 'bull';
+  if(['SELL','UNDERWEIGHT'].includes(u)) return 'bear';
+  if(['HOLD'].includes(u)) return 'neutral';
+  return 'blue';
+};
+const fmt = v => v != null ? (typeof v==='number'? ('$'+v.toFixed(2)) : v) : '—';
+
+// ── Fetch data ────────────────────────────────────────────────────────────────
+async function loadSummary(sessionId, horizon) {
+  const base = window.API_BASE || '';
+  const r = await fetch(`${base}/api/sessions/${sessionId}/summary?horizon=${horizon}`);
+  if (!r.ok) throw new Error(await r.text());
+  const {summary} = await r.json();
+  return summary;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(data, activeHorizon) {
+  const {meta,signal,outlooks,price_levels:pl,indicators:ind,analysts,debate,risk,scenarios,final} = data;
+  const horizons = [
+    {k:'today',    label:'Today'},
+    {k:'tomorrow', label:'Tomorrow'},
+    {k:'week',     label:'This Week'},
+    {k:'month',    label:'This Month'},
+  ];
+  const ol = (outlooks||{})[activeHorizon] || {};
+
+  // Price bar calculation
+  const allPrices = [pl?.stop_loss, pl?.current, pl?.entry_zone?.[0], pl?.entry_zone?.[1], ...(pl?.targets||[]).map(t=>t.price)].filter(Boolean);
+  const pMin = Math.min(...allPrices)*0.99;
+  const pMax = Math.max(...allPrices)*1.01;
+  const pct = v => v != null ? Math.max(0,Math.min(100,((v-pMin)/(pMax-pMin))*100)).toFixed(1)+'%' : '50%';
+
+  // Indicator table rows
+  const indRows = [
+    {name:'RSI(14)', val: ind?.rsi?.value!=null?(ind.rsi.value.toFixed(1)):'—', status: ind?.rsi?.status, bar: ind?.rsi?.value, barMax:100, barColor: ind?.rsi?.value>70?'var(--bear)':ind?.rsi?.value<30?'var(--bull)':'var(--blue)'},
+    {name:'MACD',    val: ind?.macd?.value!=null?(ind.macd.value.toFixed(2)):'—', status: ind?.macd?.status, bar:null},
+    {name:'Trend',   val: ind?.trend?.status||'—', status: ind?.trend?.status, bar:null},
+    {name:'50d MA',  val: '—', status: ind?.ma50_vs_price==='below'?'bullish':'bearish', bar:null, note: ind?.ma50_vs_price ? `Price ${ind.ma50_vs_price==='below'?'ABOVE':'BELOW'} 50d MA` : ''},
+    {name:'200d MA', val: '—', status: ind?.ma200_vs_price==='below'?'bullish':'bearish', bar:null, note: ind?.ma200_vs_price ? `Price ${ind.ma200_vs_price==='below'?'ABOVE':'BELOW'} 200d MA` : ''},
+    {name:'ATR',     val: ind?.volatility?.atr!=null?('$'+ind.volatility.atr.toFixed(2)):'—', status: ({low:'bullish',normal:'neutral',high:'warn',extreme:'bearish'}[ind?.volatility?.status])||'neutral', bar:null, note: ind?.volatility?.status||''},
+  ];
+
+  const statusTag = (s,label) => {
+    const cls = ({bullish:'bull',bearish:'bear',neutral:'neutral',near_overbought:'warn',overbought:'bear',oversold:'bull',uptrend:'bull',downtrend:'bear',sideways:'neutral'}[s])||'neutral';
+    return `<span class="tag ${cls}">${label||s||'—'}</span>`;
+  };
+
+  $('app').innerHTML = `
+    <!-- Header -->
+    <div class="hdr">
+      <div>
+        <div class="ticker">${meta?.ticker||'—'}</div>
+        <div class="asset-name">${meta?.asset||''}</div>
+      </div>
+      <div class="date-badge">${meta?.date||''}</div>
+    </div>
+
+    <!-- Signal hero -->
+    <div class="signal-hero">
+      <div class="signal-badge ${bias2class(signal?.bias)}">${signal?.action||'—'}</div>
+      <div class="signal-meta">
+        <div style="font-size:13px;font-weight:700">${signal?.bias?.toUpperCase()||''} · ${signal?.confidence?.toUpperCase()||''} confidence</div>
+        <div class="signal-conf">${signal?.horizon_note||''}</div>
+        <div class="signal-horizon">Horizon: ${horizons.find(h=>h.k===activeHorizon)?.label||activeHorizon}</div>
+      </div>
+    </div>
+
+    <!-- Horizon tabs -->
+    <div class="tabs" id="tabs">
+      ${horizons.map(h=>`<div class="tab${h.k===activeHorizon?' active':''}" onclick="switchHorizon('${h.k}')">${h.label}</div>`).join('')}
+    </div>
+
+    <!-- Outlook card -->
+    <div class="outlook-card">
+      <div class="label">Outlook — ${horizons.find(h=>h.k===activeHorizon)?.label||activeHorizon}</div>
+      <div class="outlook-row">
+        <div class="direction-chip ${ol.direction||'neutral'}">${(ol.direction||'neutral').toUpperCase()}</div>
+        <div class="price-range">${ol.range_low!=null?`$${ol.range_low} – $${ol.range_high}`:'—'} <span>expected range</span></div>
+      </div>
+      <div class="outlook-summary">${ol.summary||'No outlook available for this horizon.'}</div>
+      ${ol.key_event ? `<div class="key-event">⚡ ${ol.key_event}</div>` : ''}
+    </div>
+
+    <!-- Price levels -->
+    <div class="price-section">
+      <div class="section-title">Price Levels</div>
+      <div class="price-bar-wrap">
+        <div class="price-bar-fill" style="width:100%"></div>
+        ${pl?.stop_loss   !=null?`<div class="price-dot stop"   style="left:${pct(pl.stop_loss)}"  title="Stop"><div class="price-label" style="left:${pct(pl.stop_loss)}">Stop<br>${fmt(pl.stop_loss)}</div></div>`:''}
+        ${pl?.current     !=null?`<div class="price-dot current" style="left:${pct(pl.current)}"   title="Now"><div class="price-label" style="left:${pct(pl.current)}">Now<br>${fmt(pl.current)}</div></div>`:''}
+        ${pl?.entry_zone?.[0]!=null?`<div class="price-dot entry"   style="left:${pct(pl.entry_zone[0])}" title="Entry"><div class="price-label" style="left:${pct(pl.entry_zone[0])}">Entry<br>${fmt(pl.entry_zone[0])}</div></div>`:''}
+        ${(pl?.targets||[]).map((t,i)=>`<div class="price-dot target" style="left:${pct(t.price)}" title="${t.label}"><div class="price-label" style="left:${pct(t.price)}">T${i+1}<br>${fmt(t.price)}</div></div>`).join('')}
+      </div>
+      <div class="price-grid">
+        <div class="price-cell"><div class="lbl">Current</div><div class="val blue">${fmt(pl?.current)}</div></div>
+        <div class="price-cell"><div class="lbl">Entry Zone</div><div class="val bull">${pl?.entry_zone?.[0]!=null?`$${pl.entry_zone[0]} – $${pl.entry_zone[1]}`:'—'}</div></div>
+        <div class="price-cell"><div class="lbl">Stop Loss</div><div class="val bear">${fmt(pl?.stop_loss)}</div></div>
+        <div class="price-cell"><div class="lbl">1st Target</div><div class="val">${pl?.targets?.[0]?fmt(pl.targets[0].price):'—'}</div></div>
+      </div>
+    </div>
+
+    <!-- Indicator table -->
+    <div class="indicators-section">
+      <div class="section-title">Technical Indicators</div>
+      <table>
+        <thead><tr><th>Indicator</th><th>Value</th><th>Signal</th></tr></thead>
+        <tbody>
+          ${indRows.map(r=>`
+            <tr>
+              <td>${r.name}</td>
+              <td>${r.bar!=null?`<span class="bar-wrap"><span class="bar-inner" style="width:${(r.val/r.barMax*100).toFixed(0)}%;background:${r.barColor}"></span></span>`:''}<b>${r.note||r.val}</b></td>
+              <td>${statusTag(r.status)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Analyst grid -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px">Analyst Consensus</div>
+    <div class="analyst-grid">
+      ${['market','news','social','fundamentals'].map(key=>{
+        const a = (analysts||{})[key]||{};
+        const sc = sig2class(a.signal);
+        return `<div class="analyst-card">
+          <div class="name">${key.charAt(0).toUpperCase()+key.slice(1)}</div>
+          <div class="sig ${sc}">${a.signal||'N/A'}</div>
+          <div class="score-bar"><div class="score-fill" style="width:${(a.score||5)*10}%"></div></div>
+          <ul>${(a.highlights||[]).map(h=>`<li>${h}</li>`).join('')}</ul>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- News/sentiment summary table -->
+    <div class="indicators-section">
+      <div class="section-title">News &amp; Sentiment Signals</div>
+      <table>
+        <thead><tr><th>Factor</th><th>Short-term</th><th>Long-term</th></tr></thead>
+        <tbody>
+          ${['market','news','social','fundamentals'].map(key=>{
+            const a=(analysts||{})[key]||{};
+            const bcls=bias2class(a.bias);
+            return `<tr>
+              <td style="font-weight:600">${key.charAt(0).toUpperCase()+key.slice(1)}</td>
+              <td style="font-size:11px;color:var(--muted)">${a.short_term||'—'}</td>
+              <td style="font-size:11px;color:var(--muted)">${a.long_term||'—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bull/Bear debate -->
+    <div class="debate-card">
+      <div class="section-title">Research Debate</div>
+      <div class="verdict-row">
+        <div class="verdict-chip">${debate?.verdict||'—'}</div>
+        <div style="font-size:13px;color:var(--muted)">${debate?.consensus||''}</div>
+      </div>
+      <div class="score-row">
+        <span class="s bull">🐂 Bull ${debate?.bull_score||'—'}/10</span>
+        <span class="s bear">🐻 Bear ${debate?.bear_score||'—'}/10</span>
+      </div>
+      <ul class="key-points">${(debate?.key_points||[]).map(p=>`<li>${p}</li>`).join('')}</ul>
+      ${debate?.stop_thesis?`<div class="stop-thesis">⛔ Invalidation: ${debate.stop_thesis}</div>`:''}
+    </div>
+
+    <!-- Risk -->
+    <div class="risk-card">
+      <div class="section-title">Risk Assessment</div>
+      <div class="risk-gauge-wrap">
+        <div class="risk-score-num" style="color:${risk?.score>6?'var(--bear)':risk?.score>4?'var(--neutral)':'var(--bull)'}">${risk?.score??'—'}</div>
+        <div class="gauge-col">
+          <div class="gauge-track">
+            <div class="gauge-thumb" style="left:${risk?.score?((risk.score-1)/9*100).toFixed(0)+'%':'50%'}"></div>
+          </div>
+          <div class="gauge-labels"><span>Low</span><span>High</span></div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">${risk?.level||''}</div>
+      </div>
+      <ul class="risks-list">${(risk?.key_risks||[]).map(r=>`<li>${r}</li>`).join('')}</ul>
+      <div class="catalysts">${(risk?.catalysts_to_watch||[]).map(c=>`<span class="catalyst-tag">📌 ${c}</span>`).join('')}</div>
+    </div>
+
+    <!-- Scenarios -->
+    <div class="indicators-section">
+      <div class="section-title">Key Scenarios</div>
+      <table>
+        <thead><tr><th>Scenario</th><th>Trigger</th><th>Target</th><th>Prob.</th></tr></thead>
+        <tbody>
+          ${(data.scenarios||[]).map(s=>{
+            const icon = s.direction==='up'?'🐂':s.direction==='down'?'🐻':'➡️';
+            const cls  = s.direction==='up'?'bull':s.direction==='down'?'bear':'neutral';
+            return `<tr>
+              <td><span class="tag ${cls}">${icon} ${s.label||s.direction}</span></td>
+              <td style="font-size:11px;color:var(--muted)">${s.trigger||'—'}</td>
+              <td style="font-weight:700;color:${s.direction==='up'?'var(--bull)':s.direction==='down'?'var(--bear)':'var(--muted)'}">${s.price_target!=null?('$'+s.price_target):'—'}</td>
+              <td><span class="tag ${s.probability==='high'?(s.direction==='up'?'bull':'bear'):s.probability==='medium'?'warn':'neutral'}">${s.probability||'—'}</span></td>
+            </tr>
+            <tr><td colspan="4" style="font-size:11px;color:var(--dim);padding-bottom:6px">${s.summary||''}</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Trade plan -->
+    <div class="trade-card">
+      <div class="trade-action">${final?.action||'—'}</div>
+      <div class="trade-note">${final?.note||''}</div>
+      <div class="trade-grid">
+        <div class="trade-cell">
+          <div class="lbl">Entry</div>
+          <div class="val green">${fmt(final?.entry)}</div>
+        </div>
+        <div class="trade-cell">
+          <div class="lbl">Stop Loss</div>
+          <div class="val red">${fmt(final?.stop_loss)}</div>
+        </div>
+        <div class="trade-cell">
+          <div class="lbl">Size</div>
+          <div class="val gold">${final?.position_pct!=null?(final.position_pct+'%'):'—'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let _sessionId, _horizon = 'week', _cache = {};
+
+async function switchHorizon(h) {
+  _horizon = h;
+  await refresh();
+}
+
+async function refresh() {
+  if (_cache[_horizon]) { render(_cache[_horizon], _horizon); return; }
+  try {
+    const data = await loadSummary(_sessionId, _horizon);
+    _cache[_horizon] = data;
+    render(data, _horizon);
+  } catch(e) {
+    $('app').innerHTML = `<div class="spin" style="color:var(--bear)">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(location.search);
+  _sessionId = params.get('session') || window.SESSION_ID;
+  _horizon   = params.get('horizon') || 'week';
+
+  if (!_sessionId) {
+    // Demo mode: render with sample data from claudeFinance folder
+    render(DEMO_DATA, _horizon);
+    return;
+  }
+  await refresh();
+});
+
+// ── Demo data (XAGUSD from claudeFinance files) ───────────────────────────────
+const DEMO_DATA = {
+  meta:{ ticker:'XAGUSD', asset:'Silver spot price (XAG/USD)', date:'2026-05-15', horizon:'week' },
+  signal:{ action:'BUY', bias:'bullish', confidence:'medium-high', horizon_note:'Structural bull case intact; near-term pullback expected before next leg up.' },
+  outlooks:{
+    today:    { direction:'neutral',  range_low:83.0, range_high:86.0, summary:'Consolidation near $84–86 likely; watch for profit-taking from May 13 peak.', key_event:'Monitor equity market open — risk-on/off sets metal tone.' },
+    tomorrow: { direction:'bearish',  range_low:81.0, range_high:85.0, summary:'Mild pullback toward $82–83 support zone expected; healthy correction.', key_event:'Any Fed speaker commentary could shift bias.' },
+    week:     { direction:'bullish',  range_low:80.0, range_high:89.0, summary:'Pullback to $82–84 zone, then resumption of uptrend toward $88–89 resistance.', key_event:'June PCE preview data + DXY movements critical.' },
+    month:    { direction:'bullish',  range_low:78.0, range_high:95.0, summary:'Target $90–95 if USD weakens and Fed signals rate cuts; support at $78–80.', key_event:'FOMC tone and June 12-14 PCE print.' },
+  },
+  price_levels:{
+    current:84.75, entry_zone:[82.0,84.0], stop_loss:80.0,
+    targets:[
+      { price:88.89, label:'short-term', timeframe:'1 week' },
+      { price:92.0,  label:'medium-term', timeframe:'1 month' },
+      { price:100.0, label:'long-term', timeframe:'6 months' },
+    ],
+  },
+  indicators:{
+    rsi:{ value:68.91, status:'near_overbought' },
+    macd:{ value:2.11, status:'bullish' },
+    trend:{ status:'uptrend' },
+    volatility:{ status:'high', atr:3.28 },
+    ma50_vs_price:'below', ma200_vs_price:'below',
+  },
+  analysts:{
+    market:     { signal:'BUY',       bias:'bullish', score:8, highlights:['24.2% rally Apr 29–May 13, above 50d/200d SMA','MACD +2.11, highest reading; strong momentum','RSI 68.91 near overbought; pullback likely'], short_term:'Pullback to $82–84 likely; healthy zone for longs.', long_term:'Target $90–92 on sustained USD weakness.' },
+    news:       { signal:'NEUTRAL',   bias:'bearish', score:4, highlights:['AI/equity risk-on redirecting capital from metals','No Fed rate-cut signals; higher-for-longer headwind','USD strength likely; structural XAGUSD pressure'], short_term:'Downward pressure; $82–85 consolidation likely.', long_term:'Bullish on Fed pivot or inflation surprise.' },
+    social:     { signal:'NEUTRAL',   bias:'neutral', score:5, highlights:['No real-time silver sentiment data available','Solar/EV industrial demand provides structural floor','Background geopolitical risk = soft safe-haven bid'], short_term:'Range-bound; monitor $30–31 pivot.', long_term:'Slightly bullish on industrial fundamentals.' },
+    fundamentals:{ signal:'OVERWEIGHT',bias:'bullish',score:8, highlights:['60% industrial demand: solar/EV/BESS + monetary hedge','Multi-year Comex drawdown; Mexico/Peru supply constrained','52-wk high $121.30; structural uptrend intact'], short_term:'Overbought near-term; prefer pullback entry $78–82.', long_term:'Target $100–115 over 6–12 months on Fed easing.' },
+  },
+  debate:{ verdict:'OVERWEIGHT', consensus:'Build staged long position', bull_score:7, bear_score:4, key_points:['Industrial supply/demand favors longs over 6–12 months','24% two-week rally signals real institutional positioning','Staged entry: 40% at $84 → 35% at $78–82 → 25% at $70–74'], stop_thesis:'Weekly close below $72 invalidates bull structure.' },
+  risk:{ score:6, level:'medium-high', key_risks:['Fed hawkish surprise reverses rally','USD strength (DXY above 108) caps upside','China PMI 49.4 signals slowing industrial demand'], catalysts_to_watch:['June 12-14 PCE print','July FOMC tone','DXY index movement'] },
+  scenarios:[
+    { label:'Bull Case',  trigger:'Fed signals rate cuts OR CPI misses sharply', price_target:92,  direction:'up',      probability:'medium', summary:'If Fed turns dovish or inflation falls, silver breaks above $89 toward $92–95.' },
+    { label:'Base Case',  trigger:'Consolidation then gradual grind higher',       price_target:87,  direction:'sideways',probability:'high',   summary:'Silver pulls back to $82–84, forms base, then grinds back toward $87–89 by week end.' },
+    { label:'Bear Case',  trigger:'Fed hawkish surprise OR USD surges (DXY > 108)',price_target:77,  direction:'down',    probability:'low',   summary:'Hawkish Fed or strong USD breaks $80 support, revisiting 50d SMA at $77.' },
+  ],
+  final:{ action:'BUY', entry:84.0, stop_loss:72.0, position_pct:5.2, note:'40% initial tranche at $84; scale in on pullbacks to $78–82.' },
+};
+</script>
+</body>
+</html>

@@ -25,14 +25,14 @@ MODEL_OPTIONS: ProviderModeOptions = {
     },
     "anthropic": {
         "quick": [
-            ("Claude Haiku 4.5 - Fast, near-instant responses", "claude-haiku-4-5-20251001"),
-            ("Claude Sonnet 4.6 - Best speed and intelligence balance", "claude-sonnet-4-6"),
-            ("Claude Opus 4.7 - Most intelligent, latest flagship", "claude-opus-4-7"),
+            ("Claude Haiku 4.5 - Fastest, cheapest (~$0.25/1M)", "claude-haiku-4-5-20251001"),
+            ("Claude Sonnet 4.6 - Balanced speed & quality", "claude-sonnet-4-6"),
+            ("Claude Opus 4.7 - Most capable (expensive)", "claude-opus-4-7"),
         ],
         "deep": [
-            ("Claude Opus 4.7 - Most intelligent, latest flagship", "claude-opus-4-7"),
-            ("Claude Sonnet 4.6 - Best speed and intelligence balance", "claude-sonnet-4-6"),
-            ("Claude Haiku 4.5 - Fast, near-instant responses", "claude-haiku-4-5-20251001"),
+            ("Claude Haiku 4.5 - Dev/budget (~$1.25/1M out)", "claude-haiku-4-5-20251001"),
+            ("Claude Sonnet 4.6 - Balanced speed & quality", "claude-sonnet-4-6"),
+            ("Claude Opus 4.7 - Best reasoning (expensive)", "claude-opus-4-7"),
         ],
     },
     "google": {
@@ -64,24 +64,23 @@ MODEL_OPTIONS: ProviderModeOptions = {
     },
     "deepseek": {
         "quick": [
-            ("DeepSeek V4 Flash - Latest V4 fast model", "deepseek-v4-flash"),
-            ("DeepSeek V3.2", "deepseek-chat"),
+            ("DeepSeek V3 - Fast, low-cost ($0.27/1M in)", "deepseek-chat"),
+            ("DeepSeek R1 - Reasoning model ($0.55/1M in)", "deepseek-reasoner"),
             ("Custom model ID", "custom"),
         ],
         "deep": [
-            ("DeepSeek V4 Pro - Latest V4 flagship model", "deepseek-v4-pro"),
-            ("DeepSeek V3.2 (thinking)", "deepseek-reasoner"),
-            ("DeepSeek V3.2", "deepseek-chat"),
+            ("DeepSeek R1 - Reasoning model ($0.55/1M in)", "deepseek-reasoner"),
+            ("DeepSeek V3 - Fast, low-cost ($0.27/1M in)", "deepseek-chat"),
             ("Custom model ID", "custom"),
         ],
     },
     "deepseek_anthropic": {
         "quick": [
-            ("DeepSeek V4 Flash - Fast, Anthropic-compat endpoint", "deepseek-v4-flash"),
+            ("DeepSeek V3 - Fast, Anthropic-compat endpoint", "deepseek-chat"),
         ],
         "deep": [
-            ("DeepSeek V4 Pro [1M ctx] - Flagship, Anthropic-compat endpoint", "deepseek-v4-pro[1m]"),
-            ("DeepSeek V4 Flash - Fast, Anthropic-compat endpoint", "deepseek-v4-flash"),
+            ("DeepSeek R1 - Reasoning, Anthropic-compat endpoint", "deepseek-reasoner"),
+            ("DeepSeek V3 - Fast, Anthropic-compat endpoint", "deepseek-chat"),
         ],
     },
     "qwen": {

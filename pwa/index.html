@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -277,6 +277,44 @@ nav.tab-bar {
   padding: 10px 0; display: none;
 }
 .report-section-body.open { display: block; }
+
+/* ── Analyst mini-cards ───────────────────────────────────────────────────── */
+.mini-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+.mini-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.sig-badge { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.5px; }
+.sig-badge.buy  { background: #162a1e; color: var(--bull);    border: 1px solid var(--bull); }
+.sig-badge.sell { background: #2a1616; color: var(--bear);    border: 1px solid var(--bear); }
+.sig-badge.hold { background: #2a2010; color: var(--neutral); border: 1px solid var(--neutral); }
+.sig-badge.na   { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+.bias-chip { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: capitalize; }
+.bias-chip.bullish { background: #162a1e; color: var(--bull); }
+.bias-chip.bearish { background: #2a1616; color: var(--bear); }
+.bias-chip.neutral { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+.score-wrap { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.score-bar { width: 56px; height: 5px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+.score-val { font-size: 10px; color: var(--muted); white-space: nowrap; }
+.mini-hl { list-style: none; margin: 0 0 8px; padding: 0; }
+.mini-hl li { font-size: 12px; color: var(--text); padding: 2px 0 2px 14px; position: relative; line-height: 1.5; }
+.mini-hl li::before { content: '\2022'; position: absolute; left: 0; color: var(--accent); }
+.mini-outlook { font-size: 11px; color: var(--muted); display: grid; gap: 3px; }
+.mini-outlook span strong { color: var(--text); }
+.show-full-btn { font-size: 11px; color: var(--accent); background: none; border: none; cursor: pointer; padding: 4px 0 6px; display: block; }
+.raw-text { font-size: 12px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; padding: 4px 0; }
+.raw-text.hidden { display: none; }
+.debate-scores { display: flex; gap: 14px; margin: 6px 0; }
+.debate-score { font-size: 11px; color: var(--muted); }
+.debate-score .val { font-weight: 700; }
+.debate-score.bull .val { color: var(--bull); }
+.debate-score.bear .val { color: var(--bear); }
+.scenarios-mini { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+.scenarios-mini th { color: var(--muted); font-weight: 600; text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--border); }
+.scenarios-mini td { padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.scenarios-mini .bull-row td:first-child { color: var(--bull); font-weight: 700; }
+.scenarios-mini .bear-row td:first-child { color: var(--bear); font-weight: 700; }
+.scenarios-mini .base-row td:first-child { color: var(--neutral); font-weight: 700; }
+.risk-bar { height: 6px; border-radius: 3px; margin: 4px 0 6px; position: relative; background: linear-gradient(to right, var(--bull) 0%, var(--neutral) 50%, var(--bear) 100%); }
+.risk-dot { position: absolute; top: -3px; width: 12px; height: 12px; border-radius: 50%; background: white; border: 2px solid var(--bg); transform: translateX(-50%); }
 
 /* Final verdict card */
 .verdict-card {
@@ -634,11 +672,10 @@ nav.tab-bar {
         <div class="form-row">
           <label for="analysis-horizon">Horizon</label>
           <select id="analysis-horizon" onchange="localStorage.setItem('ta_analysis_horizon',this.value)">
-            <option value="intraday">Intraday (today)</option>
-            <option value="1day">1 Day</option>
-            <option value="1week" selected>1 Week</option>
-            <option value="1month">1 Month</option>
-            <option value="longterm">Long-term (3+ months)</option>
+            <option value="today">Today -- intraday &amp; end-of-day close</option>
+            <option value="tomorrow">Tomorrow -- next session open/close</option>
+            <option value="week" selected>This Week -- next 5 trading days</option>
+            <option value="month">This Month -- next 3-4 weeks</option>
           </select>
         </div>
 
@@ -668,6 +705,11 @@ nav.tab-bar {
         <div class="form-row">
           <label for="analysis-deep-model">Deep model</label>
           <select id="analysis-deep-model"></select>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+          <button class="tag-chip" style="font-size:11px;padding:4px 10px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer" onclick="setModelPreset('haiku')">Dev &#x26A1; Haiku&#xD7;2</button>
+          <button class="tag-chip" style="font-size:11px;padding:4px 10px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer" onclick="setModelPreset('sonnet')">Balanced &#x2B50; Sonnet</button>
+          <button class="tag-chip" style="font-size:11px;padding:4px 10px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer" onclick="setModelPreset('opus')">Best &#x1F9E0; Opus</button>
         </div>
 
         <div style="display:flex;gap:8px">
@@ -1069,9 +1111,7 @@ async function loadNews() {
 }
 
 async function loadAll() {
-  await loadPrice();
-  // Fire the heavier calls in parallel
-  await Promise.allSettled([loadIndicators(), loadPivots(), loadNews()]);
+  await Promise.allSettled([loadPrice(), loadIndicators(), loadPivots(), loadNews()]);
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
@@ -1123,7 +1163,7 @@ const _TIER2_DEFS = [
 function initAgentsTab() {
   const today = new Date().toISOString().slice(0, 10);
   $('agents-date').value = localStorage.getItem('ta_agents_date') || today;
-  $('agents-horizon').value = localStorage.getItem('ta_agents_horizon') || '1week';
+  $('agents-horizon').value = localStorage.getItem('ta_agents_horizon') || 'week';
 
   // Build Tier 1 chips — use div not label to avoid checkbox double-fire
   $('analyst-chips').innerHTML = _TIER1_DEFS.map(a => `
@@ -1162,6 +1202,7 @@ async function submitAgentRun() {
   $('agents-run-btn').disabled = true;
   $('agents-run-btn').textContent = 'Starting…';
   $('agents-stop-btn').style.display = 'inline-block';
+  _summaryInjected = false;
 
   try {
     const resp = await fetch(API + '/api/agents/run', {
@@ -1171,7 +1212,7 @@ async function submitAgentRun() {
         ticker:           _ticker,
         analysis_date:    date,
         analysts:         [..._agentSelected],
-        forecast_horizon: $('agents-horizon').value || '1week',
+        analysis_horizon: $('agents-horizon').value || 'week',
         llm_provider:     $('agents-provider').value || 'anthropic',
         quick_llm:        (() => {
           const v = $('agents-quick-model').value || null;
@@ -1237,7 +1278,11 @@ function buildAgentOutputCards(sessionId, ticker, analysts) {
         </div>
         <div class="agent-status-dot dot-pending" id="adot-${id}"></div>
       </div>
-      <div class="agent-run-body collapsed" id="abody-${id}">Waiting for agent to start…</div>
+      <div class="agent-run-body collapsed" id="abody-${id}">
+        <div id="amini-${id}" style="display:none"></div>
+        <button class="show-full-btn" id="amtoggle-${id}" style="display:none" onclick="toggleAgentRaw('${id}')">Show full report &#x25BC;</button>
+        <div class="raw-text" id="araw-${id}" style="color:var(--muted);font-size:12px">Waiting for agent to start&#x2026;</div>
+      </div>
     `;
     container.appendChild(card);
   }
@@ -1258,13 +1303,65 @@ function setAgentDot(agentName, status) {
 }
 
 function setAgentReport(section, content) {
-  // Map report section → agent id
   const id = Object.entries(REPORT_MAP).find(([, v]) => v === section)?.[0];
   if (!id) return;
+  const raw = $('araw-' + id);
+  if (raw) { raw.textContent = content; raw.style.color = ''; raw.style.fontSize = ''; }
   const body = $('abody-' + id);
-  if (!body) return;
-  body.textContent = content;
-  body.classList.remove('collapsed');
+  if (body) body.classList.remove('collapsed');
+}
+
+function toggleAgentRaw(id) {
+  const raw = $('araw-' + id);
+  const btn = $('amtoggle-' + id);
+  if (!raw) return;
+  if (raw.dataset.lazy && !raw.textContent) {
+    raw.textContent = raw.dataset.lazy;
+    delete raw.dataset.lazy;
+  }
+  const hidden = raw.classList.toggle('hidden');
+  if (btn) btn.textContent = hidden ? 'Show full report ▼' : 'Hide full report ▲';
+}
+
+let _summaryInjected = false;
+
+function _checkAgentsDone() {
+  const btn = $('agents-run-btn');
+  if (!btn || btn.textContent === 'Run Selected Analysts') return;
+  const allDone = [..._agentSelected].every(id => {
+    const raw = $('araw-' + id);
+    return raw && raw.textContent && raw.textContent !== 'Waiting for agent to start…';
+  });
+  if (allDone) {
+    if (btn.textContent !== 'Finishing pipeline…') btn.textContent = 'Finishing pipeline…';
+    if (!_summaryInjected && _agentSessionId) {
+      _summaryInjected = true;
+      // Show loading placeholder immediately in each mini-card slot
+      for (const id of _agentSelected) {
+        const mini = $('amini-' + id);
+        if (mini && !mini.dataset.loaded) {
+          mini.innerHTML = '<div style="padding:10px 0;color:var(--muted);font-size:12px">Generating summary&#x2026;</div>';
+          mini.style.display = '';
+        }
+      }
+      fetchAndInjectSummaryCards(_agentSessionId, 'week');
+    }
+  }
+}
+
+// Called after each individual analyst report_update — show card for that section immediately
+const _ANALYST_SECTION_KEYS = new Set(['market_report', 'sentiment_report', 'news_report', 'fundamentals_report']);
+
+function _tryInjectAnalystCard(section) {
+  if (!_analysisSessionId) return;
+  if (!_ANALYST_SECTION_KEYS.has(section)) return;
+  const card = $('rcard-' + section);
+  if (!card || card.dataset.loaded) return; // already has real content
+  // Show loading placeholder while Haiku extracts
+  card.innerHTML = '<div style="padding:10px 0;color:var(--muted);font-size:12px">Generating summary&#x2026;</div>';
+  card.style.display = '';
+  const horizon = ($('analysis-horizon') || {}).value || 'week';
+  fetchAndInjectSummaryCards(_analysisSessionId, horizon, true);
 }
 
 function connectAgentWs(sessionId) {
@@ -1278,18 +1375,24 @@ function connectAgentWs(sessionId) {
     let msg;
     try { msg = JSON.parse(ev.data); } catch { return; }
 
-    if (msg.type === 'agent_update') {
+    if (msg.type === 'status' && msg.status === 'running') {
+      $('agents-run-btn').textContent = 'Running…';
+    } else if (msg.type === 'agent_update') {
       setAgentDot(msg.agent, msg.status);
+      _checkAgentsDone();
     } else if (msg.type === 'report_update') {
       setAgentReport(msg.section, msg.content);
-    } else if (msg.type === 'done' || msg.type === 'error' || msg.type === 'status' && msg.status === 'cancelled') {
+      _checkAgentsDone();
+    } else if (msg.type === 'summary_update') {
+      if (msg.summary) injectSummaryCards(msg.summary);
+    } else if (msg.type === 'done' || msg.type === 'error' || (msg.type === 'status' && msg.status === 'cancelled')) {
       $('agents-run-btn').disabled = false;
       $('agents-run-btn').textContent = 'Run Selected Analysts';
       $('agents-stop-btn').style.display = 'none';
+      if (msg.type === 'done') fetchAndInjectSummaryCards(_agentSessionId, 'week');
       ws.close();
       _agentWs = null;
     } else if (msg.type === 'snapshot') {
-      // Restore state from snapshot on reconnect
       if (msg.agent_status) {
         for (const row of msg.agent_status) setAgentDot(row.agent_name, row.status);
       }
@@ -1327,10 +1430,27 @@ async function loadAgentSession(sessionId) {
     buildAgentOutputCards(sessionId, session.ticker, analysts.length ? analysts : Object.keys(REPORT_MAP));
 
     for (const row of d.agent_status || []) setAgentDot(row.agent_name, row.status);
+
+    // Store full text lazily — uncollapse card body so mini-card is visible,
+    // but don't fill the text area until the user clicks "Show full report".
     for (const [sec, content] of Object.entries(d.reports || {})) {
-      if (content) setAgentReport(sec, content);
+      if (!content) continue;
+      const id = Object.entries(REPORT_MAP).find(([, v]) => v === sec)?.[0];
+      if (!id) continue;
+      const raw = $('araw-' + id);
+      if (raw) {
+        raw.dataset.lazy = content;
+        raw.textContent = '';
+        raw.style.color = '';
+        raw.style.fontSize = '';
+      }
+      const body = $('abody-' + id);
+      if (body) body.classList.remove('collapsed');
     }
+
     _agentSessionId = sessionId;
+    _summaryInjected = false;
+    fetchAndInjectSummaryCards(sessionId, 'week');
   } catch (e) { console.error('loadAgentSession', e); }
 }
 
@@ -1377,10 +1497,11 @@ const _REPORT_SECTIONS = [
 ];
 
 // State for Tab 3
-let _analysisSessionId  = null;
-let _analysisWs         = null;
-let _analysisSessions   = [];   // history
-let _analysisSelected   = new Set(['market','social','news','fundamentals']);
+let _analysisSessionId    = null;
+let _analysisWs           = null;
+let _analysisSessions     = [];   // history
+let _analysisSelected     = new Set(['market','social','news','fundamentals']);
+let _analysisSummaryDone  = false; // guard against double fetchAndInjectSummaryCards
 let _chatPending        = false;
 let _agentStatusMap     = {};   // name → status
 let _agentStartMap      = {};   // name → timestamp
@@ -1388,7 +1509,7 @@ let _agentStartMap      = {};   // name → timestamp
 function initAnalysisTab() {
   const today = new Date().toISOString().slice(0, 10);
   $('analysis-date').value = localStorage.getItem('ta_analysis_date') || today;
-  $('analysis-horizon').value = localStorage.getItem('ta_analysis_horizon') || '1week';
+  $('analysis-horizon').value = localStorage.getItem('ta_analysis_horizon') || 'week';
 
   // Build analyst checkboxes
   $('analysis-analyst-chips').innerHTML = _TIER1_DEFS.map(a => `
@@ -1418,6 +1539,7 @@ async function submitAnalysis() {
   if (quickModel) localStorage.setItem('ta_analysis_quick_model', quickModel);
   if (deepModel)  localStorage.setItem('ta_analysis_deep_model',  deepModel);
 
+  _analysisSummaryDone = false;
   $('analysis-run-btn').disabled = true;
   $('analysis-run-btn').textContent = 'Submitting…';
   $('analysis-stop-btn').style.display = 'inline-block';
@@ -1431,7 +1553,7 @@ async function submitAnalysis() {
         analysis_date:    date,
         analysts:         [..._analysisSelected],
         research_depth:   depth,
-        forecast_horizon: $('analysis-horizon').value || '1week',
+        analysis_horizon: $('analysis-horizon').value || 'week',
         llm_provider:     $('analysis-provider').value || 'anthropic',
         quick_llm:        quickModel,
         deep_llm:         deepModel,
@@ -1548,11 +1670,8 @@ function setPipelineAgent(agentName, status) {
   }
 }
 
-function renderReportSection(key, content) {
+function _ensureReportSectionDom(key, def) {
   $('reports-card').style.display = '';
-  const def = _REPORT_SECTIONS.find(s => s.key === key);
-  if (!def) return;
-
   let section = $('rsec-' + key);
   if (!section) {
     section = document.createElement('div');
@@ -1562,12 +1681,48 @@ function renderReportSection(key, content) {
       <div class="report-section-header" onclick="toggleReportSection('${key}')">
         <span class="report-section-icon">${def.icon}</span>
         <span class="report-section-title">${def.title}</span>
-        <span class="report-section-chevron" id="rchev-${key}">▼</span>
+        <span class="report-section-chevron" id="rchev-${key}">&#x25BC;</span>
       </div>
-      <div class="report-section-body" id="rbody-${key}"></div>`;
+      <div class="report-section-body" id="rbody-${key}">
+        <div id="rcard-${key}" style="display:none"></div>
+        <button class="show-full-btn" id="rtoggle-${key}" style="display:none" onclick="toggleReportRaw('${key}')">Show full report &#x25BC;</button>
+        <div class="raw-text" id="rraw-${key}"></div>
+      </div>`;
     $('reports-body').appendChild(section);
   }
-  $('rbody-' + key).textContent = content;
+  return section;
+}
+
+// Open section body (show mini-card area) without setting full text.
+// Used when loading history — text is stored lazily in dataset.lazy.
+function initReportSection(key, lazyContent) {
+  const def = _REPORT_SECTIONS.find(s => s.key === key);
+  if (!def) return;
+  _ensureReportSectionDom(key, def);
+  const body = $('rbody-' + key);
+  if (body && !body.classList.contains('open')) {
+    body.classList.add('open');
+    const chev = $('rchev-' + key);
+    if (chev) chev.classList.add('open');
+  }
+  if (lazyContent) {
+    const raw = $('rraw-' + key);
+    if (raw) raw.dataset.lazy = lazyContent;
+  }
+}
+
+function renderReportSection(key, content) {
+  const def = _REPORT_SECTIONS.find(s => s.key === key);
+  if (!def) return;
+  _ensureReportSectionDom(key, def);
+  const raw = $('rraw-' + key);
+  if (raw) { raw.textContent = content; delete raw.dataset.lazy; }
+  const body = $('rbody-' + key);
+  if (body && !body.classList.contains('open')) {
+    body.classList.add('open');
+    const chev = $('rchev-' + key);
+    if (chev) chev.classList.add('open');
+  }
 }
 
 function toggleReportSection(key) {
@@ -1575,6 +1730,18 @@ function toggleReportSection(key) {
   const chev = $('rchev-' + key);
   const open = body.classList.toggle('open');
   if (chev) chev.classList.toggle('open', open);
+}
+
+function toggleReportRaw(key) {
+  const raw = $('rraw-' + key);
+  const btn = $('rtoggle-' + key);
+  if (!raw) return;
+  if (raw.dataset.lazy && !raw.textContent) {
+    raw.textContent = raw.dataset.lazy;
+    delete raw.dataset.lazy;
+  }
+  const hidden = raw.classList.toggle('hidden');
+  if (btn) btn.textContent = hidden ? 'Show full report ▼' : 'Hide full report ▲';
 }
 
 function showVerdict(rating) {
@@ -1604,19 +1771,26 @@ function connectAnalysisWs(sessionId) {
       setPipelineAgent(msg.agent, msg.status);
     } else if (msg.type === 'report_update') {
       renderReportSection(msg.section, msg.content);
+      _tryInjectAnalystCard(msg.section);
+    } else if (msg.type === 'summary_update') {
+      if (msg.summary) injectSummaryCards(msg.summary);
     } else if (msg.type === 'done') {
       showAnalysisBanner('done', 'Analysis complete');
       $('chat-card').style.display = '';
       loadChatHistory(sessionId);
       $('analysis-stop-btn').style.display = 'none';
+      if (msg.final_rating) showVerdict(msg.final_rating);
+      if (!_analysisSummaryDone) { _analysisSummaryDone = true; fetchAndInjectSummaryCards(sessionId, ($('analysis-horizon') || {}).value || 'week'); }
       ws.close(); _analysisWs = null;
     } else if (msg.type === 'error') {
       showAnalysisBanner('failed', msg.message || 'Pipeline failed');
       $('analysis-stop-btn').style.display = 'none';
+      if (!_analysisSummaryDone && $('reports-body') && $('reports-body').children.length > 0) { _analysisSummaryDone = true; fetchAndInjectSummaryCards(sessionId, ($('analysis-horizon') || {}).value || 'week'); }
       ws.close(); _analysisWs = null;
     } else if (msg.type === 'status' && msg.status === 'cancelled') {
       showAnalysisBanner('failed', 'Cancelled by user');
       $('analysis-stop-btn').style.display = 'none';
+      if (!_analysisSummaryDone && $('reports-body') && $('reports-body').children.length > 0) { _analysisSummaryDone = true; fetchAndInjectSummaryCards(sessionId, ($('analysis-horizon') || {}).value || 'week'); }
       ws.close(); _analysisWs = null;
     } else if (msg.type === 'queue_update') {
       showAnalysisBanner('queued', `Queue position #${msg.position}`);
@@ -1648,7 +1822,14 @@ function connectAnalysisWs(sessionId) {
   };
 
   ws.onerror = () => {};
-  ws.onclose = () => { if (_analysisWs === ws) _analysisWs = null; };
+  ws.onclose = () => {
+    if (_analysisWs === ws) _analysisWs = null;
+    // Fallback: show cards for whatever reports finished if not already fetched
+    if (!_analysisSummaryDone && $('reports-body') && $('reports-body').children.length > 0 && sessionId) {
+      _analysisSummaryDone = true;
+      fetchAndInjectSummaryCards(sessionId, ($('analysis-horizon') || {}).value || 'week');
+    }
+  };
 }
 
 async function fetchAndRenderReports(sessionId) {
@@ -1658,7 +1839,151 @@ async function fetchAndRenderReports(sessionId) {
       if (content) renderReportSection(key, content);
     }
     if (d.session?.final_rating) showVerdict(d.session.final_rating);
+    if (d.session?.status === 'completed') {
+      fetchAndInjectSummaryCards(sessionId, ($('analysis-horizon') || {}).value || 'week');
+    }
   } catch (e) { console.error('fetchAndRenderReports', e); }
+}
+
+// ── Summary mini-card helpers ──────────────────────────────────────────────
+
+function _sigBadgeClass(sig) {
+  if (!sig) return 'na';
+  const s = sig.toUpperCase();
+  if (s === 'BUY' || s === 'OVERWEIGHT') return 'buy';
+  if (s === 'SELL' || s === 'UNDERWEIGHT') return 'sell';
+  if (s === 'HOLD' || s === 'NEUTRAL') return 'hold';
+  return 'na';
+}
+function _biasClass(b) {
+  if (!b) return 'neutral';
+  const bl = b.toLowerCase();
+  return bl === 'bullish' ? 'bullish' : bl === 'bearish' ? 'bearish' : 'neutral';
+}
+
+function renderAnalystMiniCard(d) {
+  if (!d) return '';
+  const sig = d.signal || 'N/A';
+  const score = d.score ?? 5;
+  const pct = Math.round((score / 10) * 100);
+  const hl = (Array.isArray(d.highlights) ? d.highlights.slice(0, 3) : []).map(h => `<li>${h}</li>`).join('');
+  return `<div class="mini-card">
+    <div class="mini-card-header">
+      <span class="sig-badge ${_sigBadgeClass(sig)}">${sig}</span>
+      <span class="bias-chip ${_biasClass(d.bias)}">${d.bias || 'neutral'}</span>
+      <div class="score-wrap">
+        <div class="score-bar"><div class="score-fill" style="width:${pct}%"></div></div>
+        <span class="score-val">${score}/10</span>
+      </div>
+    </div>
+    ${hl ? `<ul class="mini-hl">${hl}</ul>` : ''}
+    <div class="mini-outlook">
+      ${d.short_term ? `<span><strong>Short-term:</strong> ${d.short_term}</span>` : ''}
+      ${d.long_term  ? `<span><strong>Long-term:</strong> ${d.long_term}</span>`  : ''}
+    </div>
+  </div>`;
+}
+
+function renderDebateMiniCard(debate) {
+  if (!debate) return '';
+  const verdict = debate.verdict || 'HOLD';
+  const pts = (Array.isArray(debate.key_points) ? debate.key_points.slice(0, 3) : []).map(p => `<li>${p}</li>`).join('');
+  return `<div class="mini-card">
+    <div class="mini-card-header">
+      <span class="sig-badge ${_sigBadgeClass(verdict)}">${verdict}</span>
+      <span style="font-size:11px;color:var(--muted);flex:1">${debate.consensus || ''}</span>
+    </div>
+    <div class="debate-scores">
+      <div class="debate-score bull">Bull <span class="val">${debate.bull_score ?? 5}/10</span></div>
+      <div class="debate-score bear">Bear <span class="val">${debate.bear_score ?? 5}/10</span></div>
+    </div>
+    ${pts ? `<ul class="mini-hl">${pts}</ul>` : ''}
+    ${debate.stop_thesis ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">Invalidation: ${debate.stop_thesis}</div>` : ''}
+  </div>`;
+}
+
+function renderFinalMiniCard(final, risk, scenarios) {
+  let html = '<div class="mini-card">';
+  if (final) {
+    const action = final.action || 'HOLD';
+    const riskLvl = risk?.level || '';
+    const riskCls = (riskLvl === 'high' || riskLvl === 'medium-high') ? 'bearish' : riskLvl === 'low' ? 'bullish' : 'neutral';
+    html += `<div class="mini-card-header" style="margin-bottom:10px">
+      <span class="sig-badge ${_sigBadgeClass(action)}" style="font-size:13px">${action}</span>
+      ${riskLvl ? `<span class="bias-chip ${riskCls}" style="margin-left:auto">Risk: ${riskLvl}</span>` : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;font-size:11px">
+      ${final.entry != null ? `<div style="text-align:center"><div style="color:var(--muted)">Entry</div><div style="font-weight:700">$${final.entry}</div></div>` : ''}
+      ${final.stop_loss != null ? `<div style="text-align:center"><div style="color:var(--muted)">Stop</div><div style="font-weight:700;color:var(--bear)">$${final.stop_loss}</div></div>` : ''}
+      ${final.position_pct != null ? `<div style="text-align:center"><div style="color:var(--muted)">Size</div><div style="font-weight:700">${final.position_pct}%</div></div>` : ''}
+    </div>
+    ${final.note ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">${final.note}</div>` : ''}`;
+  }
+  if (risk) {
+    const rPct = Math.round(((risk.score || 5) / 10) * 100);
+    const risks = (Array.isArray(risk.key_risks) ? risk.key_risks.slice(0, 3) : []).map(r => `<li>${r}</li>`).join('');
+    html += `<div style="font-size:10px;color:var(--muted);margin-bottom:2px">Risk ${risk.score || '?'}/10</div>
+    <div class="risk-bar"><div class="risk-dot" style="left:${rPct}%"></div></div>
+    ${risks ? `<ul class="mini-hl" style="margin-top:6px">${risks}</ul>` : ''}`;
+  }
+  if (Array.isArray(scenarios) && scenarios.length) {
+    const rows = scenarios.map(s => {
+      const l = (s.label || '').toLowerCase();
+      const cls = l.includes('bull') ? 'bull-row' : l.includes('bear') ? 'bear-row' : 'base-row';
+      const tgt = s.price_target != null ? '$' + s.price_target : '--';
+      return `<tr class="${cls}"><td>${s.label || ''}</td><td>${tgt}</td><td>${s.probability || ''}</td></tr>`;
+    }).join('');
+    html += `<table class="scenarios-mini"><thead><tr><th>Scenario</th><th>Target</th><th>Prob</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function _injectMiniCard(cardId, toggleId, rawId, html) {
+  const card = $(cardId);
+  if (!card || card.dataset.loaded) return;
+  if (!html || !html.trim()) return;
+  card.dataset.loaded = '1';
+  card.innerHTML = html;
+  card.style.display = '';
+  const raw = $(rawId);
+  if (raw) raw.classList.add('hidden');
+  const toggle = $(toggleId);
+  if (toggle) toggle.style.display = '';
+}
+
+function injectSummaryCards(summary) {
+  if (!summary) return;
+  const ANALYST_MAP = {
+    market_report:       'market',
+    news_report:         'news',
+    sentiment_report:    'social',
+    fundamentals_report: 'fundamentals',
+  };
+  for (const [key, analystKey] of Object.entries(ANALYST_MAP)) {
+    const d = summary.analysts?.[analystKey];
+    if (!d) continue;
+    const html = renderAnalystMiniCard(d);
+    _injectMiniCard('rcard-' + key, 'rtoggle-' + key, 'rraw-' + key, html);
+    const agentId = Object.entries(REPORT_MAP).find(([, v]) => v === key)?.[0];
+    if (agentId) _injectMiniCard('amini-' + agentId, 'amtoggle-' + agentId, 'araw-' + agentId, html);
+  }
+  if (summary.debate) {
+    _injectMiniCard('rcard-investment_plan', 'rtoggle-investment_plan', 'rraw-investment_plan', renderDebateMiniCard(summary.debate));
+  }
+  if (summary.final || summary.risk || (Array.isArray(summary.scenarios) && summary.scenarios.length)) {
+    _injectMiniCard('rcard-final_trade_decision', 'rtoggle-final_trade_decision', 'rraw-final_trade_decision',
+      renderFinalMiniCard(summary.final, summary.risk, summary.scenarios));
+  }
+}
+
+async function fetchAndInjectSummaryCards(sessionId, horizon, force = false) {
+  if (!sessionId) return;
+  try {
+    const url = `/api/sessions/${sessionId}/summary?horizon=${encodeURIComponent(horizon || 'week')}${force ? '&force=1' : ''}`;
+    const d = await apiFetch(url);
+    if (d?.summary) injectSummaryCards(d.summary);
+  } catch (e) { console.error('Summary fetch failed:', e); }
 }
 
 // ── Chat ──────────────────────────────────────────────────────────────────────
@@ -1746,9 +2071,10 @@ async function loadAnalysisSession(sessionId) {
     const analysts = session.config?.analysts || [..._analysisSelected];
 
     _analysisSessionId = sessionId;
+    _analysisSummaryDone = false;
     const status = session.status;
 
-    if (status === 'running')    showAnalysisBanner('running', 'Analysis running…');
+    if (status === 'running')        showAnalysisBanner('running', 'Analysis running…');
     else if (status === 'completed') showAnalysisBanner('done', 'Analysis complete');
     else if (status === 'failed')    showAnalysisBanner('failed', session.error || 'Failed');
     else showAnalysisBanner('queued', `Queued (#${session.queue_position || '?'})`);
@@ -1756,11 +2082,19 @@ async function loadAnalysisSession(sessionId) {
     showPipelineCard(analysts);
     for (const row of d.agent_status || []) setPipelineAgent(row.agent_name, row.status);
 
-    for (const [key, content] of Object.entries(d.reports || {})) {
-      if (content) renderReportSection(key, content);
+    // Create section shells with lazy-loaded text — show mini-cards only,
+    // defer full text until the user clicks "Show full report".
+    const reports = d.reports || {};
+    for (const [key, content] of Object.entries(reports)) {
+      if (content) initReportSection(key, content);
     }
+
     if (session.final_rating) showVerdict(session.final_rating);
 
+    if (status === 'completed' || status === 'failed') {
+      const horizon = ($('analysis-horizon') || {}).value || 'week';
+      fetchAndInjectSummaryCards(sessionId, horizon);
+    }
     if (status === 'completed') {
       $('chat-card').style.display = '';
       loadChatHistory(sessionId);
@@ -1812,7 +2146,7 @@ async function saveTemplate() {
   const cfg = {
     analysts:         [..._analysisSelected],
     research_depth:   parseInt($('analysis-depth').value) || 1,
-    forecast_horizon: $('analysis-horizon').value || '1week',
+    analysis_horizon: $('analysis-horizon').value || 'week',
   };
   try {
     await fetch(API + '/api/templates', {
@@ -1866,16 +2200,15 @@ function analysisOnVisible() {
   loadTemplates();
 }
 
-// ── Model selector ────────────────────────────────────────────────────────────
 let _modelCatalog = {};
 
 const _PROVIDER_LABELS = {
-  anthropic:          'Anthropic (Claude)',
-  openai:             'OpenAI (GPT)',
-  google:             'Google (Gemini)',
+  openai:             'OpenAI',
+  anthropic:          'Anthropic',
+  google:             'Google',
   xai:                'xAI (Grok)',
-  deepseek:           'DeepSeek (OpenAI-compat)',
-  deepseek_anthropic: 'DeepSeek (Anthropic-compat)',
+  deepseek:           'DeepSeek',
+  deepseek_anthropic: 'DeepSeek (Anthropic compat)',
   qwen:               'Qwen (Alibaba)',
   glm:                'GLM (Zhipu)',
   ollama:             'Ollama (Local)',
@@ -1933,6 +2266,29 @@ async function loadModelOptions() {
   }
 }
 
+// ── History restore on page load ──────────────────────────────────────────────
+async function loadSessionHistory() {
+  try {
+    const d = await apiFetch('/api/sessions?limit=20');
+    const sessions = d.sessions || [];
+    for (const s of sessions) {
+      const entry = {
+        session_id: s.id,
+        ticker:     s.ticker,
+        date:       s.analysis_date,
+      };
+      if (s.mode === 'agents') {
+        entry.analysts = s.config?.analysts || [];
+        _agentSessions.push(entry);
+      } else {
+        _analysisSessions.push(entry);
+      }
+    }
+    renderAgentsHistory();
+    renderAnalysisHistory();
+  } catch (e) { console.warn('loadSessionHistory failed', e); }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
   $('ticker-input').value = _ticker;
@@ -1945,6 +2301,7 @@ function init() {
   initAgentsTab();
   initAnalysisTab();
   loadModelOptions();
+  loadSessionHistory();
 
   // Register service worker
   if ('serviceWorker' in navigator) {

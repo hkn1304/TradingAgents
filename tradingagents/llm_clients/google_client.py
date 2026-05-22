@@ -1,3 +1,5 @@
+import logging
+import time
 from typing import Any, Optional
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -5,16 +7,63 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from .base_client import BaseLLMClient, normalize_content
 from .validators import validate_model
 
+logger = logging.getLogger(__name__)
+
+_GOOGLE_OVERLOAD_DELAYS = (5, 15, 30)
+_GOOGLE_RATELIMIT_DELAYS = (10, 30, 60)
+
+
+def _google_invoke_with_retry(invoke_fn):
+    """Retry invoke_fn on Google 429 ResourceExhausted and 503 ServiceUnavailable."""
+    try:
+        from google.api_core import exceptions as gexc
+        _quota_exc = (gexc.ResourceExhausted,)
+        _service_exc = (gexc.ServiceUnavailable, gexc.InternalServerError, gexc.DeadlineExceeded)
+    except ImportError:
+        _quota_exc = _service_exc = ()
+
+    last_exc = None
+    max_attempts = max(len(_GOOGLE_OVERLOAD_DELAYS), len(_GOOGLE_RATELIMIT_DELAYS)) + 1
+    for attempt in range(max_attempts):
+        try:
+            return invoke_fn()
+        except Exception as exc:
+            # Match by type if google.api_core is available; fall back to string check.
+            is_quota = _quota_exc and isinstance(exc, _quota_exc)
+            is_service = _service_exc and isinstance(exc, _service_exc)
+            if not (is_quota or is_service):
+                err = str(exc).lower()
+                is_quota = "resource_exhausted" in err or "429" in err or "quota" in err
+                is_service = "unavailable" in err or "503" in err or "500" in err or "deadline" in err
+            if not (is_quota or is_service):
+                raise
+            last_exc = exc
+            delays = _GOOGLE_RATELIMIT_DELAYS if is_quota else _GOOGLE_OVERLOAD_DELAYS
+            label = "429 Quota" if is_quota else "5xx ServiceError"
+
+        if attempt >= len(delays):
+            break
+        delay = delays[attempt]
+        logger.warning(
+            "Google %s (attempt %d/%d) — retrying in %ds",
+            label, attempt + 1, len(delays), delay,
+        )
+        time.sleep(delay)
+
+    raise last_exc
+
 
 class NormalizedChatGoogleGenerativeAI(ChatGoogleGenerativeAI):
-    """ChatGoogleGenerativeAI with normalized content output.
+    """ChatGoogleGenerativeAI with normalized content output and transient-error retry.
 
-    Gemini 3 models return content as list of typed blocks.
-    This normalizes to string for consistent downstream handling.
+    Gemini models return content as list of typed blocks.
+    Retries on 429 ResourceExhausted and 503 ServiceUnavailable.
     """
 
     def invoke(self, input, config=None, **kwargs):
-        return normalize_content(super().invoke(input, config, **kwargs))
+        return _google_invoke_with_retry(
+            lambda: normalize_content(super(NormalizedChatGoogleGenerativeAI, self).invoke(input, config, **kwargs))
+        )
 
 
 class GoogleClient(BaseLLMClient):

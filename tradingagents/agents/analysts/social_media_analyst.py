@@ -1,9 +1,15 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from tradingagents.agents.utils.agent_utils import build_instrument_context, get_conclusion_template, get_language_instruction, get_news
+from tradingagents.agents.utils.agent_utils import (
+    build_instrument_context,
+    get_conclusion_template,
+    get_horizon_instruction,
+    get_language_instruction,
+    get_news,
+)
 from tradingagents.dataflows.config import get_config
 
 
-def create_social_media_analyst(llm, forecast_horizon: str = "1week"):
+def create_social_media_analyst(llm):
     def social_media_analyst_node(state):
         current_date = state["trade_date"]
         instrument_context = build_instrument_context(state["company_of_interest"])
@@ -15,10 +21,10 @@ def create_social_media_analyst(llm, forecast_horizon: str = "1week"):
         system_message = (
             "Your task is to immediately analyse public sentiment, social media discussions, and recent news "
             "for the instrument specified in the context as of the current date. "
-            "Do NOT ask any clarifying questions — begin with tool calls right away.\n\n"
+            "Do NOT ask any clarifying questions -- begin with tool calls right away.\n\n"
             "Search strategy (use the search terms listed in your context, NOT just the raw ticker symbol):\n"
             "1. Search for public sentiment and social discussions using the asset's common name "
-            "(e.g. for XAGUSD use 'silver', 'silver price', 'silver forecast' — investors and traders "
+            "(e.g. for XAGUSD use 'silver', 'silver price', 'silver forecast' -- investors and traders "
             "discuss commodities/crypto/forex by name, not by ticker code).\n"
             "2. Search for recent news events driving sentiment: use the asset's common name "
             "AND relevant macro/geopolitical keywords from your context "
@@ -31,7 +37,8 @@ def create_social_media_analyst(llm, forecast_horizon: str = "1week"):
             "- Retail vs. institutional sentiment divergence if observable\n"
             "- Recent news that is shifting market opinion\n\n"
             "Provide specific, actionable insights. Append a Markdown table summarising sentiment signals and their implications."
-            + get_conclusion_template(forecast_horizon)
+            + get_horizon_instruction()
+            + get_conclusion_template()
             + get_language_instruction()
         )
 

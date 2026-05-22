@@ -5,6 +5,7 @@ from tradingagents.agents.utils.agent_utils import (
     get_cashflow,
     get_conclusion_template,
     get_fundamentals,
+    get_horizon_instruction,
     get_income_statement,
     get_insider_transactions,
     get_language_instruction,
@@ -12,7 +13,7 @@ from tradingagents.agents.utils.agent_utils import (
 from tradingagents.dataflows.config import get_config
 
 
-def create_fundamentals_analyst(llm, forecast_horizon: str = "1week"):
+def create_fundamentals_analyst(llm):
     def fundamentals_analyst_node(state):
         current_date = state["trade_date"]
         instrument_context = build_instrument_context(state["company_of_interest"])
@@ -27,11 +28,11 @@ def create_fundamentals_analyst(llm, forecast_horizon: str = "1week"):
         system_message = (
             "Your task is to immediately perform a comprehensive fundamental analysis of the instrument "
             "specified in the context as of the current date. "
-            "Do NOT ask any clarifying questions — begin with tool calls right away.\n\n"
+            "Do NOT ask any clarifying questions -- begin with tool calls right away.\n\n"
             "For equities and ETFs: call get_fundamentals, get_balance_sheet, get_cashflow, and "
             "get_income_statement to build a complete financial picture.\n\n"
             "For non-equity instruments (metals, commodities, crypto, forex): "
-            "financial statements will be unavailable or empty — this is expected. "
+            "financial statements will be unavailable or empty -- this is expected. "
             "Instead focus your analysis on: supply/demand dynamics, production data, "
             "institutional positioning (COT report insights), ETF/fund flows, "
             "historical price-to-fundamentals relationships, and any available market-structure data. "
@@ -40,7 +41,8 @@ def create_fundamentals_analyst(llm, forecast_horizon: str = "1week"):
             "profitability, debt levels, cash flow strength, and forward outlook for equities; "
             "or supply/demand balance, major producers/consumers, and structural price drivers for non-equity assets. "
             "Append a Markdown table summarising key fundamental metrics."
-            + get_conclusion_template(forecast_horizon)
+            + get_horizon_instruction()
+            + get_conclusion_template()
             + get_language_instruction()
         )
 

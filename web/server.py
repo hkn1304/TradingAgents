@@ -20,8 +20,9 @@ GET  /api/sessions                    session history
 GET  /api/sessions/{session_id}       full session with reports + agent status
 DELETE /api/sessions/{session_id}     delete session
 
-GET  /api/sessions/{session_id}/chat  chat history
-POST /api/sessions/{session_id}/chat  send message → get reply
+GET  /api/sessions/{session_id}/chat    chat history
+POST /api/sessions/{session_id}/chat   send message → get reply
+GET  /api/sessions/{session_id}/summary compact JSON card (horizon=today|tomorrow|week|month)
 
 GET  /api/templates                   list templates
 POST /api/templates                   create template
@@ -82,6 +83,7 @@ from web.job_runner import (
     cancel_session,
 )
 from web.chat import chat as chat_handler
+from web.report_summarizer import get_or_build_summary, HORIZONS
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +121,7 @@ class JobSubmit(BaseModel):
     quick_llm:        Optional[str] = None
     deep_llm:         Optional[str] = None
     output_language:  str   = "English"
+    analysis_horizon: str   = "week"     # today | tomorrow | week | month
     backend_url:      Optional[str] = None
     anthropic_effort: Optional[str] = None
     openai_reasoning_effort: Optional[str] = None
@@ -134,6 +137,7 @@ class AgentRunSubmit(BaseModel):
     quick_llm:       Optional[str] = None
     deep_llm:        Optional[str] = None
     output_language: str   = "English"
+    analysis_horizon: str  = "week"      # today | tomorrow | week | month
     backend_url:     Optional[str] = None
     anthropic_effort: Optional[str] = None
     openai_reasoning_effort: Optional[str] = None
@@ -193,13 +197,33 @@ def get_config():
 
 # ── /api/markets/* ─────────────────────────────────────────────────────────────
 
+import time as _time
+
+_market_cache: dict = {}  # key → (value, expires_at)
+
+def _mc_get(key: str):
+    entry = _market_cache.get(key)
+    if entry and _time.monotonic() < entry[1]:
+        return entry[0]
+    return None
+
+def _mc_set(key: str, value, ttl: float):
+    _market_cache[key] = (value, _time.monotonic() + ttl)
+
+
 @app.get("/api/markets/price")
 def markets_price(ticker: str):
+    key = f"price:{ticker}"
+    cached = _mc_get(key)
+    if cached is not None:
+        return cached
     provider = get_market_provider()
     price = provider.get_price_live(ticker)
     if price is None:
         raise HTTPException(503, detail="Price unavailable")
-    return {"ticker": ticker, "price": price}
+    result = {"ticker": ticker, "price": price}
+    _mc_set(key, result, 10)  # 10 s — matches UI refresh rate
+    return result
 
 
 @app.get("/api/markets/ohlcv")
@@ -232,15 +256,25 @@ def markets_ohlcv(
 @app.get("/api/markets/indicators")
 def markets_indicators(ticker: str, date: str | None = None):
     from datetime import datetime
-    provider = get_market_provider()
     date = date or datetime.utcnow().strftime("%Y-%m-%d")
+    key = f"indicators:{ticker}:{date}"
+    cached = _mc_get(key)
+    if cached is not None:
+        return cached
+    provider = get_market_provider()
     indicators = provider.get_indicators(ticker, date)
-    return {"ticker": ticker, "date": date, "indicators": indicators}
+    result = {"ticker": ticker, "date": date, "indicators": indicators}
+    _mc_set(key, result, 120)  # 2 min — intraday indicators don't change fast
+    return result
 
 
 @app.get("/api/markets/pivots")
 def markets_pivots(ticker: str, interval: str = "1d", days: int = 90):
     from datetime import datetime, timedelta
+    key = f"pivots:{ticker}:{interval}"
+    cached = _mc_get(key)
+    if cached is not None:
+        return cached
     provider   = get_market_provider()
     end_date   = datetime.utcnow().strftime("%Y-%m-%d")
     start_date = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
@@ -254,16 +288,24 @@ def markets_pivots(ticker: str, interval: str = "1d", days: int = 90):
     if len(df) < 2:
         raise HTTPException(404, detail=f"Not enough OHLCV data for pivots on {ticker}")
 
-    return {"ticker": ticker, "interval": interval, "pivots": provider.calc_pivots(df)}
+    result = {"ticker": ticker, "interval": interval, "pivots": provider.calc_pivots(df)}
+    _mc_set(key, result, 300)  # 5 min — daily pivots barely move intraday
+    return result
 
 
 @app.get("/api/markets/news")
 def markets_news(ticker: str, limit: int = 6):
+    key = f"news:{ticker}:{limit}"
+    cached = _mc_get(key)
+    if cached is not None:
+        return cached
     provider = get_market_provider()
     if not provider.supports(Capability.NEWS):
         raise HTTPException(501, detail="Current provider does not support news")
     news = provider.get_news(ticker, max_items=limit)
-    return {"ticker": ticker, "news": news}
+    result = {"ticker": ticker, "news": news}
+    _mc_set(key, result, 300)  # 5 min — news feed doesn't need instant refresh
+    return result
 
 
 # ── /api/jobs/* (Tab 3 — full pipeline) ───────────────────────────────────────
@@ -418,6 +460,41 @@ async def post_chat(session_id: str, body: ChatMessage):
         raise HTTPException(404, detail="Session not found")
     reply = await chat_handler(session_id, body.message)
     return {"reply": reply}
+
+
+# ── /api/sessions/{id}/summary ────────────────────────────────────────────────
+
+@app.get("/api/sessions/{session_id}/summary")
+def get_summary(session_id: str, horizon: str = "week", force: bool = False):
+    """Return a compact JSON card (~2 KB) summarising all reports for the session.
+    horizon: today | tomorrow | week | month
+    force: bypass cache and re-extract (used while pipeline is still running)
+    """
+    session = session_get(session_id)
+    if not session:
+        raise HTTPException(404, detail="Session not found")
+    if horizon not in HORIZONS:
+        raise HTTPException(400, detail=f"horizon must be one of: {list(HORIZONS)}")
+
+    all_reports = report_get_all(session_id)
+    investment_state = session.get("investment_debate_state") or {}
+    risk_state       = session.get("risk_debate_state") or {}
+
+    reports_payload = {
+        "ticker":            session.get("ticker", ""),
+        "date":              session.get("analysis_date", ""),
+        "market_report":     all_reports.get("market_report", ""),
+        "news_report":       all_reports.get("news_report", ""),
+        "sentiment_report":  all_reports.get("sentiment_report", ""),
+        "fundamentals_report": all_reports.get("fundamentals_report", ""),
+        "investment_debate": investment_state.get("history", "") if isinstance(investment_state, dict) else "",
+        "risk_debate":       risk_state.get("history", "") if isinstance(risk_state, dict) else "",
+        "trader_plan":       all_reports.get("trader_investment_plan", ""),
+        "final_decision":    all_reports.get("final_trade_decision", ""),
+    }
+
+    summary = get_or_build_summary(session_id, reports_payload, horizon=horizon, force=force)
+    return {"session_id": session_id, "horizon": horizon, "summary": summary}
 
 
 # ── /api/templates/* ───────────────────────────────────────────────────────────

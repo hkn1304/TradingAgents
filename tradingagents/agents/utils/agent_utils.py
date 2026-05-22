@@ -96,6 +96,28 @@ def _build_conclusion_template(label: str, guidance: str) -> str:
     )
 
 
+_HORIZON_LABELS = {
+    "today":    "today (intraday price action and end-of-day close)",
+    "tomorrow": "tomorrow (next trading session open, high, low, close)",
+    "week":     "this week (next 5 trading days)",
+    "month":    "this month (next 3-4 weeks)",
+}
+
+
+def get_horizon_instruction() -> str:
+    """Return an instruction scoping predictions to the configured analysis horizon."""
+    from tradingagents.dataflows.config import get_config
+    horizon = get_config().get("analysis_horizon", "week")
+    label = _HORIZON_LABELS.get(horizon, f"the next {horizon}")
+    return (
+        f" Your predictions, price targets, and strategy recommendations must be "
+        f"explicitly scoped to **{label}**. "
+        f"State this timeframe clearly at the start of your Price Outlook section "
+        f"and in the CONCLUSION. Do not give generic multi-month forecasts unless "
+        f"the user's horizon is month."
+    )
+
+
 def get_language_instruction() -> str:
     """Return a prompt instruction for the configured output language.
 
@@ -218,7 +240,13 @@ _CONCLUSION_TEMPLATE = (
     "### Geopolitical & Macro Risks\n"
     "- [List any geopolitical events, central bank actions, or macro data releases that could materially move price]\n\n"
     "### Recommended Strategy\n"
-    "- [2–3 actionable bullet points: entry zone, stop-loss level, target, or bias]\n"
+    "- [2–3 actionable bullet points: entry zone, stop-loss level, target, or bias]\n\n"
+    "### Key Scenarios\n"
+    "| Scenario | Trigger | Price Target | Probability |\n"
+    "|---|---|---|---|\n"
+    "| 🐂 Bull Case | [what event drives price up] | $[target] | [low/medium/high] |\n"
+    "| ➡️ Base Case | [most likely outcome given current data] | $[target] | [low/medium/high] |\n"
+    "| 🐻 Bear Case | [what event drives price down] | $[target] | [low/medium/high] |\n"
     "---"
 )
 

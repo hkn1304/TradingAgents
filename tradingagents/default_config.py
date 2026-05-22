@@ -31,9 +31,9 @@ DEFAULT_CONFIG = {
     # Output language for analyst reports and final decision
     # Internal agent debate stays in English for reasoning quality
     "output_language": "English",
-    # Forecast horizon — controls the time frame analysts target in their CONCLUSION
-    # Valid values: "intraday" | "1day" | "1week" | "1month" | "longterm"
-    "forecast_horizon": "1week",
+    # Analysis horizon — controls the timeframe analysts target in their CONCLUSION
+    # Valid values: "today" | "tomorrow" | "week" | "month"
+    "analysis_horizon": "week",
     # Debate and discussion settings
     "max_debate_rounds": 1,
     "max_risk_discuss_rounds": 1,

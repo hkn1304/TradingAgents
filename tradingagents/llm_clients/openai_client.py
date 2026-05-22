@@ -1,4 +1,6 @@
+import logging
 import os
+import time
 from typing import Any, Optional
 
 from langchain_core.messages import AIMessage
@@ -7,6 +9,43 @@ from langchain_openai import ChatOpenAI
 from .base_client import BaseLLMClient, normalize_content
 from .capabilities import get_capabilities
 from .validators import validate_model
+
+logger = logging.getLogger(__name__)
+
+# Retry delays (seconds) for transient OpenAI-compatible API errors.
+_OAI_OVERLOAD_DELAYS = (5, 15, 30)   # 529 / 500 / 503
+_OAI_RATELIMIT_DELAYS = (10, 30, 60) # 429
+
+
+def _openai_invoke_with_retry(invoke_fn):
+    """Retry invoke_fn on 429 / 500 / 503 / 529 from any OpenAI-compatible API."""
+    import openai
+
+    last_exc = None
+    max_attempts = max(len(_OAI_OVERLOAD_DELAYS), len(_OAI_RATELIMIT_DELAYS)) + 1
+    for attempt in range(max_attempts):
+        try:
+            return invoke_fn()
+        except openai.RateLimitError as exc:
+            last_exc = exc
+            delays, label = _OAI_RATELIMIT_DELAYS, "429 RateLimited"
+        except (openai.InternalServerError, openai.APIStatusError) as exc:
+            status = getattr(exc, "status_code", None)
+            if status and 400 <= status < 500 and status != 429:
+                raise  # 4xx client errors are not transient
+            last_exc = exc
+            delays, label = _OAI_OVERLOAD_DELAYS, f"{status or '5xx'} ServerError"
+
+        if attempt >= len(delays):
+            break
+        delay = delays[attempt]
+        logger.warning(
+            "OpenAI-compat %s (attempt %d/%d) — retrying in %ds",
+            label, attempt + 1, len(delays), delay,
+        )
+        time.sleep(delay)
+
+    raise last_exc
 
 
 class NormalizedChatOpenAI(ChatOpenAI):
@@ -29,7 +68,9 @@ class NormalizedChatOpenAI(ChatOpenAI):
     """
 
     def invoke(self, input, config=None, **kwargs):
-        return normalize_content(super().invoke(input, config, **kwargs))
+        return _openai_invoke_with_retry(
+            lambda: normalize_content(super(NormalizedChatOpenAI, self).invoke(input, config, **kwargs))
+        )
 
     def with_structured_output(self, schema, *, method=None, **kwargs):
         caps = get_capabilities(self.model_name)

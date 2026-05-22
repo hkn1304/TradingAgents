@@ -2,8 +2,8 @@
 Background job execution for the TradingAgents web backend.
 
 Two execution paths:
-  Full pipeline  (Tab 3) — one at a time via a FIFO queue + single worker thread
-  Agent-only run (Tab 2) — runs immediately in its own thread, bypasses queue
+  Full pipeline  (Tab 3) â-" one at a time via a FIFO queue + single worker thread
+  Agent-only run (Tab 2) â-" runs immediately in its own thread, bypasses queue
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import queue
+import re
 import threading
 import traceback
 from typing import Any
@@ -30,7 +31,7 @@ from web.stream import manager as ws_manager
 
 logger = logging.getLogger(__name__)
 
-# ── Cancellation registry ─────────────────────────────────────────────────────
+# â"-â"- Cancellation registry â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
 _cancel_events: dict[str, threading.Event] = {}
 _cancel_lock = threading.Lock()
 
@@ -56,7 +57,7 @@ def deregister_cancel(session_id: str) -> None:
         _cancel_events.pop(session_id, None)
 
 
-# ── Agent ordering constants (mirrors cli/main.py) ────────────────────────────
+# â"-â"- Agent ordering constants (mirrors cli/main.py) â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
 
 ANALYST_ORDER = ["market", "social", "news", "fundamentals"]
 
@@ -84,14 +85,76 @@ ALL_AGENTS = [
     "Portfolio Manager",
 ]
 
+# ── Report / summary validation ────────────────────────────────────────────────
+
+_DIRECTION_WORDS = re.compile(r"\b(bullish|bearish|neutral|buy|sell|hold|overweight|underweight)\b", re.I)
+_MIN_REPORT_CHARS = 300
+
+
+def _validate_analyst_report(analyst_key: str, content: str) -> None:
+    """Warn when an analyst report looks malformed or too thin."""
+    if not content:
+        logger.warning("Analyst '%s' returned an EMPTY report — the LLM produced no text output", analyst_key)
+        return
+    if len(content) < _MIN_REPORT_CHARS:
+        logger.warning(
+            "Analyst '%s' report is suspiciously short (%d chars, expected >%d)",
+            analyst_key, len(content), _MIN_REPORT_CHARS,
+        )
+    if not _DIRECTION_WORDS.search(content):
+        logger.warning(
+            "Analyst '%s' report has NO directional signal (no buy/sell/hold/bullish/bearish/neutral)",
+            analyst_key,
+        )
+    if "## conclusion" not in content.lower():
+        logger.warning(
+            "Analyst '%s' report is missing the '## CONCLUSION' section mandated by the prompt template",
+            analyst_key,
+        )
+
+
+def _validate_summary(summary: dict, expected_ticker: str) -> None:
+    """Warn when the extracted summary JSON has unexpected gaps."""
+    if not summary.get("_ok"):
+        logger.warning(
+            "Summary extraction produced no '_ok' flag for %s — "
+            "the LLM response may be empty or unparseable",
+            expected_ticker,
+        )
+        return
+    meta   = summary.get("meta")   or {}
+    signal = summary.get("signal") or {}
+    price  = summary.get("price_levels") or {}
+
+    actual = meta.get("ticker", "")
+    if actual and actual.upper() != expected_ticker.upper():
+        logger.warning("Summary ticker mismatch: expected '%s', got '%s'", expected_ticker, actual)
+
+    for field, val in [("signal.action", signal.get("action")),
+                       ("signal.bias",   signal.get("bias")),
+                       ("price_levels.current", price.get("current"))]:
+        if val is None:
+            logger.warning("Summary field '%s' is null for %s", field, expected_ticker)
+
+    analysts = summary.get("analysts") or {}
+    na_count = sum(1 for a in analysts.values() if (a or {}).get("signal") in (None, "N/A"))
+    if analysts and na_count == len(analysts):
+        logger.warning(
+            "All %d analyst signals are N/A in summary for %s — "
+            "LLM failed to extract any directional data",
+            na_count, expected_ticker,
+        )
+
+
 # ── Config builder ─────────────────────────────────────────────────────────────
 
 _PROVIDER_MODEL_DEFAULTS: dict[str, tuple[str, str]] = {
-    # (quick_model, deep_model) — used when frontend sends no model selection
-    "anthropic":          ("claude-haiku-4-5-20251001", "claude-opus-4-7"),
-    "openai":             ("gpt-4o-mini",               "gpt-4o"),
-    "google":             ("gemini-2.0-flash",           "gemini-2.5-pro"),
-    "deepseek_anthropic": ("deepseek-v4-flash",          "deepseek-v4-pro[1m]"),
+    # (quick_model, deep_model) -- used when frontend sends no model selection
+    "anthropic":          ("claude-haiku-4-5-20251001", "claude-haiku-4-5-20251001"),
+    "openai":             ("gpt-4o-mini",               "gpt-4o-mini"),
+    "google":             ("gemini-2.0-flash",           "gemini-2.5-flash"),
+    "deepseek":           ("deepseek-v4-flash",           "deepseek-v4-pro"),
+    "deepseek_anthropic": ("deepseek-v4-flash",           "deepseek-v4-pro"),
 }
 
 
@@ -113,7 +176,7 @@ def build_graph_config(job_config: dict) -> dict:
 
     cfg["backend_url"]             = job_config.get("backend_url")
     cfg["output_language"]         = job_config.get("output_language", "English")
-    cfg["forecast_horizon"]        = job_config.get("forecast_horizon", "1week")
+    cfg["analysis_horizon"]        = job_config.get("analysis_horizon", "week")
     cfg["google_thinking_level"]   = job_config.get("google_thinking_level")
     cfg["openai_reasoning_effort"] = job_config.get("openai_reasoning_effort")
     cfg["anthropic_effort"]        = job_config.get("anthropic_effort")
@@ -121,20 +184,39 @@ def build_graph_config(job_config: dict) -> dict:
     return cfg
 
 
-# ── Chunk processor ────────────────────────────────────────────────────────────
+# â"-â"- Chunk processor â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
 
 class _ChunkProcessor:
     """
     Translates raw LangGraph stream chunks into DB updates + WebSocket events.
     Mirrors the logic from cli/main.py but writes to SQLite instead of
     updating an in-memory MessageBuffer.
+
+    Progressive summary: a background thread rebuilds the compact summary card
+    every time a new analyst report (or the final decision) arrives, broadcasting
+    a ``summary_update`` WebSocket event so the UI can refresh the card live.
+    Only one summary build runs at a time per session; a pending request is
+    dropped when a new one arrives to avoid piling up LLM calls.
     """
 
-    def __init__(self, session_id: str, selected_analysts: list[str]) -> None:
+    def __init__(
+        self,
+        session_id: str,
+        selected_analysts: list[str],
+        *,
+        horizon: str = "week",
+        ticker: str = "",
+        date: str = "",
+    ) -> None:
         self.session_id       = session_id
         self.selected         = [a.lower() for a in selected_analysts]
-        self._report_cache: dict[str, str] = {}   # section → content seen so far
-        self._agent_states: dict[str, str] = {}   # agent → last known status
+        self.horizon          = horizon
+        self.ticker           = ticker
+        self.date             = date
+        self._report_cache: dict[str, str] = {}
+        self._agent_states: dict[str, str] = {}
+        self._summary_lock    = threading.Lock()
+        self._summary_in_flight = False  # True while a background build is running
 
     def _set_agent(self, name: str, status: str) -> None:
         if self._agent_states.get(name) == status:
@@ -151,6 +233,14 @@ class _ChunkProcessor:
         if not content or content == self._report_cache.get(section):
             return
         self._report_cache[section] = content
+
+        # Validate analyst report quality before persisting
+        analyst_key = next(
+            (k for k, v in ANALYST_REPORT_MAP.items() if v == section), None
+        )
+        if analyst_key:
+            _validate_analyst_report(analyst_key, content)
+
         report_upsert(self.session_id, section, content)
         ws_manager.broadcast_sync(self.session_id, {
             "type": "report_update",
@@ -158,8 +248,62 @@ class _ChunkProcessor:
             "content": content,
         })
 
+        # Trigger progressive summary rebuild for analyst reports and final outputs
+        _summary_trigger_sections = set(ANALYST_REPORT_MAP.values()) | {
+            "final_trade_decision", "trader_investment_plan"
+        }
+        if section in _summary_trigger_sections:
+            self._trigger_summary()
+
+    def _trigger_summary(self) -> None:
+        """Start a background thread to rebuild the summary card, if none is running."""
+        with self._summary_lock:
+            if self._summary_in_flight:
+                return
+            self._summary_in_flight = True
+
+        def _build():
+            try:
+                from web.report_summarizer import get_or_build_summary
+                from web.database import report_get_all
+                all_reports = report_get_all(self.session_id)
+                payload = {
+                    "ticker":              self.ticker,
+                    "date":                self.date,
+                    "market_report":       all_reports.get("market_report", ""),
+                    "news_report":         all_reports.get("news_report", ""),
+                    "sentiment_report":    all_reports.get("sentiment_report", ""),
+                    "fundamentals_report": all_reports.get("fundamentals_report", ""),
+                    "investment_debate":   "",
+                    "risk_debate":         "",
+                    "trader_plan":         all_reports.get("trader_investment_plan", ""),
+                    "final_decision":      all_reports.get("final_trade_decision", ""),
+                }
+                summary = get_or_build_summary(
+                    self.session_id, payload, horizon=self.horizon, force=True
+                )
+                _validate_summary(summary, self.ticker)
+                ws_manager.broadcast_sync(self.session_id, {
+                    "type": "summary_update",
+                    "summary": summary,
+                })
+            except Exception:
+                logger.warning(
+                    "Background summary rebuild failed for session %s",
+                    self.session_id, exc_info=True,
+                )
+            finally:
+                with self._summary_lock:
+                    self._summary_in_flight = False
+
+        t = threading.Thread(
+            target=_build, daemon=True,
+            name=f"summary-{self.session_id[:8]}",
+        )
+        t.start()
+
     def process(self, chunk: dict[str, Any]) -> None:
-        # ── Analyst reports ──────────────────────────────────────────────────
+        # â"-â"- Analyst reports â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
         found_active = False
         for key in ANALYST_ORDER:
             if key not in self.selected:
@@ -180,7 +324,7 @@ class _ChunkProcessor:
             if self._agent_states.get("Bull Researcher") in (None, "pending"):
                 self._set_agent("Bull Researcher", "in_progress")
 
-        # ── Investment debate (Research team) ────────────────────────────────
+        # â"-â"- Investment debate (Research team) â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
         debate = chunk.get("investment_debate_state") or {}
         if debate:
             bull  = (debate.get("bull_history")  or "").strip()
@@ -203,13 +347,13 @@ class _ChunkProcessor:
                 self._set_agent("Research Manager",   "completed")
                 self._set_agent("Trader",             "in_progress")
 
-        # ── Trader ───────────────────────────────────────────────────────────
+        # â"-â"- Trader â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
         if chunk.get("trader_investment_plan"):
             self._set_report("trader_investment_plan", chunk["trader_investment_plan"])
             self._set_agent("Trader",            "completed")
             self._set_agent("Aggressive Analyst","in_progress")
 
-        # ── Risk debate ───────────────────────────────────────────────────────
+        # â"-â"- Risk debate â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
         risk = chunk.get("risk_debate_state") or {}
         if risk:
             agg  = (risk.get("aggressive_history")   or "").strip()
@@ -236,12 +380,12 @@ class _ChunkProcessor:
                           "Neutral Analyst", "Portfolio Manager"):
                     self._set_agent(a, "completed")
 
-        # ── final_trade_decision (top-level field) ───────────────────────────
+        # â"-â"- final_trade_decision (top-level field) â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
         if chunk.get("final_trade_decision"):
             self._set_report("final_trade_decision", chunk["final_trade_decision"])
 
 
-# ── Core execution ─────────────────────────────────────────────────────────────
+# â"-â"- Core execution â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
 
 def _execute(session_id: str, ticker: str, analysis_date: str,
              selected_analysts: list[str], job_config: dict) -> None:
@@ -268,7 +412,13 @@ def _execute(session_id: str, ticker: str, analysis_date: str,
     ]
     agent_status_init(session_id, active_analyst_names + fixed_agents)
 
-    processor = _ChunkProcessor(session_id, selected_analysts)
+    processor = _ChunkProcessor(
+        session_id,
+        selected_analysts,
+        horizon=cfg.get("analysis_horizon", "week"),
+        ticker=ticker,
+        date=analysis_date,
+    )
     init_state = graph.propagator.create_initial_state(ticker, analysis_date)
     args = graph.propagator.get_graph_args()
 
@@ -315,11 +465,11 @@ def _execute(session_id: str, ticker: str, analysis_date: str,
         "session_id": session_id,
         "final_rating": final_rating,
     })
-    logger.info("Session %s completed — rating: %s", session_id, final_rating)
+    logger.info("Session %s completed, rating: %s", session_id, final_rating)
     deregister_cancel(session_id)
 
 
-# ── Full pipeline queue (Tab 3) ────────────────────────────────────────────────
+# â"-â"- Full pipeline queue (Tab 3) â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
 
 _full_queue: queue.Queue = queue.Queue()
 _queue_lock = threading.Lock()
@@ -339,7 +489,7 @@ def _broadcast_queue_positions() -> None:
 
 
 def _full_pipeline_worker() -> None:
-    """Single background thread — processes full-pipeline jobs one at a time."""
+    """Single background thread â-" processes full-pipeline jobs one at a time."""
     while True:
         job = _full_queue.get()
         session_id      = job["session_id"]
@@ -392,7 +542,7 @@ def enqueue_full_pipeline(
     return position
 
 
-# ── Agent-only run (Tab 2) ─────────────────────────────────────────────────────
+# â"-â"- Agent-only run (Tab 2) â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-â"-
 
 def run_agents_immediate(
     session_id: str,
@@ -402,7 +552,7 @@ def run_agents_immediate(
     config: dict,
 ) -> None:
     """
-    Launch selected agents in a dedicated thread — bypasses the queue.
+    Launch selected agents in a dedicated thread â-" bypasses the queue.
     For Tier 1 (analyst-only) runs the full graph still executes, but
     the UI presents only the analyst-section outputs.
     """
