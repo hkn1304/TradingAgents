@@ -105,6 +105,25 @@ def init_db() -> None:
             api_key  TEXT NOT NULL,
             PRIMARY KEY (user_id, provider)
         );
+
+        CREATE TABLE IF NOT EXISTS kalman_signals (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticker      TEXT    NOT NULL,
+            timeframe   TEXT    NOT NULL,
+            model       TEXT    NOT NULL,
+            ts          TEXT    NOT NULL,
+            price       REAL,
+            filtered_price REAL,
+            velocity    REAL,
+            bias        TEXT,
+            signal      TEXT,
+            vel_signal  TEXT,
+            z_score     REAL,
+            gain        REAL,
+            regime      TEXT,
+            created_at  TEXT    DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_ksig_ticker ON kalman_signals(ticker, timeframe, model, ts);
         """)
 
 
@@ -358,3 +377,35 @@ def template_list(user_id: str = "default") -> list[dict]:
 def template_delete(template_id: str) -> None:
     with _conn() as con:
         con.execute("DELETE FROM templates WHERE id=?", (template_id,))
+
+
+# ── Kalman signals ─────────────────────────────────────────────────────────────
+
+def kalman_signal_upsert(ticker: str, timeframe: str, model: str, ts: str,
+                          price: float, filtered_price: float,
+                          velocity, bias: str, signal, vel_signal,
+                          z_score: float, gain: float, regime: str):
+    """Insert or replace the latest signal snapshot for this ticker/timeframe/model."""
+    with _conn() as conn:
+        conn.execute("""
+            INSERT INTO kalman_signals
+              (ticker, timeframe, model, ts, price, filtered_price, velocity,
+               bias, signal, vel_signal, z_score, gain, regime)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (ticker, timeframe, model, ts, price, filtered_price,
+              velocity, bias, signal, vel_signal, z_score, gain, regime))
+
+
+def kalman_signal_history(ticker: str, timeframe: str, limit: int = 50):
+    """Return recent signal rows for both models, newest first."""
+    with _conn() as conn:
+        rows = conn.execute("""
+            SELECT model, ts, price, filtered_price, velocity,
+                   bias, signal, vel_signal, z_score, gain, regime
+            FROM kalman_signals
+            WHERE ticker=? AND timeframe=?
+            ORDER BY ts DESC LIMIT ?
+        """, (ticker, timeframe, limit)).fetchall()
+    cols = ['model','ts','price','filtered_price','velocity',
+            'bias','signal','vel_signal','z_score','gain','regime']
+    return [dict(zip(cols, r)) for r in rows]
