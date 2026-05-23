@@ -1079,11 +1079,59 @@ function updateLastUpdate() {
   $('last-update').textContent = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 }
 
+// ── Client-side ring-buffer cache ─────────────────────────────────────────────
+class RingCache {
+  constructor(cap = 40) {
+    this._cap   = cap;
+    this._store = new Map(); // key → { data, exp }
+    this._ring  = [];        // insertion-order keys, oldest first
+  }
+  get(key) {
+    const e = this._store.get(key);
+    if (!e) return null;
+    if (Date.now() > e.exp) { this._store.delete(key); return null; }
+    return e.data;
+  }
+  set(key, data, ttlMs) {
+    if (this._store.has(key)) {
+      // refresh in-place — don't shift the ring position
+      const e = this._store.get(key);
+      e.data = data; e.exp = Date.now() + ttlMs;
+      return;
+    }
+    if (this._ring.length >= this._cap) this._store.delete(this._ring.shift());
+    this._ring.push(key);
+    this._store.set(key, { data, exp: Date.now() + ttlMs });
+  }
+  size()   { return this._ring.length; }
+}
+
+const _cache = new RingCache(40);
+
+function _cacheTtl(path) {
+  if (path.includes('/api/markets/indicators')) return 120_000;   // 2 min
+  if (path.includes('/api/markets/pivots'))     return 300_000;   // 5 min
+  if (path.includes('/api/markets/news'))       return 300_000;   // 5 min
+  if (path.includes('/api/kalman/'))            return 300_000;   // 5 min
+  if (path.includes('/api/portfolio/kalman')) {
+    const m = path.match(/[?&]horizon=([^&]+)/);
+    return (_PORT_REFRESH_MS || {})[m ? m[1] : '1d'] || 3_600_000;
+  }
+  return 0; // price, sessions, jobs, chat — never cache
+}
+
 // ── API fetch ─────────────────────────────────────────────────────────────────
 async function apiFetch(path) {
+  const ttl = _cacheTtl(path);
+  if (ttl > 0) {
+    const hit = _cache.get(path);
+    if (hit !== null) return hit;
+  }
   const r = await fetch(API + path);
   if (!r.ok) throw new Error(r.status);
-  return r.json();
+  const data = await r.json();
+  if (ttl > 0) _cache.set(path, data, ttl);
+  return data;
 }
 
 // ── Ticker management ─────────────────────────────────────────────────────────
