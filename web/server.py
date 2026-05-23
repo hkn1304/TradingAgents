@@ -10,6 +10,9 @@ GET  /api/markets/indicators          technical indicators
 GET  /api/markets/pivots              pivot levels
 GET  /api/markets/news                news feed
 
+GET  /api/kalman/{ticker}             dual Kalman signal (RW + CV)
+GET  /api/kalman/{ticker}/history     signal history for comparison
+
 POST /api/jobs                        submit full-pipeline job (Tab 3)
 GET  /api/jobs/{session_id}           job status + queue position
 
@@ -87,7 +90,7 @@ from web.report_summarizer import get_or_build_summary, HORIZONS
 
 logger = logging.getLogger(__name__)
 
-# ── Lifespan ───────────────────────────────────────────────────────────────────
+# ── Lifespan ───────────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -98,7 +101,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-# ── App ────────────────────────────────────────────────────────────────────────
+# ── App ─────────────────────────────────────────────────────────────────────────────
 
 app = FastAPI(title="TradingAgents Web", lifespan=lifespan)
 app.add_middleware(
@@ -109,7 +112,7 @@ app.add_middleware(
 )
 
 
-# ── Request / Response models ──────────────────────────────────────────────────
+# ── Request / Response models ───────────────────────────────────────────────────────
 
 class JobSubmit(BaseModel):
     ticker:           str
@@ -160,7 +163,7 @@ class TemplateUpdate(BaseModel):
     config: dict = {}
 
 
-# ── /api/models ────────────────────────────────────────────────────────────────
+# ── /api/models ──────────────────────────────────────────────────────────────────
 
 @app.get("/api/models")
 def get_models():
@@ -174,7 +177,7 @@ def get_models():
     return result
 
 
-# ── /api/config ────────────────────────────────────────────────────────────────
+# ── /api/config ───────────────────────────────────────────────────────────────────
 
 @app.get("/api/config")
 def get_config():
@@ -195,7 +198,7 @@ def get_config():
     }
 
 
-# ── /api/markets/* ─────────────────────────────────────────────────────────────
+# ── /api/markets/* ───────────────────────────────────────────────────────────────────
 
 import time as _time
 
@@ -308,7 +311,73 @@ def markets_news(ticker: str, limit: int = 6):
     return result
 
 
-# ── /api/jobs/* (Tab 3 — full pipeline) ───────────────────────────────────────
+# ── /api/kalman/{ticker} ─────────────────────────────────────────────────────────────
+
+@app.get("/api/kalman/{ticker}")
+def get_kalman(
+    ticker: str,
+    timeframe: str = "1d",
+    days: int = 180,
+):
+    import re
+    from datetime import datetime, timedelta
+    from web.kalman import compute_both
+    from web.database import kalman_signal_upsert, kalman_signal_history
+
+    if not re.match(r'^[A-Z0-9.=\-]{1,20}$', ticker.upper()):
+        raise HTTPException(400, detail="Invalid ticker")
+
+    provider = get_market_provider()
+    end_date   = datetime.utcnow().strftime("%Y-%m-%d")
+    start_date = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    interval_map = {
+        "1h": OHLCVInterval.HOUR_1,
+        "4h": OHLCVInterval.HOUR_4,
+        "1d": OHLCVInterval.DAY_1,
+    }
+    iv = interval_map.get(timeframe, OHLCVInterval.DAY_1)
+
+    df = provider.get_ohlcv(ticker.upper(), start_date, end_date, iv)
+    if df.empty or len(df) < 30:
+        raise HTTPException(404, detail=f"Not enough data for {ticker}")
+
+    result = compute_both(df, timeframe=timeframe)
+
+    # Persist latest signal snapshot for both models
+    ts_now = datetime.utcnow().isoformat()
+    last_price = float(df['Close'].iloc[-1]) if 'Close' in df.columns else float(df['close'].iloc[-1])
+    for model_name, sig in [('rw', result['rw']), ('cv', result['cv'])]:
+        kalman_signal_upsert(
+            ticker=ticker.upper(), timeframe=timeframe, model=model_name,
+            ts=ts_now, price=last_price,
+            filtered_price=sig['kalman_line'][-1],
+            velocity=sig['velocity'][-1] if sig['velocity'] else None,
+            bias=sig['bias'], signal=sig['signal'],
+            vel_signal=sig.get('vel_signal'),
+            z_score=sig['z_now'], gain=sig['gain_now'], regime=sig['regime']
+        )
+
+    return {
+        "ticker":    ticker.upper(),
+        "timeframe": timeframe,
+        "n_bars":    result['n_bars'],
+        "rw":        result['rw'],
+        "cv":        result['cv'],
+    }
+
+
+@app.get("/api/kalman/{ticker}/history")
+def get_kalman_history(ticker: str, timeframe: str = "1d", limit: int = 50):
+    from web.database import kalman_signal_history
+    return {
+        "ticker":    ticker.upper(),
+        "timeframe": timeframe,
+        "history":   kalman_signal_history(ticker.upper(), timeframe, limit),
+    }
+
+
+# ── /api/jobs/* (Tab 3 — full pipeline) ─────────────────────────────────────────────
 
 @app.post("/api/jobs", status_code=202)
 def submit_job(body: JobSubmit):
@@ -357,7 +426,7 @@ def cancel_job(session_id: str):
     return {"session_id": session_id, "status": "cancelling"}
 
 
-# ── /api/agents/run/* (Tab 2 — selective agents) ───────────────────────────────
+# ── /api/agents/run/* (Tab 2 — selective agents) ─────────────────────────────────
 
 @app.post("/api/agents/run", status_code=202)
 def submit_agent_run(body: AgentRunSubmit):
@@ -419,7 +488,7 @@ def cancel_agent_run(session_id: str):
 
 
 
-# ── /api/sessions/* (history) ──────────────────────────────────────────────────
+# ── /api/sessions/* (history) ──────────────────────────────────────────────────────────
 
 @app.get("/api/sessions")
 def list_sessions(limit: int = 50):
@@ -445,7 +514,7 @@ def delete_session(session_id: str):
     session_delete(session_id)
 
 
-# ── /api/sessions/{id}/chat ────────────────────────────────────────────────────
+# ── /api/sessions/{id}/chat ──────────────────────────────────────────────────────────
 
 @app.get("/api/sessions/{session_id}/chat")
 def get_chat(session_id: str):
@@ -462,7 +531,7 @@ async def post_chat(session_id: str, body: ChatMessage):
     return {"reply": reply}
 
 
-# ── /api/sessions/{id}/summary ────────────────────────────────────────────────
+# ── /api/sessions/{id}/summary ──────────────────────────────────────────────────────────
 
 @app.get("/api/sessions/{session_id}/summary")
 def get_summary(session_id: str, horizon: str = "week", force: bool = False):
@@ -497,7 +566,7 @@ def get_summary(session_id: str, horizon: str = "week", force: bool = False):
     return {"session_id": session_id, "horizon": horizon, "summary": summary}
 
 
-# ── /api/templates/* ───────────────────────────────────────────────────────────
+# ── /api/templates/* ───────────────────────────────────────────────────────────────────
 
 @app.get("/api/templates")
 def get_templates():
@@ -534,7 +603,7 @@ def delete_template_route(template_id: str):
     template_delete(template_id)
 
 
-# ── WebSocket /ws/{session_id} ─────────────────────────────────────────────────
+# ── WebSocket /ws/{session_id} ─────────────────────────────────────────────────────────────────
 
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(ws: WebSocket, session_id: str):
@@ -566,7 +635,7 @@ async def websocket_endpoint(ws: WebSocket, session_id: str):
         ws_manager.disconnect(session_id, ws)
 
 
-# ── Static PWA ─────────────────────────────────────────────────────────────────
+# ── Static PWA ───────────────────────────────────────────────────────────────────────
 
 _PWA_DIR = Path(__file__).parent.parent / "pwa"
 if _PWA_DIR.exists():
