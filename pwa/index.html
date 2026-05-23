@@ -1,4 +1,3 @@
-﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -504,6 +503,61 @@ nav.tab-bar {
 }
 .hist-chip:hover { border-color: var(--accent); color: var(--accent); }
 .hist-chip.current { border-color: var(--accent); color: var(--accent); }
+/* ── Kalman overlay panel (Tab 1) ─────────────────────────────────────────── */
+.kalman-card { padding: 0; overflow: hidden; }
+.kalman-controls {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 6px;
+}
+.kalman-label { font-size: 11px; color: var(--muted); }
+.kalman-toggle-group { display: flex; gap: 5px; }
+.k-toggle {
+  font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg3); color: var(--muted);
+  cursor: pointer; transition: all .15s;
+}
+.k-toggle.active-rw  { border-color: #38bdf8; color: #38bdf8; background: rgba(56,189,248,.12); }
+.k-toggle.active-cv  { border-color: #fb923c; color: #fb923c; background: rgba(251,146,60,.12); }
+.k-toggle.active-vel { border-color: #a78bfa; color: #a78bfa; background: rgba(167,139,250,.12); }
+#kalman-chart-wrap { width: 100%; }
+#kalman-svg-main   { width: 100%; display: block; }
+#kalman-svg-vel    { width: 100%; display: block; border-top: 1px solid var(--border); }
+
+/* Signal comparison card */
+.ksig-compare {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  border-top: 1px solid var(--border);
+}
+.ksig-col {
+  padding: 10px 12px; border-right: 1px solid var(--border);
+}
+.ksig-col:last-child { border-right: none; }
+.ksig-model-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.ksig-model-rw  { color: #38bdf8; }
+.ksig-model-cv  { color: #fb923c; }
+.ksig-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; }
+.ksig-key  { color: var(--muted); }
+.ksig-val  { font-weight: 700; }
+.ksig-bull { color: var(--bull); }
+.ksig-bear { color: var(--bear); }
+.ksig-neut { color: var(--neutral); }
+.ksig-lead {
+  grid-column: 1 / -1; padding: 8px 12px; border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); text-align: center;
+}
+
+/* Signal badge on price hero */
+.signal-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 700;
+  margin-top: 4px;
+}
+.sig-buy  { background: rgba(63,185,80,.15);  color: var(--bull); border: 1px solid rgba(63,185,80,.4); }
+.sig-sell { background: rgba(248,81,73,.15);  color: var(--bear); border: 1px solid rgba(248,81,73,.4); }
+.sig-none { background: rgba(139,148,158,.1); color: var(--muted); border: 1px solid var(--border); }
 </style>
 </head>
 <body>
@@ -537,6 +591,7 @@ nav.tab-bar {
         <div class="price-badge flat" id="price-change">—</div>
       </div>
       <div class="price-sub" id="price-sub">Loading…</div>
+      <div id="kalman-signal-badge"></div>
     </div>
 
     <!-- TradingView chart -->
@@ -547,6 +602,37 @@ nav.tab-bar {
       </div>
       <iframe id="tv-chart" scrolling="no" allowtransparency="true"
               allowfullscreen="" frameborder="0"></iframe>
+    </div>
+    <!-- Kalman overlay -->
+    <div class="card kalman-card" id="kalman-card">
+      <div class="kalman-controls">
+        <span class="kalman-label" id="kalman-chart-label">Kalman Filter · Daily</span>
+        <div class="kalman-toggle-group">
+          <button class="k-toggle active-rw"  id="ktog-rw"  onclick="toggleKalman('rw')">RW</button>
+          <button class="k-toggle active-cv"  id="ktog-cv"  onclick="toggleKalman('cv')">CV</button>
+          <button class="k-toggle active-vel" id="ktog-vel" onclick="toggleKalman('vel')">Velocity</button>
+          <button class="k-toggle" id="ktog-tf" onclick="cycleKalmanTf()"
+                  style="border-color:var(--accent);color:var(--accent)">1D</button>
+        </div>
+      </div>
+      <div id="kalman-chart-wrap">
+        <svg id="kalman-svg-main" style="background:#161b22;min-height:220px">
+          <text x="50%" y="50%" fill="#8b949e" font-size="12"
+                text-anchor="middle" dominant-baseline="middle">Loading…</text>
+        </svg>
+        <svg id="kalman-svg-vel" style="background:#0d1117;height:70px;display:none"></svg>
+      </div>
+      <div class="ksig-compare" id="ksig-compare">
+        <div class="ksig-col">
+          <div class="ksig-model-label ksig-model-rw">Random Walk</div>
+          <div id="ksig-rw-body" style="color:var(--muted);font-size:11px">Loading…</div>
+        </div>
+        <div class="ksig-col">
+          <div class="ksig-model-label ksig-model-cv">Const. Velocity</div>
+          <div id="ksig-cv-body" style="color:var(--muted);font-size:11px">Loading…</div>
+        </div>
+        <div class="ksig-lead" id="ksig-lead">—</div>
+      </div>
     </div>
 
     <!-- Pivot levels -->
@@ -921,6 +1007,7 @@ function applyTicker() {
 
   // Reload all data
   loadAll();
+  loadKalman();
 }
 
 // ── TradingView chart ─────────────────────────────────────────────────────────
@@ -1123,6 +1210,7 @@ function switchTab(tab) {
   _activeTab = tab;
   if (tab === 'agents')   agentsOnVisible();
   if (tab === 'analysis') analysisOnVisible();
+  if (tab === 'markets')  loadKalman();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2289,6 +2377,267 @@ async function loadSessionHistory() {
   } catch (e) { console.warn('loadSessionHistory failed', e); }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// KALMAN OVERLAY — Tab 1
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _kalmanData     = null;
+let _kalmanTf       = '1d';
+let _kalmanShowRW   = true;
+let _kalmanShowCV   = true;
+let _kalmanShowVel  = true;
+
+const _KalmanTfCycle = ['1d', '1h'];
+
+function cycleKalmanTf() {
+  const idx = _KalmanTfCycle.indexOf(_kalmanTf);
+  _kalmanTf = _KalmanTfCycle[(idx + 1) % _KalmanTfCycle.length];
+  $('ktog-tf').textContent = _kalmanTf.toUpperCase();
+  loadKalman();
+}
+
+function toggleKalman(which) {
+  if (which === 'rw')  { _kalmanShowRW  = !_kalmanShowRW;  $('ktog-rw').classList.toggle('active-rw',  _kalmanShowRW); }
+  if (which === 'cv')  { _kalmanShowCV  = !_kalmanShowCV;  $('ktog-cv').classList.toggle('active-cv',  _kalmanShowCV); }
+  if (which === 'vel') { _kalmanShowVel = !_kalmanShowVel; $('ktog-vel').classList.toggle('active-vel', _kalmanShowVel); }
+  $('kalman-svg-vel').style.display = (_kalmanShowVel && _kalmanData?.cv?.velocity) ? 'block' : 'none';
+  if (_kalmanData) renderKalmanSVG(_kalmanData);
+}
+
+async function loadKalman() {
+  if (_activeTab !== 'markets') return;
+  const days = _kalmanTf === '1h' ? 30 : 180;
+  $('kalman-chart-label').textContent = `Kalman Filter · ${_kalmanTf.toUpperCase()} · ${_ticker}`;
+  try {
+    const d = await apiFetch(`/api/kalman/${_ticker}?timeframe=${_kalmanTf}&days=${days}`);
+    _kalmanData = d;
+    renderKalmanSVG(d);
+    renderKalmanCompare(d);
+    renderKalmanBadge(d);
+  } catch (e) {
+    $('kalman-svg-main').innerHTML =
+      `<text x="50%" y="50%" fill="#f85149" font-size="11"
+             text-anchor="middle" dominant-baseline="middle">⚠ ${e.message}</text>`;
+  }
+}
+
+function renderKalmanSVG(d) {
+  const wrap = $('kalman-chart-wrap');
+  const W = wrap.clientWidth || 360;
+  const H = 220;
+  const PAD = { top: 20, right: 48, bottom: 28, left: 10 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top  - PAD.bottom;
+
+  const closes = d.rw.kalman_line;  // use as x-axis proxy
+  const n = closes.length;
+  if (n < 2) return;
+
+  // Price range across all visible lines
+  const allVals = [...closes];
+  if (_kalmanShowRW) allVals.push(...d.rw.kalman_line);
+  if (_kalmanShowCV) allVals.push(...d.cv.kalman_line);
+  const minP = Math.min(...allVals) * 0.997;
+  const maxP = Math.max(...allVals) * 1.003;
+  const pRange = maxP - minP || 1;
+
+  const px = i  => PAD.left + (i / (n - 1)) * cW;
+  const py = p  => PAD.top  + (1 - (p - minP) / pRange) * cH;
+
+  // ── Build SVG content ────────────────────────────────────────────────────
+  let svg = '';
+
+  // Grid lines (4 horizontal)
+  for (let k = 0; k <= 4; k++) {
+    const yv = minP + (k / 4) * pRange;
+    const yy = py(yv);
+    svg += `<line x1="${PAD.left}" y1="${yy}" x2="${W - PAD.right}" y2="${yy}"
+              stroke="#1e293b" stroke-width="0.6"/>
+            <text x="${W - PAD.right + 3}" y="${yy + 3.5}" fill="#475569"
+              font-size="8.5" font-family="sans-serif">${fmt(yv, 2)}</text>`;
+  }
+
+  // RW Kalman line
+  if (_kalmanShowRW) {
+    const pts = d.rw.kalman_line.map((v, i) => `${px(i)},${py(v)}`).join(' ');
+    svg += `<polyline points="${pts}" fill="none" stroke="#38bdf8" stroke-width="2"
+              stroke-linejoin="round" opacity="0.9"/>`;
+  }
+
+  // CV Kalman line
+  if (_kalmanShowCV) {
+    const pts = d.cv.kalman_line.map((v, i) => `${px(i)},${py(v)}`).join(' ');
+    svg += `<polyline points="${pts}" fill="none" stroke="#fb923c" stroke-width="1.8"
+              stroke-linejoin="round" stroke-dasharray="4,2" opacity="0.9"/>`;
+  }
+
+  // Buy/Sell crossover markers — RW
+  if (_kalmanShowRW) {
+    d.rw.cross_signals.forEach((s, i) => {
+      if (s === 0) return;
+      const x = px(i); const y = py(d.rw.kalman_line[i]);
+      svg += s === 1
+        ? `<polygon points="${x},${y-8} ${x-5},${y+2} ${x+5},${y+2}"
+             fill="#4ade80" opacity="0.9"/>`
+        : `<polygon points="${x},${y+8} ${x-5},${y-2} ${x+5},${y-2}"
+             fill="#f87171" opacity="0.9"/>`;
+    });
+  }
+
+  // Velocity zero-crossing markers — CV
+  if (_kalmanShowCV && d.cv.vel_signals) {
+    d.cv.vel_signals.forEach((s, i) => {
+      if (s === 0) return;
+      const x = px(i); const y = py(d.cv.kalman_line[i]);
+      svg += s === 1
+        ? `<circle cx="${x}" cy="${y-10}" r="4" fill="none"
+             stroke="#fb923c" stroke-width="1.5" opacity="0.85"/>`
+        : `<circle cx="${x}" cy="${y+10}" r="4" fill="none"
+             stroke="#fb923c" stroke-width="1.5" opacity="0.85"/>`;
+    });
+  }
+
+  // Z-score band (light fill when |z| > 1.5)
+  d.rw.z_score.forEach((z, i) => {
+    if (Math.abs(z) < 1.5 || i === 0) return;
+    const x0 = px(i-1); const x1 = px(i);
+    const col = z > 0 ? 'rgba(248,81,73,0.1)' : 'rgba(63,185,80,0.1)';
+    const y0 = PAD.top; const h0 = cH;
+    svg += `<rect x="${x0}" y="${y0}" width="${x1-x0}" height="${h0}" fill="${col}"/>`;
+  });
+
+  // Legend
+  const legY = H - 6;
+  if (_kalmanShowRW)
+    svg += `<line x1="${PAD.left+4}" y1="${legY}" x2="${PAD.left+16}" y2="${legY}"
+              stroke="#38bdf8" stroke-width="2"/>
+            <text x="${PAD.left+19}" y="${legY+3.5}" fill="#38bdf8"
+              font-size="8.5" font-family="sans-serif">RW</text>`;
+  if (_kalmanShowCV)
+    svg += `<line x1="${PAD.left+42}" y1="${legY}" x2="${PAD.left+54}" y2="${legY}"
+              stroke="#fb923c" stroke-width="1.8" stroke-dasharray="3,2"/>
+            <text x="${PAD.left+57}" y="${legY+3.5}" fill="#fb923c"
+              font-size="8.5" font-family="sans-serif">CV</text>`;
+  if (_kalmanShowCV)
+    svg += `<circle cx="${PAD.left+85}" cy="${legY}" r="3.5" fill="none"
+              stroke="#fb923c" stroke-width="1.5"/>
+            <text x="${PAD.left+91}" y="${legY+3.5}" fill="#fb923c"
+              font-size="8.5" font-family="sans-serif">vel signal</text>`;
+
+  // Title
+  svg += `<text x="${PAD.left}" y="13" fill="#64748b" font-size="9.5"
+            font-family="sans-serif" font-weight="600">${_ticker} · ${_kalmanTf.toUpperCase()}</text>`;
+
+  $('kalman-svg-main').setAttribute('viewBox', `0 0 ${W} ${H}`);
+  $('kalman-svg-main').innerHTML = svg;
+
+  // ── Velocity sub-panel ────────────────────────────────────────────────────
+  const velSvg = $('kalman-svg-vel');
+  if (_kalmanShowVel && d.cv.velocity) {
+    velSvg.style.display = 'block';
+    const VH = 70;
+    const vel = d.cv.velocity;
+    const vMax = Math.max(Math.abs(Math.min(...vel)), Math.abs(Math.max(...vel)), 0.01);
+    const vpx = i => PAD.left + (i / (n - 1)) * cW;
+    const vpy = v => VH / 2 - (v / vMax) * (VH / 2 - 6);
+    let vSvg = `<line x1="${PAD.left}" y1="${VH/2}" x2="${W-PAD.right}" y2="${VH/2}"
+                  stroke="#334155" stroke-width="0.8"/>
+                <text x="${PAD.left}" y="10" fill="#475569"
+                  font-size="8.5" font-family="sans-serif">CV Velocity</text>`;
+    // Fill above/below zero
+    for (let i = 1; i < n; i++) {
+      const x0 = vpx(i-1), x1 = vpx(i);
+      const y0 = vpy(vel[i-1]), y1 = vpy(vel[i]), mid = VH/2;
+      const col = vel[i] >= 0 ? 'rgba(251,146,60,0.35)' : 'rgba(100,116,139,0.25)';
+      vSvg += `<polygon points="${x0},${mid} ${x0},${y0} ${x1},${y1} ${x1},${mid}"
+                 fill="${col}"/>`;
+    }
+    const vPts = vel.map((v, i) => `${vpx(i)},${vpy(v)}`).join(' ');
+    vSvg += `<polyline points="${vPts}" fill="none" stroke="#fb923c"
+               stroke-width="1.5" stroke-linejoin="round"/>`;
+    // zero-crossing markers
+    d.cv.vel_signals.forEach((s, i) => {
+      if (s === 0) return;
+      vSvg += `<circle cx="${vpx(i)}" cy="${VH/2}" r="3.5"
+                 fill="${s === 1 ? '#4ade80' : '#f87171'}" opacity="0.9"/>`;
+    });
+    velSvg.setAttribute('viewBox', `0 0 ${W} ${VH}`);
+    velSvg.innerHTML = vSvg;
+  } else {
+    velSvg.style.display = 'none';
+  }
+}
+
+function renderKalmanCompare(d) {
+  function sigHtml(sig, age) {
+    if (!sig) return '<span class="ksig-neut">—</span>';
+    const cls = sig === 'buy' ? 'ksig-bull' : 'ksig-bear';
+    const arrow = sig === 'buy' ? '▲' : '▼';
+    return `<span class="${cls}">${arrow} ${sig.toUpperCase()}</span>`
+         + (age != null ? ` <span style="color:var(--muted);font-size:10px">${age}b ago</span>` : '');
+  }
+  function biasHtml(b) {
+    const cls = b === 'bullish' ? 'ksig-bull' : b === 'bearish' ? 'ksig-bear' : 'ksig-neut';
+    return `<span class="${cls}">${b}</span>`;
+  }
+  function regHtml(r) {
+    return `<span style="color:${r==='trending'?'var(--accent)':'var(--muted)'}">${r}</span>`;
+  }
+
+  function colHtml(sig) {
+    return `
+      <div class="ksig-row"><span class="ksig-key">Bias</span>${biasHtml(sig.bias)}</div>
+      <div class="ksig-row"><span class="ksig-key">Regime</span>${regHtml(sig.regime)}</div>
+      <div class="ksig-row"><span class="ksig-key">Cross</span>${sigHtml(sig.signal, sig.signal_age_bars)}</div>
+      ${sig.vel_signal !== undefined ? `<div class="ksig-row"><span class="ksig-key">Vel</span>${sigHtml(sig.vel_signal, sig.vel_signal_age_bars)}</div>` : ''}
+      <div class="ksig-row"><span class="ksig-key">Z</span>
+        <span class="${Math.abs(sig.z_now)>2?'ksig-bear':'ksig-neut'}">${sig.z_now > 0 ? '+' : ''}${sig.z_now}</span>
+      </div>`;
+  }
+
+  $('ksig-rw-body').innerHTML = colHtml(d.rw);
+  $('ksig-cv-body').innerHTML = colHtml(d.cv);
+
+  // Lead time annotation
+  const lead = d.cv.vel_lead_bars;
+  if (lead != null && lead > 0) {
+    $('ksig-lead').innerHTML =
+      `<span style="color:#fb923c">CV velocity signal led crossover by <strong>${lead} bars</strong></span>`
+      + ` — potential early warning advantage`;
+  } else if (lead != null && lead < 0) {
+    $('ksig-lead').innerHTML =
+      `<span style="color:var(--muted)">CV velocity signal lagged by ${Math.abs(lead)} bars this time</span>`;
+  } else {
+    $('ksig-lead').innerHTML = `<span style="color:var(--muted)">No velocity lead data yet</span>`;
+  }
+}
+
+function renderKalmanBadge(d) {
+  const badge = $('kalman-signal-badge');
+  if (!badge) return;
+  // Use RW as primary, CV as confirmation
+  const rwSig = d.rw.signal;
+  const cvSig = d.cv.signal;
+  const agree = rwSig && cvSig && rwSig === cvSig;
+  const bias  = d.rw.bias;
+
+  let html = '';
+  if (agree) {
+    const cls  = rwSig === 'buy' ? 'sig-buy' : 'sig-sell';
+    const arr  = rwSig === 'buy' ? '▲' : '▼';
+    html = `<span class="signal-badge ${cls}">${arr} ${rwSig.toUpperCase()} · Both models agree</span>`;
+  } else if (rwSig || cvSig) {
+    const sig = rwSig || cvSig;
+    const cls = sig === 'buy' ? 'sig-buy' : 'sig-sell';
+    const arr = sig === 'buy' ? '▲' : '▼';
+    html = `<span class="signal-badge ${cls}" style="opacity:.75">${arr} ${sig.toUpperCase()} · 1 model</span>`;
+  } else {
+    const cls = bias === 'bullish' ? 'sig-buy' : bias === 'bearish' ? 'sig-sell' : 'sig-none';
+    html = `<span class="signal-badge ${cls}">● ${bias}</span>`;
+  }
+  badge.innerHTML = html;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
   $('ticker-input').value = _ticker;
@@ -2297,6 +2646,7 @@ function init() {
 
   updateChart();
   loadAll();
+  loadKalman();
   startTimers();
   initAgentsTab();
   initAnalysisTab();
