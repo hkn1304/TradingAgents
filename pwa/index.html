@@ -2748,13 +2748,17 @@ function renderKalmanBadge(d) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const _PORT_BAR_LABELS = { '1h':'15m bars','4h':'30m bars','1d':'1h bars','1w':'4h bars','1m':'1d bars' };
+const _PORT_REFRESH_MS = { '1h': 15*60*1000, '4h': 30*60*1000, '1d': 60*60*1000, '1w': 60*60*1000, '1m': 60*60*1000 };
 
 let _portHorizon = localStorage.getItem('ta_port_horizon') || '1d';
 let _portTickers = (() => {
   try { return JSON.parse(localStorage.getItem('ta_port_tickers') || '["","","","",""]'); }
   catch { return ['','','','','']; }
 })();
-let _portLoading = false;
+let _portLoading  = false;
+let _portHasData  = false;   // true once a successful scan has been rendered
+let _portRefreshTimer = null;
+let _portLastScanTs   = null;
 
 function initPortfolioTab() {
   _renderPortHorizonBtns();
@@ -2765,6 +2769,10 @@ function setPortHorizon(h) {
   _portHorizon = h;
   localStorage.setItem('ta_port_horizon', h);
   _renderPortHorizonBtns();
+  _resetPortRefreshTimer();
+  // Re-scan immediately if tickers are already filled in
+  const active = _portTickers.filter(t => t);
+  if (active.length) runPortfolioScan();
 }
 
 function _renderPortHorizonBtns() {
@@ -2792,6 +2800,14 @@ function _savePortTicker(idx, val) {
   localStorage.setItem('ta_port_tickers', JSON.stringify(_portTickers));
 }
 
+function _resetPortRefreshTimer() {
+  if (_portRefreshTimer) clearInterval(_portRefreshTimer);
+  _portRefreshTimer = setInterval(() => {
+    const active = _portTickers.filter(t => t);
+    if (active.length && _portHasData) runPortfolioScan();
+  }, _PORT_REFRESH_MS[_portHorizon] || 60 * 60 * 1000);
+}
+
 async function runPortfolioScan() {
   if (_portLoading) return;
 
@@ -2811,20 +2827,26 @@ async function runPortfolioScan() {
   btn.textContent = 'Analyzing…';
   $('port-alloc-card').style.display = 'none';
 
-  $('port-results').innerHTML = active.map(t => `
-    <div class="card port-ticker-card">
-      <div class="port-card-header">
-        <span class="port-card-ticker">${t}</span>
-        <span class="skeleton" style="width:90px;height:22px;display:inline-block;border-radius:6px"></span>
-      </div>
-      <div class="skeleton" style="height:70px;margin-top:10px"></div>
-    </div>`).join('');
+  // Show skeletons only on first load; silent refresh otherwise
+  if (!_portHasData) {
+    $('port-results').innerHTML = active.map(t => `
+      <div class="card port-ticker-card">
+        <div class="port-card-header">
+          <span class="port-card-ticker">${t}</span>
+          <span class="skeleton" style="width:90px;height:22px;display:inline-block;border-radius:6px"></span>
+        </div>
+        <div class="skeleton" style="height:70px;margin-top:10px"></div>
+      </div>`).join('');
+  }
 
   try {
     const data = await apiFetch(
       `/api/portfolio/kalman?tickers=${encodeURIComponent(active.join(','))}&horizon=${_portHorizon}`
     );
+    _portHasData = true;
+    _portLastScanTs = Date.now();
     _renderPortResults(data);
+    _resetPortRefreshTimer();
   } catch (e) {
     $('port-results').innerHTML =
       `<div class="card"><div class="error-msg">⚠ ${e.message}</div></div>`;
@@ -2844,7 +2866,15 @@ function _renderPortResults(data) {
     strong_sell: '▼▼ STRONG SELL',
   };
 
-  $('port-results').innerHTML = data.results.map(r => {
+  // Refresh-time stamp injected before the first card
+  const refreshMs   = _PORT_REFRESH_MS[data.horizon] || 60*60*1000;
+  const nextMinutes = Math.round(refreshMs / 60000);
+  const stampHtml   = `<div style="font-size:10px;color:var(--muted);padding:6px 12px 0">
+    Updated ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+    · auto-refreshes every ${nextMinutes} min
+  </div>`;
+
+  $('port-results').innerHTML = stampHtml + data.results.map(r => {
     if (r.error) return `
       <div class="card port-ticker-card">
         <div class="port-card-header">
