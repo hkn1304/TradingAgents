@@ -512,10 +512,17 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
             cv_eff = (cv_vel if (cv_vel and cv_vel_age is not None and cv_vel_age < 15)
                       else _eff(cv_cross, cv['bias']))
             models_agree = bool(rw_eff and cv_eff and rw_eff == cv_eff)
+            # What direction do the models agree on (if they do)?
+            agreed_side = rw_eff if models_agree else None  # 'buy' | 'sell' | None
 
             # Composite score (0–100)
             score = max(buy_r, sell_r) * 50
-            if models_agree:             score += 15
+            # Agreement bonus only when models align WITH the bar-state direction
+            if models_agree and agreed_side == ('buy' if direction == 'bullish' else 'sell'):
+                score += 15
+            elif models_agree:
+                # Models agree but against the historical trend — mild penalty
+                score -= 5
             if rw['regime'] == 'trending': score += 10
             cross_age = rw.get('signal_age_bars')
             if cross_age is not None and cross_age < 5: score += 10
@@ -524,12 +531,18 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
             if abs(z) > 2.5:  score -= 15
             score = int(max(0, min(100, round(score))))
 
-            if direction == "neutral" or score < 40:
+            # Model signals take priority over bar-state direction when they agree
+            if agreed_side and score >= 40:
+                if agreed_side == 'buy':
+                    sig_label = "strong_buy" if score >= 65 else "buy"
+                else:
+                    sig_label = "strong_sell" if score >= 65 else "sell"
+            elif direction == "neutral" or score < 40:
                 sig_label = "neutral"
             elif direction == "bullish":
-                sig_label = "strong_buy" if (score >= 65 and models_agree) else "buy"
+                sig_label = "buy"
             else:
-                sig_label = "strong_sell" if (score >= 65 and models_agree) else "sell"
+                sig_label = "sell"
 
             last_price = float(df2['close'].iloc[-1])
 
@@ -558,7 +571,7 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
 
     # Score-weighted allocation among confirmed BUY tickers (score >= 45)
     buy_results = [r for r in results if not r.get('error')
-                   and r['direction'] == 'bullish' and r['signal_strength'] >= 45]
+                   and r['signal'] in ('buy', 'strong_buy') and r['signal_strength'] >= 45]
     total_score = sum(r['signal_strength'] for r in buy_results) or 1
     allocation  = {r['ticker']: (round(r['signal_strength'] / total_score, 4)
                                  if r in buy_results else 0.0)
