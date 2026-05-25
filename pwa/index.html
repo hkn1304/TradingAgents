@@ -95,7 +95,7 @@ nav.tab-bar {
   height: var(--tabbar-h);
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--bg2); border-top: 1px solid var(--border);
-  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
 }
 .tab-btn {
   background: none; border: none; color: var(--muted);
@@ -195,6 +195,88 @@ nav.tab-bar {
   color: var(--bear); font-size: 12px; padding: 8px 0;
   display: flex; align-items: center; gap: 6px;
 }
+
+/* ── Tab 5: Execute (MT5) ─────────────────────────────────────────────────── */
+.exec-conn-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;
+}
+.exec-input {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 7px 10px; font-size: 13px; outline: none; width: 100%;
+}
+.exec-input:focus { border-color: var(--accent); }
+.exec-btn {
+  background: var(--accent); color: #0d1117; border: none;
+  border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: opacity .15s;
+}
+.exec-btn:disabled { opacity: .5; cursor: not-allowed; }
+.exec-btn-danger {
+  background: rgba(248,81,73,.15); color: var(--bear); border: 1px solid var(--bear);
+  border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.exec-btn-sm {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer;
+}
+.exec-status-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; padding: 3px 10px; border-radius: 10px; margin-top: 8px;
+  border: 1px solid var(--border);
+}
+.exec-status-pill.conn  { color: var(--bull); border-color: var(--bull); background: rgba(63,185,80,.08); }
+.exec-status-pill.disc  { color: var(--muted); }
+.exec-acct-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.exec-acct-box { background: var(--bg3); border-radius: 8px; padding: 10px; }
+.exec-acct-lbl { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+.exec-acct-val { font-size: 17px; font-weight: 700; }
+.exec-cfg-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;
+}
+.exec-cfg-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.exec-select {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 6px; padding: 6px 8px; font-size: 12px; width: 100%; outline: none;
+}
+.exec-number {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 6px; padding: 6px 8px; font-size: 12px; width: 100%; outline: none;
+}
+.exec-auto-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 0; border-bottom: 1px solid var(--border);
+}
+.exec-auto-row:last-child { border-bottom: none; }
+.exec-toggle {
+  position: relative; width: 38px; height: 20px; flex-shrink: 0;
+}
+.exec-toggle input { opacity: 0; width: 0; height: 0; }
+.exec-toggle-track {
+  position: absolute; cursor: pointer; inset: 0;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 20px;
+  transition: .2s;
+}
+.exec-toggle input:checked + .exec-toggle-track { background: var(--bull); border-color: var(--bull); }
+.exec-toggle-track::before {
+  content: ''; position: absolute; height: 14px; width: 14px; left: 2px; bottom: 2px;
+  background: var(--muted); border-radius: 50%; transition: .2s;
+}
+.exec-toggle input:checked + .exec-toggle-track::before {
+  transform: translateX(18px); background: #0d1117;
+}
+.exec-pending-card {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 8px; background: var(--bg3);
+}
+.exec-pending-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.exec-pending-ticker { font-size: 17px; font-weight: 800; }
+.exec-pending-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.exec-pos-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.exec-pos-table th { font-size: 10px; color: var(--muted); text-align: left; padding: 4px 4px; }
+.exec-pos-table td { padding: 7px 4px; border-top: 1px solid var(--border); }
+.exec-log-item { padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.exec-log-item:last-child { border-bottom: none; }
+.exec-log-ts { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
 /* ── Tab 4: Portfolio ─────────────────────────────────────────────────────── */
 .port-horizon-row {
@@ -960,6 +1042,99 @@ nav.tab-bar {
 
   </div><!-- /tab-portfolio -->
 
+  <!-- ── Tab 5: Execute (MT5 Auto-trading) ─────────────────────────────── -->
+  <div id="tab-execute" class="tab-content" style="padding-bottom:80px">
+
+    <!-- Connection Panel -->
+    <div class="card">
+      <div class="card-title">MT5 Connection</div>
+      <div class="exec-conn-grid">
+        <input class="exec-input" id="exec-login"    type="number"   placeholder="Login">
+        <input class="exec-input" id="exec-password" type="password" placeholder="Password">
+        <input class="exec-input" id="exec-server"   type="text"     placeholder="Server">
+      </div>
+      <button class="exec-btn" id="exec-conn-btn" onclick="mt5Connect()">Connect</button>
+      <div id="exec-status-pill" class="exec-status-pill disc">
+        <span>●</span><span id="exec-status-text">Disconnected</span>
+      </div>
+    </div>
+
+    <!-- Account Info (hidden until connected) -->
+    <div class="card" id="exec-acct-card" style="display:none">
+      <div class="card-title">Account</div>
+      <div class="exec-acct-grid" id="exec-acct-grid"></div>
+    </div>
+
+    <!-- Config -->
+    <div class="card">
+      <div class="card-title">Execution Config</div>
+      <div class="exec-cfg-grid">
+        <div>
+          <div class="exec-cfg-label">Risk per trade</div>
+          <input class="exec-number" id="exec-risk"    type="number" step="0.001" min="0.001" max="0.1" value="0.01">
+        </div>
+        <div>
+          <div class="exec-cfg-label">Max positions</div>
+          <input class="exec-number" id="exec-maxpos"  type="number" step="1"     min="1"     max="20"  value="3">
+        </div>
+        <div>
+          <div class="exec-cfg-label">Min Kalman score</div>
+          <input class="exec-number" id="exec-minscore" type="number" step="1"    min="40"    max="100" value="65">
+        </div>
+        <div>
+          <div class="exec-cfg-label">Agent max age</div>
+          <select class="exec-select" id="exec-age">
+            <option value="8">Today (8 h)</option>
+            <option value="24" selected>24 h</option>
+            <option value="72">72 h</option>
+          </select>
+        </div>
+      </div>
+      <button class="exec-btn" onclick="mt5SaveConfig()">Save Config</button>
+    </div>
+
+    <!-- Auto-execute toggles (filled dynamically from portfolio tickers) -->
+    <div class="card" id="exec-auto-card">
+      <div class="card-title">Auto-Execute Tickers</div>
+      <div id="exec-auto-rows"><div style="font-size:12px;color:var(--muted)">Run a Portfolio scan first.</div></div>
+    </div>
+
+    <!-- Pending Signals (manual approve) -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin:0">Pending Signals</div>
+        <button class="exec-btn-sm" onclick="mt5CheckPending()">Refresh</button>
+      </div>
+      <div id="exec-pending-list"><div style="font-size:12px;color:var(--muted)">No pending signals.</div></div>
+    </div>
+
+    <!-- Open Positions -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin:0">Open Positions</div>
+        <button class="exec-btn-sm" onclick="mt5RefreshPositions()">Refresh</button>
+      </div>
+      <div id="exec-positions-wrap">
+        <table class="exec-pos-table">
+          <thead><tr>
+            <th>Symbol</th><th>Dir</th><th>Vol</th>
+            <th>Entry</th><th>P/L</th><th></th>
+          </tr></thead>
+          <tbody id="exec-positions-body">
+            <tr><td colspan="6" style="color:var(--muted);font-size:12px">Connect MT5 first.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Trade Log -->
+    <div class="card">
+      <div class="card-title">Trade Log</div>
+      <div id="exec-log-list"><div style="font-size:12px;color:var(--muted)">No entries.</div></div>
+    </div>
+
+  </div><!-- /tab-execute -->
+
 </main>
 
 <!-- ── Bottom tab bar ────────────────────────────────────────────────────── -->
@@ -1003,6 +1178,13 @@ nav.tab-bar {
            6.75 7.5"/>
     </svg>
     Portfolio
+  </button>
+  <button class="tab-btn" id="btn-execute" onclick="switchTab('execute')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
+    </svg>
+    Execute
   </button>
 </nav>
 
@@ -1356,7 +1538,7 @@ async function loadAll() {
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(tab) {
-  ['markets', 'agents', 'analysis', 'portfolio'].forEach(t => {
+  ['markets', 'agents', 'analysis', 'portfolio', 'execute'].forEach(t => {
     $('tab-' + t).classList.toggle('active', t === tab);
     $('btn-' + t).classList.toggle('active', t === tab);
   });
@@ -1364,6 +1546,7 @@ function switchTab(tab) {
   if (tab === 'agents')    agentsOnVisible();
   if (tab === 'analysis')  analysisOnVisible();
   if (tab === 'markets')   loadKalman();
+  if (tab === 'execute')   mt5RefreshPositions();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2892,6 +3075,7 @@ async function runPortfolioScan() {
       `/api/portfolio/kalman?tickers=${encodeURIComponent(active.join(','))}&horizon=${_portHorizon}`
     );
     _portHasData = true;
+    _mt5AutoExecuteFromScan(data.results);
     _portLastScanTs = Date.now();
     _renderPortResults(data);
     _resetPortRefreshTimer();
@@ -3030,6 +3214,254 @@ function _renderPortAllocation(data) {
   $('port-alloc-card').style.display = 'block';
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 5 — EXECUTE (MT5 Auto-trading)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _mt5Connected  = false;
+let _mt5AutoTickers = {};   // ticker → bool
+let _mt5PendingSignals = []; // [{ticker, direction, score, modelsAgree, atr}]
+
+function initExecuteTab() {
+  mt5PollStatus();
+}
+
+async function mt5PollStatus() {
+  try {
+    const d = await apiFetch('/api/mt5/status');
+    _mt5Connected = d.connected;
+    _renderMt5Status(d);
+  } catch {}
+}
+
+function _renderMt5Status(d) {
+  const pill = $('exec-status-pill');
+  const txt  = $('exec-status-text');
+  const connBtn = $('exec-conn-btn');
+  if (d.connected) {
+    pill.className = 'exec-status-pill conn';
+    txt.textContent = `Connected — ${d.account?.login ?? ''} @ ${d.account?.server ?? ''}`;
+    connBtn.textContent = 'Disconnect';
+    connBtn.onclick = mt5Disconnect;
+    $('exec-acct-card').style.display = 'block';
+    _renderAcct(d.account);
+    mt5RefreshPositions();
+  } else {
+    pill.className = 'exec-status-pill disc';
+    txt.textContent = 'Disconnected';
+    connBtn.textContent = 'Connect';
+    connBtn.onclick = mt5Connect;
+    $('exec-acct-card').style.display = 'none';
+    $('exec-positions-body').innerHTML =
+      '<tr><td colspan="6" style="color:var(--muted);font-size:12px">Connect MT5 first.</td></tr>';
+  }
+}
+
+function _renderAcct(a) {
+  if (!a) return;
+  $('exec-acct-grid').innerHTML = [
+    ['Balance', '$' + fmt(a.balance)],
+    ['Equity',  '$' + fmt(a.equity)],
+    ['P/L',     (a.profit >= 0 ? '+' : '') + '$' + fmt(a.profit)],
+    ['Margin',  '$' + fmt(a.margin)],
+    ['Free',    '$' + fmt(a.margin_free)],
+    ['Leverage','1:' + a.leverage],
+  ].map(([l,v]) => `
+    <div class="exec-acct-box">
+      <div class="exec-acct-lbl">${l}</div>
+      <div class="exec-acct-val">${v}</div>
+    </div>`).join('');
+}
+
+async function mt5Connect() {
+  const login    = $('exec-login').value.trim();
+  const password = $('exec-password').value;
+  const server   = $('exec-server').value.trim();
+  if (!login || !password || !server) { alert('Fill login, password, server'); return; }
+  const btn = $('exec-conn-btn');
+  btn.disabled = true; btn.textContent = 'Connecting…';
+  try {
+    const d = await apiFetch('/api/mt5/connect', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ login: Number(login), password, server }),
+    });
+    _renderMt5Status(d);
+    if (!d.connected) alert('Connection failed: ' + (d.message || ''));
+  } catch (e) { alert('Error: ' + e.message); }
+  btn.disabled = false;
+}
+
+async function mt5Disconnect() {
+  await apiFetch('/api/mt5/connect', { method: 'DELETE' });
+  _mt5Connected = false;
+  _renderMt5Status({ connected: false });
+}
+
+async function mt5SaveConfig() {
+  const payload = {
+    risk_pct:          parseFloat($('exec-risk').value)     || 0.01,
+    max_positions:     parseInt($('exec-maxpos').value)     || 3,
+    min_kalman_score:  parseInt($('exec-minscore').value)   || 65,
+    agent_max_age_h:   parseFloat($('exec-age').value)      || 24,
+    auto_tickers:      Object.keys(_mt5AutoTickers).filter(t => _mt5AutoTickers[t]),
+    enabled:           true,
+  };
+  try {
+    await apiFetch('/api/mt5/config', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    alert('Config saved.');
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+function _renderAutoRows(tickers) {
+  if (!tickers.length) {
+    $('exec-auto-rows').innerHTML = '<div style="font-size:12px;color:var(--muted)">Run a Portfolio scan first.</div>';
+    return;
+  }
+  $('exec-auto-rows').innerHTML = tickers.map(t => `
+    <div class="exec-auto-row">
+      <span style="font-size:13px;font-weight:700">${t}</span>
+      <label class="exec-toggle">
+        <input type="checkbox" id="exec-auto-${t}"
+          ${_mt5AutoTickers[t] ? 'checked' : ''}
+          onchange="_onAutoToggle('${t}', this.checked)">
+        <span class="exec-toggle-track"></span>
+      </label>
+    </div>`).join('');
+}
+
+function _onAutoToggle(ticker, on) {
+  _mt5AutoTickers[ticker] = on;
+}
+
+async function mt5CheckPending() {
+  if (!_mt5PendingSignals.length) {
+    $('exec-pending-list').innerHTML = '<div style="font-size:12px;color:var(--muted)">No pending signals.</div>';
+    return;
+  }
+  _renderPendingSignals(_mt5PendingSignals);
+}
+
+function _renderPendingSignals(signals) {
+  if (!signals.length) {
+    $('exec-pending-list').innerHTML = '<div style="font-size:12px;color:var(--muted)">No pending signals.</div>';
+    return;
+  }
+  $('exec-pending-list').innerHTML = signals.map(s => `
+    <div class="exec-pending-card">
+      <div class="exec-pending-top">
+        <div>
+          <div class="exec-pending-ticker ${s.direction==='buy'?'bull-c':'bear-c'}">${s.ticker}</div>
+          <div class="exec-pending-meta">
+            ${s.direction.toUpperCase()} · Score ${s.score} · ${s.modelsAgree ? '✓ agree' : '⚠ split'}
+            ${s.atr ? '· ATR ' + fmt(s.atr,4) : ''}
+          </div>
+        </div>
+        <button class="exec-btn" onclick="mt5ApproveSignal('${s.ticker}','${s.direction}',${s.score},${s.modelsAgree},${s.atr||0})">
+          ▶ Execute
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+async function mt5ApproveSignal(ticker, direction, score, modelsAgree, atr) {
+  if (!_mt5Connected) { alert('MT5 not connected'); return; }
+  try {
+    const d = await apiFetch('/api/mt5/execute', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ ticker, direction, signal_strength: score, models_agree: modelsAgree, atr: atr||null }),
+    });
+    if (d.success) {
+      alert(`✓ Order placed — ticket ${d.ticket}`);
+      _mt5PendingSignals = _mt5PendingSignals.filter(s => s.ticker !== ticker);
+      _renderPendingSignals(_mt5PendingSignals);
+      mt5RefreshPositions();
+      _renderTradeLog();
+    } else {
+      alert('Execution failed: ' + d.comment);
+    }
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function mt5RefreshPositions() {
+  if (!_mt5Connected) return;
+  try {
+    const d = await apiFetch('/api/mt5/status');
+    const positions = d.positions || [];
+    $('exec-positions-body').innerHTML = positions.length ? positions.map(p => `
+      <tr>
+        <td><strong>${p.symbol}</strong></td>
+        <td class="${p.direction==='buy'?'bull-c':'bear-c'}">${p.direction.toUpperCase()}</td>
+        <td>${p.volume}</td>
+        <td>${fmt(p.entry_price,4)}</td>
+        <td class="${p.profit>=0?'bull-c':'bear-c'}">${sign(p.profit)}${fmt(p.profit)}</td>
+        <td><button class="exec-btn-danger" onclick="mt5ClosePosition(${p.ticket})">✕</button></td>
+      </tr>`).join('')
+      : '<tr><td colspan="6" style="color:var(--muted);font-size:12px">No open positions.</td></tr>';
+  } catch {}
+}
+
+async function mt5ClosePosition(ticket) {
+  if (!confirm(`Close position #${ticket}?`)) return;
+  try {
+    const d = await apiFetch('/api/mt5/close/' + ticket, { method: 'POST' });
+    if (d.success) { alert('Position closed.'); mt5RefreshPositions(); _renderTradeLog(); }
+    else alert('Close failed: ' + d.comment);
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function _renderTradeLog() {
+  try {
+    const entries = await apiFetch('/api/mt5/log');
+    $('exec-log-list').innerHTML = entries.length ? entries.map(e => `
+      <div class="exec-log-item">
+        <div>
+          <span class="${e.direction==='buy'?'bull-c':'bear-c'} " style="font-weight:700">${e.ticker} ${e.direction.toUpperCase()}</span>
+          <span style="margin-left:6px;font-size:11px;color:var(--muted)">score ${e.kalman_score} · ${e.agent_rating}</span>
+          ${e.success
+            ? `<span class="bull-c" style="margin-left:6px">✓ ticket ${e.ticket}</span>`
+            : `<span class="bear-c" style="margin-left:6px">✗ ${e.comment}</span>`}
+        </div>
+        <div class="exec-log-ts">${e.ts ? new Date(e.ts+'Z').toLocaleString() : ''}</div>
+      </div>`).join('')
+      : '<div style="font-size:12px;color:var(--muted)">No entries.</div>';
+  } catch {}
+}
+
+// Auto-execute hook called from runPortfolioScan() after scan completes
+async function _mt5AutoExecuteFromScan(scanResults) {
+  if (!_mt5Connected) return;
+  for (const r of scanResults) {
+    if (r.error) continue;
+    if (!_mt5AutoTickers[r.ticker]) continue;
+    const dir = r.direction === 'bullish' ? 'buy' : r.direction === 'bearish' ? 'sell' : null;
+    if (!dir) continue;
+    try {
+      const d = await apiFetch('/api/mt5/execute', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          ticker: r.ticker,
+          direction: dir,
+          signal_strength: r.signal_strength,
+          models_agree: r.models_agree,
+          atr: null,
+        }),
+      });
+      if (d.success) {
+        console.log(`Auto-executed ${r.ticker} ${dir} ticket=${d.ticket}`);
+        mt5RefreshPositions();
+        _renderTradeLog();
+      }
+    } catch {}
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
   $('ticker-input').value = _ticker;
@@ -3043,6 +3475,7 @@ function init() {
   initAgentsTab();
   initAnalysisTab();
   initPortfolioTab();
+  initExecuteTab();
   loadModelOptions();
   loadSessionHistory();
 

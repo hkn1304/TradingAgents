@@ -36,7 +36,15 @@ WS   /ws/{session_id}                 real-time stream of agent progress
 
 GET  /api/portfolio/kalman            multi-ticker Kalman scan + allocation (Tab 4)
 
-GET  /                                serves the 4-tab PWA (pwa/index.html)
+POST /api/mt5/connect                 connect to MT5 terminal (Tab 5)
+DELETE /api/mt5/connect               disconnect from MT5
+GET  /api/mt5/status                  connection status + account info + open positions
+POST /api/mt5/config                  update execution config (risk %, thresholds, auto tickers)
+POST /api/mt5/execute                 check concurrence + execute a single ticker signal
+POST /api/mt5/close/{ticket}          close an open position by ticket number
+GET  /api/mt5/log                     last 50 execution log entries
+
+GET  /                                serves the 5-tab PWA (pwa/index.html)
 """
 
 from __future__ import annotations
@@ -89,8 +97,14 @@ from web.job_runner import (
 )
 from web.chat import chat as chat_handler
 from web.report_summarizer import get_or_build_summary, HORIZONS
+from web.mt5_broker import MT5Broker
+from web.execution_engine import ExecutionEngine
 
 logger = logging.getLogger(__name__)
+
+# ── MT5 singletons (created once, shared across requests) ────────────────────
+_mt5_broker  = MT5Broker()
+_exec_engine = ExecutionEngine(_mt5_broker)
 
 # ── Lifespan ───────────────────────────────────────────────────────────────────────
 
@@ -163,6 +177,29 @@ class TemplateUpdate(BaseModel):
     name:   str
     ticker: str
     config: dict = {}
+
+
+class MT5ConnectRequest(BaseModel):
+    login:    int
+    password: str
+    server:   str
+
+
+class MT5ConfigRequest(BaseModel):
+    risk_pct:          Optional[float]     = None
+    max_positions:     Optional[int]       = None
+    min_kalman_score:  Optional[int]       = None
+    agent_max_age_h:   Optional[float]     = None
+    auto_tickers:      Optional[list[str]] = None
+    enabled:           Optional[bool]      = None
+
+
+class MT5ExecuteRequest(BaseModel):
+    ticker:          str
+    direction:       str            # 'bullish' | 'bearish'
+    signal_strength: int
+    models_agree:    bool
+    atr:             Optional[float] = None
 
 
 # ── /api/models ──────────────────────────────────────────────────────────────────
@@ -538,6 +575,112 @@ def _port_error(ticker: str, msg: str) -> dict:
         "rw_signal": None, "cv_signal": None, "models_agree": False,
         "regime": "ranging", "z_now": 0.0,
         "sparkline_closes": [], "sparkline_kalman": [],
+    }
+
+
+# ── /api/mt5/* (Tab 5 — execution) ──────────────────────────────────────────
+
+@app.post("/api/mt5/connect", status_code=200)
+def mt5_connect(body: MT5ConnectRequest):
+    ok, msg = _mt5_broker.connect(body.login, body.password, body.server)
+    if not ok:
+        raise HTTPException(400, detail=msg)
+    acct = _mt5_broker.get_account_info()
+    return {
+        "connected": True,
+        "message":   msg,
+        "account":   _acct_dict(acct),
+    }
+
+
+@app.delete("/api/mt5/connect", status_code=200)
+def mt5_disconnect():
+    _mt5_broker.disconnect()
+    return {"connected": False}
+
+
+@app.get("/api/mt5/status")
+def mt5_status():
+    acct      = _mt5_broker.get_account_info()
+    positions = _mt5_broker.get_positions()
+    return {
+        "connected": _mt5_broker.connected,
+        "account":   _acct_dict(acct),
+        "positions": [_pos_dict(p) for p in positions],
+        "config":    _exec_engine.get_config(),
+    }
+
+
+@app.post("/api/mt5/config")
+def mt5_config(body: MT5ConfigRequest):
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    _exec_engine.update_config(**updates)
+    return {"config": _exec_engine.get_config()}
+
+
+@app.post("/api/mt5/execute")
+def mt5_execute(body: MT5ExecuteRequest):
+    """
+    Check concurrence for a single ticker + Kalman result, then execute if confirmed.
+    The Kalman result fields come directly from the Portfolio tab scan.
+    """
+    kalman_result = {
+        "direction":       body.direction,
+        "signal_strength": body.signal_strength,
+        "models_agree":    body.models_agree,
+    }
+    signal = _exec_engine.check_concurrence(body.ticker.upper(), kalman_result)
+    if signal is None:
+        return {
+            "executed": False,
+            "reason":   "Concurrence gate not passed (Kalman/agent do not agree or thresholds not met)",
+        }
+    entry = _exec_engine.execute_signal(signal, atr=body.atr)
+    return {"executed": entry["success"], "log": entry}
+
+
+@app.post("/api/mt5/close/{ticket}")
+def mt5_close(ticket: int):
+    result = _mt5_broker.close_position(ticket)
+    if not result.success:
+        raise HTTPException(400, detail=result.comment)
+    return {"closed": True, "ticket": ticket, "comment": result.comment}
+
+
+@app.get("/api/mt5/log")
+def mt5_log(limit: int = 50):
+    return {"log": _exec_engine.get_log(limit)}
+
+
+def _acct_dict(acct) -> Optional[dict]:
+    if acct is None:
+        return None
+    return {
+        "login":       acct.login,
+        "server":      acct.server,
+        "balance":     acct.balance,
+        "equity":      acct.equity,
+        "margin":      acct.margin,
+        "margin_free": acct.margin_free,
+        "leverage":    acct.leverage,
+        "currency":    acct.currency,
+        "profit":      acct.profit,
+    }
+
+
+def _pos_dict(p) -> dict:
+    return {
+        "ticket":        p.ticket,
+        "symbol":        p.symbol,
+        "direction":     p.direction,
+        "volume":        p.volume,
+        "entry_price":   p.entry_price,
+        "current_price": p.current_price,
+        "sl":            p.sl,
+        "tp":            p.tp,
+        "profit":        p.profit,
+        "comment":       p.comment,
+        "open_time":     p.open_time,
     }
 
 
