@@ -441,7 +441,7 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
     from datetime import datetime, timedelta
     from web.kalman import compute_both
 
-    ticker_list = [t.strip().upper() for t in tickers.split(',') if t.strip()][:5]
+    ticker_list = [t.strip().upper() for t in tickers.split(',') if t.strip()][:20]
     if not ticker_list:
         raise HTTPException(400, detail="No tickers provided")
     for t in ticker_list:

@@ -315,6 +315,12 @@ nav.tab-bar {
   transition: color .15s, border-color .15s;
 }
 .port-ticker-del:hover { color: var(--bear); border-color: var(--bear); }
+.port-hz-sel {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 2px 4px; font-size: 11px; font-weight: 600;
+  cursor: pointer; min-width: 44px; outline: none;
+}
+.port-hz-sel:focus { border-color: var(--accent); }
 .port-add-btn {
   display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
   background: none; border: 1px dashed var(--border); color: var(--muted);
@@ -1160,6 +1166,33 @@ nav.tab-bar {
     <div class="card" id="exec-auto-card">
       <div class="card-title">Auto-Execute Tickers</div>
       <div id="exec-auto-rows"><div style="font-size:12px;color:var(--muted)">Run a Portfolio scan first.</div></div>
+    </div>
+
+    <!-- Periodic auto-scan timer -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="card-title" style="margin:0">Auto-Scan Timer</div>
+        <span id="exec-scan-countdown" style="font-size:12px;color:var(--accent);font-weight:600"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <label class="exec-toggle">
+          <input type="checkbox" id="exec-auto-scan" onchange="_onAutoScanToggle()">
+          <span class="exec-toggle-track"></span>
+        </label>
+        <span style="font-size:12px;color:var(--muted)">Auto-scan portfolio every</span>
+        <select id="exec-scan-interval"
+          style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 8px;font-size:12px;outline:none"
+          onchange="_onScanIntervalChange()">
+          <option value="15">15 min</option>
+          <option value="30">30 min</option>
+          <option value="60" selected>1 h</option>
+          <option value="240">4 h</option>
+          <option value="1440">1 d</option>
+        </select>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">
+        Runs the Portfolio scan on the chosen interval. Auto-close and auto-execute apply to tickers toggled ON above.
+      </div>
     </div>
 
     <!-- Pending Signals (manual approve) -->
@@ -3061,13 +3094,16 @@ const _PORT_BAR_LABELS = { '1h':'15m bars','4h':'30m bars','1d':'1h bars','1w':'
 const _PORT_REFRESH_MS = { '1h': 15*60*1000, '4h': 30*60*1000, '1d': 60*60*1000, '1w': 60*60*1000, '1m': 60*60*1000 };
 
 let _portHorizon = localStorage.getItem('ta_port_horizon') || '1d';
-let _portTickers = (() => {
+let _portTickerConfigs = (() => {
   try {
-    const saved = JSON.parse(localStorage.getItem('ta_port_tickers') || '["","","","",""]');
-    // Ensure at least 1 slot
-    return Array.isArray(saved) && saved.length ? saved : ['','','','',''];
+    const saved = localStorage.getItem('ta_port_configs');
+    if (saved) return JSON.parse(saved);
+    // Migrate from old flat-ticker format
+    const old = JSON.parse(localStorage.getItem('ta_port_tickers') || '["","","","",""]');
+    const arr = Array.isArray(old) ? old : [''];
+    return arr.map(t => ({ ticker: t || '', horizon: _portHorizon }));
   }
-  catch { return ['','','','','']; }
+  catch { return [{ ticker: '', horizon: '1d' }]; }
 })();
 let _portLoading  = false;
 let _portHasData  = false;   // true once a successful scan has been rendered
@@ -3097,65 +3133,80 @@ function _renderPortHorizonBtns() {
   if (info) info.textContent = _PORT_BAR_LABELS[_portHorizon] || '';
 }
 
+function _savePortConfigs() {
+  localStorage.setItem('ta_port_configs', JSON.stringify(_portTickerConfigs));
+}
+
 function _renderPortTickerInputs() {
-  const canDelete = _portTickers.length > 1;
-  $('port-tickers').innerHTML = _portTickers.map((v, i) => `
+  const canDelete = _portTickerConfigs.length > 1;
+  const HZS = ['1h','4h','1d','1w','1m'];
+  $('port-tickers').innerHTML = _portTickerConfigs.map((cfg, i) => `
     <div class="port-ticker-row" id="port-row-${i}">
       <span class="port-ticker-num">${i + 1}</span>
       <input class="port-ticker-input" id="port-t${i}"
              placeholder="TICKER" maxlength="20"
-             value="${v || ''}"
+             value="${cfg.ticker || ''}"
              oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9.\\-=]/g,'')"
              onchange="_savePortTicker(${i},this.value)"/>
+      <select class="port-hz-sel" id="port-hz${i}" onchange="_savePortHorizon(${i},this.value)">
+        ${HZS.map(h => `<option value="${h}"${cfg.horizon===h?' selected':''}>${h.toUpperCase()}</option>`).join('')}
+      </select>
       ${canDelete ? `<button class="port-ticker-del" onclick="_removePortTicker(${i})" title="Remove">✕</button>` : ''}
     </div>`).join('');
 }
 
 function _savePortTicker(idx, val) {
-  _portTickers[idx] = val.trim().toUpperCase();
-  localStorage.setItem('ta_port_tickers', JSON.stringify(_portTickers));
+  _portTickerConfigs[idx].ticker = val.trim().toUpperCase();
+  _savePortConfigs();
+}
+
+function _savePortHorizon(idx, val) {
+  _portTickerConfigs[idx].horizon = val;
+  _savePortConfigs();
 }
 
 function _addPortTicker() {
   _flushPortInputs();
-  _portTickers.push('');
-  localStorage.setItem('ta_port_tickers', JSON.stringify(_portTickers));
+  _portTickerConfigs.push({ ticker: '', horizon: _portHorizon || '1d' });
+  _savePortConfigs();
   _renderPortTickerInputs();
-  // Focus the new input
-  const newInput = $('port-t' + (_portTickers.length - 1));
+  const newInput = $('port-t' + (_portTickerConfigs.length - 1));
   if (newInput) newInput.focus();
 }
 
 function _removePortTicker(idx) {
   _flushPortInputs();
-  _portTickers.splice(idx, 1);
-  localStorage.setItem('ta_port_tickers', JSON.stringify(_portTickers));
+  _portTickerConfigs.splice(idx, 1);
+  _savePortConfigs();
   _renderPortTickerInputs();
 }
 
 function _flushPortInputs() {
-  for (let i = 0; i < _portTickers.length; i++) {
+  for (let i = 0; i < _portTickerConfigs.length; i++) {
     const inp = $('port-t' + i);
-    if (inp) _portTickers[i] = inp.value.trim().toUpperCase();
+    const sel = $('port-hz' + i);
+    if (inp) _portTickerConfigs[i].ticker  = inp.value.trim().toUpperCase();
+    if (sel) _portTickerConfigs[i].horizon = sel.value;
   }
 }
 
 function _resetPortRefreshTimer() {
   if (_portRefreshTimer) clearInterval(_portRefreshTimer);
+  // Use shortest horizon interval across active tickers for refresh cadence
+  const active = _portTickerConfigs.filter(c => c.ticker);
+  const minMs  = active.reduce((m, c) => Math.min(m, _PORT_REFRESH_MS[c.horizon] || 3_600_000), 3_600_000);
   _portRefreshTimer = setInterval(() => {
-    const active = _portTickers.filter(t => t);
-    if (active.length && _portHasData) runPortfolioScan();
-  }, _PORT_REFRESH_MS[_portHorizon] || 60 * 60 * 1000);
+    if (_portTickerConfigs.some(c => c.ticker) && _portHasData) runPortfolioScan();
+  }, minMs);
 }
 
 async function runPortfolioScan() {
   if (_portLoading) return;
 
-  // flush any unsaved input values
   _flushPortInputs();
-  localStorage.setItem('ta_port_tickers', JSON.stringify(_portTickers));
+  _savePortConfigs();
 
-  const active = _portTickers.filter(t => t);
+  const active = _portTickerConfigs.filter(c => c.ticker);
   if (!active.length) { alert('Enter at least one ticker.'); return; }
 
   _portLoading = true;
@@ -3164,12 +3215,11 @@ async function runPortfolioScan() {
   btn.textContent = 'Analyzing…';
   $('port-alloc-card').style.display = 'none';
 
-  // Show skeletons only on first load; silent refresh otherwise
   if (!_portHasData) {
-    $('port-results').innerHTML = active.map(t => `
+    $('port-results').innerHTML = active.map(c => `
       <div class="card port-ticker-card">
         <div class="port-card-header">
-          <span class="port-card-ticker">${t}</span>
+          <span class="port-card-ticker">${c.ticker}</span>
           <span class="skeleton" style="width:90px;height:22px;display:inline-block;border-radius:6px"></span>
         </div>
         <div class="skeleton" style="height:70px;margin-top:10px"></div>
@@ -3177,17 +3227,39 @@ async function runPortfolioScan() {
   }
 
   try {
-    const data = await apiFetch(
-      `/api/portfolio/kalman?tickers=${encodeURIComponent(active.join(','))}&horizon=${_portHorizon}`
+    // Group tickers by their individual horizon, then fetch in parallel
+    const byHorizon = {};
+    for (const cfg of active) {
+      const h = cfg.horizon || _portHorizon || '1d';
+      (byHorizon[h] = byHorizon[h] || []).push(cfg.ticker);
+    }
+    const callPromises = Object.entries(byHorizon).map(([h, tickers]) =>
+      apiFetch(`/api/portfolio/kalman?tickers=${encodeURIComponent(tickers.join(','))}&horizon=${h}`)
+        .then(d => d.results.map(r => ({ ...r, _horizon: h })))
     );
+    const groups  = await Promise.all(callPromises);
+    const resultMap = {};
+    for (const grp of groups) for (const r of grp) resultMap[r.ticker] = r;
+
+    // Reorder to match the user's ticker order
+    const ordered = active.map(c => resultMap[c.ticker] || { ticker: c.ticker, error: 'No data', _horizon: c.horizon });
+
+    // Recompute allocation across all merged results
+    const buyRes    = ordered.filter(r => !r.error && ['buy','strong_buy'].includes(r.signal) && r.signal_strength >= 45);
+    const totScore  = buyRes.reduce((s, r) => s + r.signal_strength, 0) || 1;
+    const allocation = Object.fromEntries(ordered.map(r => [
+      r.ticker,
+      buyRes.includes(r) ? round(r.signal_strength / totScore, 4) : 0,
+    ]));
+
+    const data = { results: ordered, allocation, horizon: _portHorizon };
     _portHasData = true;
     _portLastScanTs = Date.now();
     _renderPortResults(data);
-    _renderAutoRows(active);
-    // Populate pending signals from scan for manual approval
-    _mt5PendingSignals = data.results
-      .filter(r => !r.error && (r.signal === 'buy' || r.signal === 'strong_buy' ||
-                                r.signal === 'sell' || r.signal === 'strong_sell'))
+    _renderAutoRows(active.map(c => c.ticker));
+
+    _mt5PendingSignals = ordered
+      .filter(r => !r.error && ['buy','strong_buy','sell','strong_sell'].includes(r.signal))
       .map(r => ({
         ticker:      r.ticker,
         direction:   r.direction === 'bullish' ? 'buy' : 'sell',
@@ -3196,7 +3268,7 @@ async function runPortfolioScan() {
         atr:         null,
       }));
     _renderPendingSignals(_mt5PendingSignals);
-    _mt5AutoExecuteFromScan(data.results);
+    _mt5AutoExecuteFromScan(ordered);
     _resetPortRefreshTimer();
   } catch (e) {
     $('port-results').innerHTML =
@@ -3208,6 +3280,8 @@ async function runPortfolioScan() {
   }
 }
 
+function round(v, dp) { return Math.round(v * 10**dp) / 10**dp; }
+
 function _renderPortResults(data) {
   const SIG_LABELS = {
     strong_buy:  '▲▲ STRONG BUY',
@@ -3217,12 +3291,8 @@ function _renderPortResults(data) {
     strong_sell: '▼▼ STRONG SELL',
   };
 
-  // Refresh-time stamp injected before the first card
-  const refreshMs   = _PORT_REFRESH_MS[data.horizon] || 60*60*1000;
-  const nextMinutes = Math.round(refreshMs / 60000);
-  const stampHtml   = `<div style="font-size:10px;color:var(--muted);padding:6px 12px 0">
+  const stampHtml = `<div style="font-size:10px;color:var(--muted);padding:6px 12px 0">
     Updated ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
-    · auto-refreshes every ${nextMinutes} min
   </div>`;
 
   $('port-results').innerHTML = stampHtml + data.results.map(r => {
@@ -3252,6 +3322,7 @@ function _renderPortResults(data) {
         <div class="port-card-header">
           <div class="port-card-left">
             <span class="port-card-ticker">${r.ticker}</span>
+            <span style="font-size:10px;color:var(--muted);margin-left:4px;font-weight:600">${(r._horizon||'').toUpperCase()}</span>
             <span class="port-card-price">$${price}</span>
           </div>
           <div class="port-card-right">
@@ -3344,6 +3415,64 @@ let _mt5PlPollTimer = null;
 let _mt5AgentMode = 'manual';   // 'manual' | 'auto'
 let _mt5AutoTemplateId = '';    // template id used in auto mode
 
+// ── Auto-scan timer ───────────────────────────────────────────────────────────
+let _portAutoScanTimer   = null;
+let _portCountdownTimer  = null;
+let _portNextScanTime    = null;
+let _portScanIntervalMin = 60;
+
+function _onAutoScanToggle() {
+  if ($('exec-auto-scan').checked) _startPortAutoScan();
+  else                             _stopPortAutoScan();
+  _persistAutoScan();
+}
+
+function _onScanIntervalChange() {
+  _portScanIntervalMin = parseInt($('exec-scan-interval').value) || 60;
+  if (_portAutoScanTimer) _startPortAutoScan(); // restart with new interval
+  _persistAutoScan();
+}
+
+function _startPortAutoScan() {
+  _stopPortAutoScan();
+  const ms = _portScanIntervalMin * 60 * 1000;
+  _portNextScanTime  = Date.now() + ms;
+  _portAutoScanTimer = setInterval(() => {
+    _portNextScanTime = Date.now() + ms;
+    runPortfolioScan();
+  }, ms);
+  _portCountdownTimer = setInterval(_updateScanCountdown, 1000);
+  _updateScanCountdown();
+}
+
+function _stopPortAutoScan() {
+  clearInterval(_portAutoScanTimer);
+  clearInterval(_portCountdownTimer);
+  _portAutoScanTimer  = null;
+  _portCountdownTimer = null;
+  _portNextScanTime   = null;
+  const el = $('exec-scan-countdown');
+  if (el) el.textContent = '';
+}
+
+function _updateScanCountdown() {
+  const el = $('exec-scan-countdown');
+  if (!el || !_portNextScanTime) return;
+  const rem = Math.max(0, _portNextScanTime - Date.now());
+  const m   = Math.floor(rem / 60000);
+  const s   = Math.floor((rem % 60000) / 1000);
+  el.textContent = `Next scan: ${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function _persistAutoScan() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('ta_exec_config') || '{}');
+    saved.auto_scan         = $('exec-auto-scan')?.checked ?? false;
+    saved.scan_interval_min = _portScanIntervalMin;
+    localStorage.setItem('ta_exec_config', JSON.stringify(saved));
+  } catch {}
+}
+
 function initExecuteTab() {
   // Restore persisted execution config
   try {
@@ -3362,6 +3491,16 @@ function initExecuteTab() {
       // Restore auto-tickers map
       if (Array.isArray(saved.auto_tickers)) {
         saved.auto_tickers.forEach(t => { _mt5AutoTickers[t] = true; });
+      }
+      // Restore auto-scan timer
+      if (saved.scan_interval_min) {
+        _portScanIntervalMin = saved.scan_interval_min;
+        const sel = $('exec-scan-interval');
+        if (sel) sel.value = _portScanIntervalMin;
+      }
+      if (saved.auto_scan) {
+        const cb = $('exec-auto-scan');
+        if (cb) { cb.checked = true; _startPortAutoScan(); }
       }
       // Push saved config to server in background
       fetch(location.origin + '/api/mt5/config', {
@@ -3463,6 +3602,8 @@ async function mt5SaveConfig() {
     auto_close:        $('exec-auto-close').checked,
     agent_mode:        _mt5AgentMode,
     auto_template_id:  _mt5AutoTemplateId,
+    auto_scan:         $('exec-auto-scan')?.checked ?? false,
+    scan_interval_min: _portScanIntervalMin,
   };
   // Persist so config survives server restarts
   localStorage.setItem('ta_exec_config', JSON.stringify(payload));
