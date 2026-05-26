@@ -1112,6 +1112,20 @@ nav.tab-bar {
             <option value="72">72 h</option>
           </select>
         </div>
+        <div>
+          <div class="exec-cfg-label">Min close score</div>
+          <input class="exec-number" id="exec-minclosescore" type="number" step="1" min="50" max="100" value="70"
+            title="Auto-close existing position when reversal signal reaches this score">
+        </div>
+      </div>
+      <!-- Auto-close on reversal toggle -->
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+        <label class="exec-toggle">
+          <input type="checkbox" id="exec-auto-close"
+            title="Auto-close open position when Kalman signal reverses direction above Min close score">
+          <span class="exec-toggle-track"></span>
+        </label>
+        <span style="font-size:12px;color:var(--muted)">Auto-close on reversal (uses Min close score)</span>
       </div>
       <!-- Require agent analysis toggle -->
       <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
@@ -3335,11 +3349,13 @@ function initExecuteTab() {
   try {
     const saved = JSON.parse(localStorage.getItem('ta_exec_config') || 'null');
     if (saved) {
-      if (saved.risk_pct       != null) $('exec-risk').value     = saved.risk_pct;
-      if (saved.max_positions  != null) $('exec-maxpos').value   = saved.max_positions;
-      if (saved.min_kalman_score!=null) $('exec-minscore').value = saved.min_kalman_score;
-      if (saved.agent_max_age_h!=null) $('exec-age').value       = saved.agent_max_age_h;
-      if (saved.require_agent  != null) $('exec-require-agent').checked = saved.require_agent;
+      if (saved.risk_pct        != null) $('exec-risk').value          = saved.risk_pct;
+      if (saved.max_positions   != null) $('exec-maxpos').value        = saved.max_positions;
+      if (saved.min_kalman_score != null) $('exec-minscore').value     = saved.min_kalman_score;
+      if (saved.min_close_score != null) $('exec-minclosescore').value = saved.min_close_score;
+      if (saved.agent_max_age_h != null) $('exec-age').value           = saved.agent_max_age_h;
+      if (saved.require_agent   != null) $('exec-require-agent').checked = saved.require_agent;
+      if (saved.auto_close      != null) $('exec-auto-close').checked  = saved.auto_close;
       if (saved.agent_mode)    { _mt5AgentMode = saved.agent_mode; _setAgentMode(saved.agent_mode); }
       if (saved.auto_template_id) { _mt5AutoTemplateId = saved.auto_template_id; }
       _onRequireAgentChange();
@@ -3436,13 +3452,15 @@ async function mt5Disconnect() {
 async function mt5SaveConfig() {
   _mt5AutoTemplateId = $('exec-auto-template')?.value || _mt5AutoTemplateId;
   const payload = {
-    risk_pct:          parseFloat($('exec-risk').value)     || 0.01,
-    max_positions:     parseInt($('exec-maxpos').value)     || 3,
-    min_kalman_score:  parseInt($('exec-minscore').value)   || 65,
-    agent_max_age_h:   parseFloat($('exec-age').value)      || 24,
+    risk_pct:          parseFloat($('exec-risk').value)          || 0.01,
+    max_positions:     parseInt($('exec-maxpos').value)          || 3,
+    min_kalman_score:  parseInt($('exec-minscore').value)        || 65,
+    min_close_score:   parseInt($('exec-minclosescore').value)   || 70,
+    agent_max_age_h:   parseFloat($('exec-age').value)           || 24,
     auto_tickers:      Object.keys(_mt5AutoTickers).filter(t => _mt5AutoTickers[t]),
     enabled:           true,
     require_agent:     $('exec-require-agent').checked,
+    auto_close:        $('exec-auto-close').checked,
     agent_mode:        _mt5AgentMode,
     auto_template_id:  _mt5AutoTemplateId,
   };
@@ -3628,12 +3646,42 @@ async function _renderTradeLog() {
 // Auto-execute hook called from runPortfolioScan() after scan completes
 async function _mt5AutoExecuteFromScan(scanResults) {
   if (!_mt5Connected) return;
-  const requireAgent = $('exec-require-agent').checked;
+  const requireAgent  = $('exec-require-agent').checked;
+  const autoClose     = $('exec-auto-close').checked;
+  const minCloseScore = parseInt($('exec-minclosescore')?.value) || 70;
+
+  // Fetch current open positions once for the whole batch
+  let openPositions = {};
+  try {
+    const st = await apiFetch('/api/mt5/status');
+    for (const p of (st.positions || [])) openPositions[p.symbol] = p;
+  } catch {}
+
   for (const r of scanResults) {
     if (r.error) continue;
     if (!_mt5AutoTickers[r.ticker]) continue;
     const dir = r.direction === 'bullish' ? 'buy' : r.direction === 'bearish' ? 'sell' : null;
     if (!dir) continue;
+
+    // ── Auto-close on reversal ────────────────────────────────────────────────
+    const openPos = openPositions[r.ticker];
+    if (autoClose && openPos && openPos.direction !== dir) {
+      if (r.signal_strength >= minCloseScore) {
+        try {
+          const cd = await apiFetch('/api/mt5/close/' + openPos.ticket, { method: 'POST' });
+          if (cd.closed) {
+            console.log(`Auto-closed ${r.ticker} ticket=${openPos.ticket} (reversal score ${r.signal_strength})`);
+            delete openPositions[r.ticker];
+            mt5RefreshPositions();
+            _renderTradeLog();
+          }
+        } catch {}
+      } else {
+        console.warn(`Auto-close skipped ${r.ticker}: score ${r.signal_strength} < min ${minCloseScore}`);
+      }
+      // After closing (or skipping), don't open a new position in the same tick
+      continue;
+    }
 
     // Auto mode: fire agent analysis in background for this ticker (non-blocking)
     if (requireAgent && _mt5AgentMode === 'auto' && _mt5AutoTemplateId) {
