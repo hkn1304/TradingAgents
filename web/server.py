@@ -658,9 +658,29 @@ def mt5_execute(body: MT5ExecuteRequest):
 
 @app.post("/api/mt5/close/{ticket}")
 def mt5_close(ticket: int):
+    # Snapshot position before closing so we can log it
+    pos = _mt5_broker.get_position_for_symbol(
+        next((p.symbol for p in _mt5_broker.get_positions() if p.ticket == ticket), "")
+    )
     result = _mt5_broker.close_position(ticket)
     if not result.success:
         raise HTTPException(400, detail=result.comment)
+    # Record close in execution log
+    from web.execution_engine import ExecutionSignal
+    from datetime import datetime
+    sig = ExecutionSignal(
+        ticker       = pos.symbol if pos else str(ticket),
+        direction    = "sell" if (pos and pos.direction == "buy") else "buy",
+        kalman_score = 0,
+        agent_rating = "manual-close",
+        session_id   = "",
+        entry_price  = pos.entry_price if pos else None,
+        stop_loss    = None,
+        position_pct = None,
+        age_hours    = 0.0,
+    )
+    _exec_engine._record(sig, True, f"Position closed (ticket {ticket})",
+                         ticket=ticket, volume=pos.volume if pos else 0.0)
     return {"closed": True, "ticket": ticket, "comment": result.comment}
 
 
