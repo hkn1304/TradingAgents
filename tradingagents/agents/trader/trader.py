@@ -22,6 +22,12 @@ def create_trader(llm):
         instrument_context = build_instrument_context(company_name)
         investment_plan = state["investment_plan"]
 
+        kalman_signal = state.get("kalman_signal", "")
+        kalman_line = (
+            f"\n\n**Quantitative Signal (Dual Kalman Filter):** {kalman_signal}"
+            if kalman_signal else ""
+        )
+
         messages = [
             {
                 "role": "system",
@@ -38,8 +44,13 @@ def create_trader(llm):
                     f"plan tailored for {company_name}. {instrument_context} This plan incorporates "
                     f"insights from current technical market trends, macroeconomic indicators, and "
                     f"social media sentiment. Use this plan as a foundation for evaluating your next "
-                    f"trading decision.\n\nProposed Investment Plan: {investment_plan}\n\n"
-                    f"Leverage these insights to make an informed and strategic decision."
+                    f"trading decision.\n\nProposed Investment Plan: {investment_plan}"
+                    f"{kalman_line}\n\n"
+                    f"Leverage these insights to make an informed and strategic decision. "
+                    f"When the Kalman signal is present, use it to calibrate your confidence in "
+                    f"entry timing and position sizing — a high score with model agreement supports "
+                    f"full sizing; a low score or model disagreement suggests reducing size or "
+                    f"waiting for confirmation."
                 ),
             },
         ]

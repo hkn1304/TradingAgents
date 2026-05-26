@@ -145,6 +145,7 @@ class JobSubmit(BaseModel):
     anthropic_effort: Optional[str] = None
     openai_reasoning_effort: Optional[str] = None
     google_thinking_level:   Optional[str] = None
+    kalman_signal:    Optional[str] = None  # pre-formatted Kalman context injected into Trader prompt
 
 
 class AgentRunSubmit(BaseModel):

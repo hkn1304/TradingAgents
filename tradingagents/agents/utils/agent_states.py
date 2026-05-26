@@ -71,3 +71,4 @@ class AgentState(MessagesState):
     ]
     final_trade_decision: Annotated[str, "Final decision made by the Risk Analysts"]
     past_context: Annotated[str, "Memory log context injected at run start (same-ticker decisions + cross-ticker lessons)"]
+    kalman_signal: Annotated[str, "Dual Kalman filter signal injected at run start (score, direction, model agreement)"]

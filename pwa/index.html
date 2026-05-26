@@ -219,6 +219,14 @@ nav.tab-bar {
   background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
   border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer;
 }
+.exec-mode-btn {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 3px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.exec-mode-btn.active {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
 .exec-status-pill {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 11px; padding: 3px 10px; border-radius: 10px; margin-top: 8px;
@@ -1090,13 +1098,31 @@ nav.tab-bar {
           </select>
         </div>
       </div>
+      <!-- Require agent analysis toggle -->
       <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
         <label class="exec-toggle">
           <input type="checkbox" id="exec-require-agent" checked
+            onchange="_onRequireAgentChange()"
             title="When OFF: execute on Kalman signal alone without LLM agent analysis">
           <span class="exec-toggle-track"></span>
         </label>
         <span style="font-size:12px;color:var(--muted)">Require agent analysis (dual-confirmation)</span>
+      </div>
+      <!-- Manual / Auto mode selector (visible when require-agent is ON) -->
+      <div id="exec-agent-mode-row" style="display:flex;align-items:center;gap:8px;margin-top:8px;margin-left:46px">
+        <button id="exec-mode-manual" class="exec-mode-btn active" onclick="_setAgentMode('manual')">Manual</button>
+        <button id="exec-mode-auto"   class="exec-mode-btn"        onclick="_setAgentMode('auto')">Auto</button>
+        <span style="font-size:11px;color:var(--muted)">How agent analysis is triggered</span>
+      </div>
+      <!-- Template selector (visible when Auto is selected) -->
+      <div id="exec-auto-template-row" style="display:none;margin-top:8px;margin-left:46px">
+        <select id="exec-auto-template"
+          style="font-size:12px;padding:4px 8px;border-radius:6px;background:var(--card);color:var(--text);border:1px solid var(--border);max-width:220px">
+          <option value="">— select template —</option>
+        </select>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          Auto: runs this template for each ticker on every scan tick
+        </div>
       </div>
       <button class="exec-btn" onclick="mt5SaveConfig()" style="margin-top:10px">Save Config</button>
     </div>
@@ -1119,7 +1145,10 @@ nav.tab-bar {
     <!-- Open Positions -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="card-title" style="margin:0">Open Positions</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="card-title" style="margin:0">Open Positions</div>
+          <span id="exec-total-pl" style="font-size:13px;font-weight:700"></span>
+        </div>
         <button class="exec-btn-sm" onclick="mt5RefreshPositions()">Refresh</button>
       </div>
       <div id="exec-positions-wrap">
@@ -1556,7 +1585,8 @@ function switchTab(tab) {
   if (tab === 'agents')    agentsOnVisible();
   if (tab === 'analysis')  analysisOnVisible();
   if (tab === 'markets')   loadKalman();
-  if (tab === 'execute')   mt5RefreshPositions();
+  if (tab === 'execute') { mt5RefreshPositions(); _startPlPoll(); }
+  else                   { _stopPlPoll(); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -3254,6 +3284,9 @@ function _renderPortAllocation(data) {
 let _mt5Connected  = false;
 let _mt5AutoTickers = {};   // ticker → bool
 let _mt5PendingSignals = []; // [{ticker, direction, score, modelsAgree, atr}]
+let _mt5PlPollTimer = null;
+let _mt5AgentMode = 'manual';   // 'manual' | 'auto'
+let _mt5AutoTemplateId = '';    // template id used in auto mode
 
 function initExecuteTab() {
   // Restore persisted execution config
@@ -3265,6 +3298,9 @@ function initExecuteTab() {
       if (saved.min_kalman_score!=null) $('exec-minscore').value = saved.min_kalman_score;
       if (saved.agent_max_age_h!=null) $('exec-age').value       = saved.agent_max_age_h;
       if (saved.require_agent  != null) $('exec-require-agent').checked = saved.require_agent;
+      if (saved.agent_mode)    { _mt5AgentMode = saved.agent_mode; _setAgentMode(saved.agent_mode); }
+      if (saved.auto_template_id) { _mt5AutoTemplateId = saved.auto_template_id; }
+      _onRequireAgentChange();
       // Restore auto-tickers map
       if (Array.isArray(saved.auto_tickers)) {
         saved.auto_tickers.forEach(t => { _mt5AutoTickers[t] = true; });
@@ -3300,6 +3336,7 @@ function _renderMt5Status(d) {
     $('exec-acct-card').style.display = 'block';
     _renderAcct(d.account);
     mt5RefreshPositions();
+    if (_activeTab === 'execute') _startPlPoll();
   } else {
     pill.className = 'exec-status-pill disc';
     txt.textContent = 'Disconnected';
@@ -3350,10 +3387,12 @@ async function mt5Connect() {
 async function mt5Disconnect() {
   await apiFetch('/api/mt5/connect', { method: 'DELETE' });
   _mt5Connected = false;
+  _stopPlPoll();
   _renderMt5Status({ connected: false });
 }
 
 async function mt5SaveConfig() {
+  _mt5AutoTemplateId = $('exec-auto-template')?.value || _mt5AutoTemplateId;
   const payload = {
     risk_pct:          parseFloat($('exec-risk').value)     || 0.01,
     max_positions:     parseInt($('exec-maxpos').value)     || 3,
@@ -3362,6 +3401,8 @@ async function mt5SaveConfig() {
     auto_tickers:      Object.keys(_mt5AutoTickers).filter(t => _mt5AutoTickers[t]),
     enabled:           true,
     require_agent:     $('exec-require-agent').checked,
+    agent_mode:        _mt5AgentMode,
+    auto_template_id:  _mt5AutoTemplateId,
   };
   // Persist so config survives server restarts
   localStorage.setItem('ta_exec_config', JSON.stringify(payload));
@@ -3400,6 +3441,32 @@ function _onAutoToggle(ticker, on) {
     saved.auto_tickers = Object.keys(_mt5AutoTickers).filter(t => _mt5AutoTickers[t]);
     localStorage.setItem('ta_exec_config', JSON.stringify(saved));
   } catch (e) {}
+}
+
+function _onRequireAgentChange() {
+  const on = $('exec-require-agent').checked;
+  $('exec-agent-mode-row').style.display    = on ? 'flex' : 'none';
+  $('exec-auto-template-row').style.display = (on && _mt5AgentMode === 'auto') ? 'block' : 'none';
+}
+
+function _setAgentMode(mode) {
+  _mt5AgentMode = mode;
+  $('exec-mode-manual').classList.toggle('active', mode === 'manual');
+  $('exec-mode-auto').classList.toggle('active',   mode === 'auto');
+  $('exec-auto-template-row').style.display = mode === 'auto' ? 'block' : 'none';
+  if (mode === 'auto') _loadAutoTemplates();
+}
+
+async function _loadAutoTemplates() {
+  try {
+    const d = await apiFetch('/api/templates');
+    const templates = d.templates || [];
+    const sel = $('exec-auto-template');
+    const cur = sel.value || _mt5AutoTemplateId;
+    sel.innerHTML = '<option value="">— select template —</option>'
+      + templates.map(t => `<option value="${t.id}"${t.id===cur?' selected':''}>${escHtml(t.name)} (${escHtml(t.ticker)})</option>`).join('');
+    if (cur) sel.value = cur;
+  } catch {}
 }
 
 async function mt5CheckPending() {
@@ -3467,7 +3534,26 @@ async function mt5RefreshPositions() {
         <td><button class="exec-btn-danger" onclick="mt5ClosePosition(${p.ticket})">✕</button></td>
       </tr>`).join('')
       : '<tr><td colspan="6" style="color:var(--muted);font-size:12px">No open positions.</td></tr>';
+    // Total P/L
+    const totalPl = positions.reduce((s, p) => s + (p.profit || 0), 0);
+    const plEl = $('exec-total-pl');
+    if (positions.length) {
+      plEl.textContent = `Total: ${sign(totalPl)}${fmt(totalPl)}`;
+      plEl.style.color = totalPl >= 0 ? 'var(--bull)' : 'var(--bear)';
+    } else {
+      plEl.textContent = '';
+    }
   } catch {}
+}
+
+function _startPlPoll() {
+  if (_mt5PlPollTimer) return;
+  _mt5PlPollTimer = setInterval(mt5RefreshPositions, 1000);
+}
+
+function _stopPlPoll() {
+  clearInterval(_mt5PlPollTimer);
+  _mt5PlPollTimer = null;
 }
 
 async function mt5ClosePosition(ticket) {
@@ -3500,11 +3586,18 @@ async function _renderTradeLog() {
 // Auto-execute hook called from runPortfolioScan() after scan completes
 async function _mt5AutoExecuteFromScan(scanResults) {
   if (!_mt5Connected) return;
+  const requireAgent = $('exec-require-agent').checked;
   for (const r of scanResults) {
     if (r.error) continue;
     if (!_mt5AutoTickers[r.ticker]) continue;
     const dir = r.direction === 'bullish' ? 'buy' : r.direction === 'bearish' ? 'sell' : null;
     if (!dir) continue;
+
+    // Auto mode: fire agent analysis in background for this ticker (non-blocking)
+    if (requireAgent && _mt5AgentMode === 'auto' && _mt5AutoTemplateId) {
+      _mt5AutoRunAgentForTicker(r.ticker, r);
+    }
+
     try {
       const d = await apiFetch('/api/mt5/execute', {
         method: 'POST',
@@ -3525,6 +3618,46 @@ async function _mt5AutoExecuteFromScan(scanResults) {
         console.warn(`Auto-execute skipped ${r.ticker}: ${d.reason}`);
       }
     } catch {}
+  }
+}
+
+async function _mt5AutoRunAgentForTicker(ticker, scanRow) {
+  if (!_mt5AutoTemplateId) return;
+  try {
+    const td = await apiFetch(`/api/templates/${_mt5AutoTemplateId}`);
+    const t = td.template;
+    if (!t) return;
+    const cfg = t.config || {};
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Build a compact Kalman context string for the Trader prompt
+    const dir   = scanRow.direction || 'neutral';
+    const score = scanRow.signal_strength ?? '?';
+    const agree = scanRow.models_agree ? 'RW and CV agree' : 'RW and CV disagree';
+    const label = scanRow.signal || '';
+    const kalmanSignal = `Score ${score}/100 · Direction: ${dir} · ${agree} · Signal: ${label}`;
+
+    const resp = await fetch(API + '/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticker:           ticker,
+        analysis_date:    today,
+        analysts:         cfg.analysts || ['market', 'social', 'news', 'fundamentals'],
+        research_depth:   cfg.research_depth   || 1,
+        analysis_horizon: cfg.analysis_horizon || 'week',
+        llm_provider:     cfg.llm_provider     || 'anthropic',
+        quick_llm:        cfg.quick_llm        || null,
+        deep_llm:         cfg.deep_llm         || null,
+        kalman_signal:    kalmanSignal,
+      }),
+    });
+    if (resp.ok) {
+      const { session_id } = await resp.json();
+      console.log(`Auto-agent started for ${ticker} (${kalmanSignal}) → session ${session_id}`);
+    }
+  } catch (e) {
+    console.warn(`Auto-agent trigger failed for ${ticker}: ${e.message}`);
   }
 }
 

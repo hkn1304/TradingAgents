@@ -419,7 +419,10 @@ def _execute(session_id: str, ticker: str, analysis_date: str,
         ticker=ticker,
         date=analysis_date,
     )
-    init_state = graph.propagator.create_initial_state(ticker, analysis_date)
+    kalman_signal = job_config.get("kalman_signal", "")
+    init_state = graph.propagator.create_initial_state(
+        ticker, analysis_date, kalman_signal=kalman_signal
+    )
     args = graph.propagator.get_graph_args()
 
     cancel_ev = register_cancel(session_id)
