@@ -299,7 +299,7 @@ nav.tab-bar {
 }
 .port-hz-btn.active { background: var(--accent); color: #0d1117; border-color: var(--accent); }
 .port-hz-info { font-size: 10px; color: var(--muted); margin-left: auto; }
-.port-tickers { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.port-tickers { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 .port-ticker-row { display: flex; align-items: center; gap: 8px; }
 .port-ticker-num { font-size: 11px; color: var(--muted); width: 14px; text-align: center; flex-shrink: 0; }
 .port-ticker-input {
@@ -308,6 +308,20 @@ nav.tab-bar {
   font-size: 13px; font-weight: 700; letter-spacing: 0.5px; outline: none; text-transform: uppercase;
 }
 .port-ticker-input:focus { border-color: var(--accent); }
+.port-ticker-del {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  border-radius: 6px; width: 24px; height: 24px; font-size: 13px; line-height: 1;
+  cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  transition: color .15s, border-color .15s;
+}
+.port-ticker-del:hover { color: var(--bear); border-color: var(--bear); }
+.port-add-btn {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+  background: none; border: 1px dashed var(--border); color: var(--muted);
+  border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+  width: 100%; justify-content: center; transition: border-color .15s, color .15s;
+}
+.port-add-btn:hover { border-color: var(--accent); color: var(--accent); }
 .port-analyze-btn {
   width: 100%; padding: 10px; background: var(--accent); color: #0d1117;
   border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
@@ -1034,6 +1048,7 @@ nav.tab-bar {
       </div>
 
       <div class="port-tickers" id="port-tickers"></div>
+      <button class="port-add-btn" onclick="_addPortTicker()">+ Add ticker</button>
 
       <button class="port-analyze-btn" id="port-analyze-btn" onclick="runPortfolioScan()">
         Analyze Portfolio
@@ -3033,7 +3048,11 @@ const _PORT_REFRESH_MS = { '1h': 15*60*1000, '4h': 30*60*1000, '1d': 60*60*1000,
 
 let _portHorizon = localStorage.getItem('ta_port_horizon') || '1d';
 let _portTickers = (() => {
-  try { return JSON.parse(localStorage.getItem('ta_port_tickers') || '["","","","",""]'); }
+  try {
+    const saved = JSON.parse(localStorage.getItem('ta_port_tickers') || '["","","","",""]');
+    // Ensure at least 1 slot
+    return Array.isArray(saved) && saved.length ? saved : ['','','','',''];
+  }
   catch { return ['','','','','']; }
 })();
 let _portLoading  = false;
@@ -3065,20 +3084,46 @@ function _renderPortHorizonBtns() {
 }
 
 function _renderPortTickerInputs() {
-  $('port-tickers').innerHTML = Array.from({length: 5}, (_, i) => `
-    <div class="port-ticker-row">
+  const canDelete = _portTickers.length > 1;
+  $('port-tickers').innerHTML = _portTickers.map((v, i) => `
+    <div class="port-ticker-row" id="port-row-${i}">
       <span class="port-ticker-num">${i + 1}</span>
       <input class="port-ticker-input" id="port-t${i}"
              placeholder="TICKER" maxlength="20"
-             value="${_portTickers[i] || ''}"
+             value="${v || ''}"
              oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9.\\-=]/g,'')"
              onchange="_savePortTicker(${i},this.value)"/>
+      ${canDelete ? `<button class="port-ticker-del" onclick="_removePortTicker(${i})" title="Remove">✕</button>` : ''}
     </div>`).join('');
 }
 
 function _savePortTicker(idx, val) {
   _portTickers[idx] = val.trim().toUpperCase();
   localStorage.setItem('ta_port_tickers', JSON.stringify(_portTickers));
+}
+
+function _addPortTicker() {
+  _flushPortInputs();
+  _portTickers.push('');
+  localStorage.setItem('ta_port_tickers', JSON.stringify(_portTickers));
+  _renderPortTickerInputs();
+  // Focus the new input
+  const newInput = $('port-t' + (_portTickers.length - 1));
+  if (newInput) newInput.focus();
+}
+
+function _removePortTicker(idx) {
+  _flushPortInputs();
+  _portTickers.splice(idx, 1);
+  localStorage.setItem('ta_port_tickers', JSON.stringify(_portTickers));
+  _renderPortTickerInputs();
+}
+
+function _flushPortInputs() {
+  for (let i = 0; i < _portTickers.length; i++) {
+    const inp = $('port-t' + i);
+    if (inp) _portTickers[i] = inp.value.trim().toUpperCase();
+  }
 }
 
 function _resetPortRefreshTimer() {
@@ -3093,10 +3138,7 @@ async function runPortfolioScan() {
   if (_portLoading) return;
 
   // flush any unsaved input values
-  for (let i = 0; i < 5; i++) {
-    const inp = $('port-t' + i);
-    if (inp) _portTickers[i] = inp.value.trim().toUpperCase();
-  }
+  _flushPortInputs();
   localStorage.setItem('ta_port_tickers', JSON.stringify(_portTickers));
 
   const active = _portTickers.filter(t => t);
