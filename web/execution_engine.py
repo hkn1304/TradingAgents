@@ -50,12 +50,13 @@ BEARISH_RATINGS = {"Sell", "Underweight"}
 
 @dataclass
 class ExecutionConfig:
-    risk_pct:          float = 0.01   # fraction of account balance to risk per trade
-    max_positions:     int   = 3      # hard cap on concurrent open positions
-    min_kalman_score:  int   = 65     # minimum Kalman score required
-    agent_max_age_h:   float = 24.0   # max age (hours) of accepted agent session
-    auto_tickers:      set   = field(default_factory=set)  # tickers with auto=ON
-    enabled:           bool  = True   # global kill-switch
+    risk_pct:           float = 0.01   # fraction of account balance to risk per trade
+    max_positions:      int   = 3      # hard cap on concurrent open positions
+    min_kalman_score:   int   = 65     # minimum Kalman score required
+    agent_max_age_h:    float = 24.0   # max age (hours) of accepted agent session
+    auto_tickers:       set   = field(default_factory=set)  # tickers with auto=ON
+    enabled:            bool  = True   # global kill-switch
+    require_agent:      bool  = True   # when False, execute on Kalman signal alone
 
 
 @dataclass
@@ -106,6 +107,7 @@ class ExecutionEngine:
                 "agent_max_age_h":  c.agent_max_age_h,
                 "auto_tickers":     sorted(c.auto_tickers),
                 "enabled":          c.enabled,
+                "require_agent":    c.require_agent,
             }
 
     # ── Concurrence check ─────────────────────────────────────────────────────
@@ -114,7 +116,7 @@ class ExecutionEngine:
         self,
         ticker: str,
         kalman_result: dict,
-    ) -> Optional[ExecutionSignal]:
+    ) -> "tuple[Optional[ExecutionSignal], str]":
         """
         Return an ExecutionSignal if both Kalman and a recent agent session
         agree on direction, else None.
@@ -124,34 +126,55 @@ class ExecutionEngine:
         score        = kalman_result.get('signal_strength', 0)
         models_agree = kalman_result.get('models_agree', False)
 
+        logger.info(
+            f"check_concurrence {ticker}: dir={direction} score={score} "
+            f"agree={models_agree} min_score={cfg.min_kalman_score} "
+            f"require_agent={cfg.require_agent} enabled={cfg.enabled}"
+        )
         if not cfg.enabled:
-            return None
-        if direction == 'neutral' or score < cfg.min_kalman_score or not models_agree:
-            return None
+            return None, "Engine disabled (kill-switch is OFF)"
+        if direction == 'neutral':
+            return None, f"Direction is neutral — no clear signal for {ticker}"
+        if score < cfg.min_kalman_score:
+            return None, f"Score {score} below minimum {cfg.min_kalman_score} — lower Min Kalman Score in Config"
+        if cfg.require_agent and not models_agree:
+            return None, "RW and CV models disagree — uncheck 'Require agent analysis' or wait for alignment"
 
-        agent = self._find_recent_agent_signal(ticker, cfg.agent_max_age_h)
-        if agent is None:
-            return None
+        trade_dir = 'buy' if direction == 'bullish' else 'sell'
 
-        rating = agent['rating']
-        if   direction == 'bullish' and rating in BULLISH_RATINGS:
-            trade_dir = 'buy'
-        elif direction == 'bearish' and rating in BEARISH_RATINGS:
-            trade_dir = 'sell'
-        else:
-            return None
+        if cfg.require_agent:
+            agent = self._find_recent_agent_signal(ticker, cfg.agent_max_age_h)
+            if agent is None:
+                return None, f"No completed agent analysis for {ticker} within {cfg.agent_max_age_h}h — run Tab 2/3 first"
+            rating = agent['rating']
+            if direction == 'bullish' and rating not in BULLISH_RATINGS:
+                return None, f"Agent rated {rating} but Kalman is bullish — signals conflict"
+            if direction == 'bearish' and rating not in BEARISH_RATINGS:
+                return None, f"Agent rated {rating} but Kalman is bearish — signals conflict"
+            return ExecutionSignal(
+                ticker       = ticker,
+                direction    = trade_dir,
+                kalman_score = score,
+                agent_rating = rating,
+                session_id   = agent['session_id'],
+                entry_price  = agent.get('entry_price'),
+                stop_loss    = agent.get('stop_loss'),
+                position_pct = agent.get('position_pct'),
+                age_hours    = agent['age_hours'],
+            ), "OK"
 
+        # Kalman-only mode — no agent analysis required
         return ExecutionSignal(
             ticker       = ticker,
             direction    = trade_dir,
             kalman_score = score,
-            agent_rating = rating,
-            session_id   = agent['session_id'],
-            entry_price  = agent.get('entry_price'),
-            stop_loss    = agent.get('stop_loss'),
-            position_pct = agent.get('position_pct'),
-            age_hours    = agent['age_hours'],
-        )
+            agent_rating = 'Kalman-only',
+            session_id   = '',
+            entry_price  = None,
+            stop_loss    = None,
+            position_pct = None,
+            age_hours    = 0.0,
+        ), "OK"
 
     def _find_recent_agent_signal(
         self, ticker: str, max_age_h: float

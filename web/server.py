@@ -192,6 +192,7 @@ class MT5ConfigRequest(BaseModel):
     agent_max_age_h:   Optional[float]     = None
     auto_tickers:      Optional[list[str]] = None
     enabled:           Optional[bool]      = None
+    require_agent:     Optional[bool]      = None
 
 
 class MT5ExecuteRequest(BaseModel):
@@ -234,6 +235,11 @@ def get_config():
             "aggressive_analyst", "neutral_analyst", "conservative_analyst",
             "portfolio_manager",
         ],
+        "mt5_defaults": {
+            "login":    os.getenv("MT5_LOGIN", ""),
+            "password": os.getenv("MT5_PASSWORD", ""),
+            "server":   os.getenv("MT5_SERVER", ""),
+        },
     }
 
 
@@ -642,12 +648,9 @@ def mt5_execute(body: MT5ExecuteRequest):
         "signal_strength": body.signal_strength,
         "models_agree":    body.models_agree,
     }
-    signal = _exec_engine.check_concurrence(body.ticker.upper(), kalman_result)
+    signal, reason = _exec_engine.check_concurrence(body.ticker.upper(), kalman_result)
     if signal is None:
-        return {
-            "executed": False,
-            "reason":   "Concurrence gate not passed (Kalman/agent do not agree or thresholds not met)",
-        }
+        return {"executed": False, "reason": reason}
     entry = _exec_engine.execute_signal(signal, atr=body.atr)
     return {"executed": entry["success"], "log": entry}
 

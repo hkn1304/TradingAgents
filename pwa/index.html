@@ -1090,7 +1090,15 @@ nav.tab-bar {
           </select>
         </div>
       </div>
-      <button class="exec-btn" onclick="mt5SaveConfig()">Save Config</button>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+        <label class="exec-toggle">
+          <input type="checkbox" id="exec-require-agent" checked
+            title="When OFF: execute on Kalman signal alone without LLM agent analysis">
+          <span class="exec-toggle-track"></span>
+        </label>
+        <span style="font-size:12px;color:var(--muted)">Require agent analysis (dual-confirmation)</span>
+      </div>
+      <button class="exec-btn" onclick="mt5SaveConfig()" style="margin-top:10px">Save Config</button>
     </div>
 
     <!-- Auto-execute toggles (filled dynamically from portfolio tickers) -->
@@ -1297,19 +1305,21 @@ function _cacheTtl(path) {
   if (path.includes('/api/kalman/'))            return 300_000;   // 5 min
   if (path.includes('/api/portfolio/kalman')) {
     const m = path.match(/[?&]horizon=([^&]+)/);
-    return (_PORT_REFRESH_MS || {})[m ? m[1] : '1d'] || 3_600_000;
+    const interval = (_PORT_REFRESH_MS || {})[m ? m[1] : '1d'] || 3_600_000;
+    return interval * 0.85; // expire before next refresh tick so auto-refresh always gets fresh data
   }
   return 0; // price, sessions, jobs, chat — never cache
 }
 
 // ── API fetch ─────────────────────────────────────────────────────────────────
-async function apiFetch(path) {
-  const ttl = _cacheTtl(path);
+async function apiFetch(path, options) {
+  const isGet = !options || !options.method || options.method === 'GET';
+  const ttl = isGet ? _cacheTtl(path) : 0;
   if (ttl > 0) {
     const hit = _cache.get(path);
     if (hit !== null) return hit;
   }
-  const r = await fetch(API + path);
+  const r = await fetch(API + path, options);
   if (!r.ok) throw new Error(r.status);
   const data = await r.json();
   if (ttl > 0) _cache.set(path, data, ttl);
@@ -2674,6 +2684,16 @@ function onAnalysisProviderChange(provider) {
   fillSelect('analysis-deep-model',  opts.deep  || [], 'ta_analysis_deep_model');
 }
 
+async function loadMt5Defaults() {
+  try {
+    const cfg = await apiFetch('/api/config');
+    const d = cfg.mt5_defaults || {};
+    if (d.login    && !$('exec-login').value)    $('exec-login').value    = d.login;
+    if (d.password && !$('exec-password').value) $('exec-password').value = d.password;
+    if (d.server   && !$('exec-server').value)   $('exec-server').value   = d.server;
+  } catch (e) { /* non-fatal */ }
+}
+
 async function loadModelOptions() {
   try {
     const res = await fetch(API + '/api/models');
@@ -3075,9 +3095,22 @@ async function runPortfolioScan() {
       `/api/portfolio/kalman?tickers=${encodeURIComponent(active.join(','))}&horizon=${_portHorizon}`
     );
     _portHasData = true;
-    _mt5AutoExecuteFromScan(data.results);
     _portLastScanTs = Date.now();
     _renderPortResults(data);
+    _renderAutoRows(active);
+    // Populate pending signals from scan for manual approval
+    _mt5PendingSignals = data.results
+      .filter(r => !r.error && (r.signal === 'buy' || r.signal === 'strong_buy' ||
+                                r.signal === 'sell' || r.signal === 'strong_sell'))
+      .map(r => ({
+        ticker:      r.ticker,
+        direction:   r.direction === 'bullish' ? 'buy' : 'sell',
+        score:       r.signal_strength,
+        modelsAgree: r.models_agree,
+        atr:         null,
+      }));
+    _renderPendingSignals(_mt5PendingSignals);
+    _mt5AutoExecuteFromScan(data.results);
     _resetPortRefreshTimer();
   } catch (e) {
     $('port-results').innerHTML =
@@ -3223,6 +3256,27 @@ let _mt5AutoTickers = {};   // ticker → bool
 let _mt5PendingSignals = []; // [{ticker, direction, score, modelsAgree, atr}]
 
 function initExecuteTab() {
+  // Restore persisted execution config
+  try {
+    const saved = JSON.parse(localStorage.getItem('ta_exec_config') || 'null');
+    if (saved) {
+      if (saved.risk_pct       != null) $('exec-risk').value     = saved.risk_pct;
+      if (saved.max_positions  != null) $('exec-maxpos').value   = saved.max_positions;
+      if (saved.min_kalman_score!=null) $('exec-minscore').value = saved.min_kalman_score;
+      if (saved.agent_max_age_h!=null) $('exec-age').value       = saved.agent_max_age_h;
+      if (saved.require_agent  != null) $('exec-require-agent').checked = saved.require_agent;
+      // Restore auto-tickers map
+      if (Array.isArray(saved.auto_tickers)) {
+        saved.auto_tickers.forEach(t => { _mt5AutoTickers[t] = true; });
+      }
+      // Push saved config to server in background
+      fetch(location.origin + '/api/mt5/config', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(saved),
+      }).catch(() => {});
+    }
+  } catch (e) {}
   mt5PollStatus();
 }
 
@@ -3286,6 +3340,7 @@ async function mt5Connect() {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ login: Number(login), password, server }),
     });
+    _mt5Connected = d.connected;
     _renderMt5Status(d);
     if (!d.connected) alert('Connection failed: ' + (d.message || ''));
   } catch (e) { alert('Error: ' + e.message); }
@@ -3306,7 +3361,10 @@ async function mt5SaveConfig() {
     agent_max_age_h:   parseFloat($('exec-age').value)      || 24,
     auto_tickers:      Object.keys(_mt5AutoTickers).filter(t => _mt5AutoTickers[t]),
     enabled:           true,
+    require_agent:     $('exec-require-agent').checked,
   };
+  // Persist so config survives server restarts
+  localStorage.setItem('ta_exec_config', JSON.stringify(payload));
   try {
     await apiFetch('/api/mt5/config', {
       method: 'POST',
@@ -3336,6 +3394,12 @@ function _renderAutoRows(tickers) {
 
 function _onAutoToggle(ticker, on) {
   _mt5AutoTickers[ticker] = on;
+  // Persist immediately so toggle survives refresh without needing Save Config
+  try {
+    const saved = JSON.parse(localStorage.getItem('ta_exec_config') || '{}');
+    saved.auto_tickers = Object.keys(_mt5AutoTickers).filter(t => _mt5AutoTickers[t]);
+    localStorage.setItem('ta_exec_config', JSON.stringify(saved));
+  } catch (e) {}
 }
 
 async function mt5CheckPending() {
@@ -3376,14 +3440,14 @@ async function mt5ApproveSignal(ticker, direction, score, modelsAgree, atr) {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ ticker, direction, signal_strength: score, models_agree: modelsAgree, atr: atr||null }),
     });
-    if (d.success) {
-      alert(`✓ Order placed — ticket ${d.ticket}`);
+    if (d.executed && d.log?.success) {
+      alert(`✓ Order placed — ticket ${d.log.ticket}`);
       _mt5PendingSignals = _mt5PendingSignals.filter(s => s.ticker !== ticker);
       _renderPendingSignals(_mt5PendingSignals);
       mt5RefreshPositions();
       _renderTradeLog();
     } else {
-      alert('Execution failed: ' + d.comment);
+      alert('Not executed: ' + (d.reason || d.log?.comment || 'Unknown error'));
     }
   } catch (e) { alert('Error: ' + e.message); }
 }
@@ -3453,10 +3517,12 @@ async function _mt5AutoExecuteFromScan(scanResults) {
           atr: null,
         }),
       });
-      if (d.success) {
-        console.log(`Auto-executed ${r.ticker} ${dir} ticket=${d.ticket}`);
+      if (d.executed && d.log?.success) {
+        console.log(`Auto-executed ${r.ticker} ${dir} ticket=${d.log.ticket}`);
         mt5RefreshPositions();
         _renderTradeLog();
+      } else if (!d.executed) {
+        console.warn(`Auto-execute skipped ${r.ticker}: ${d.reason}`);
       }
     } catch {}
   }
@@ -3478,6 +3544,7 @@ function init() {
   initExecuteTab();
   loadModelOptions();
   loadSessionHistory();
+  loadMt5Defaults();
 
   // Register service worker
   if ('serviceWorker' in navigator) {

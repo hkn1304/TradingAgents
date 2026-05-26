@@ -67,6 +67,24 @@ class OrderResult:
     comment: str
 
 
+def _best_filling_mode(symbol_info):
+    """Return the best supported filling mode for a symbol.
+
+    MT5 symbol_info.filling_mode is a bitmask:
+      1 = FOK (Fill or Kill)
+      2 = IOC (Immediate or Cancel)
+    RETURN (2 in Python API enum) works for ECN/STP where partial fills are ok.
+    """
+    if mt5 is None:
+        return 2  # fallback
+    fm = getattr(symbol_info, 'filling_mode', 0)
+    if fm & 2:   # IOC supported
+        return mt5.ORDER_FILLING_IOC
+    if fm & 1:   # FOK supported
+        return mt5.ORDER_FILLING_FOK
+    return mt5.ORDER_FILLING_RETURN  # ECN/STP brokers
+
+
 # ── Broker ────────────────────────────────────────────────────────────────────
 
 class MT5Broker:
@@ -82,22 +100,50 @@ class MT5Broker:
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
+    # Known terminal paths — tried in order when no running terminal is found
+    _TERMINAL_PATHS = [
+        r"C:\Program Files\XM Global MT5\terminal64.exe",
+        r"C:\Program Files\ALB Yatirim MetaTrader 5 Terminal\terminal64.exe",
+        r"C:\Program Files\GCM MT5 Terminal\terminal64.exe",
+        r"C:\Program Files (x86)\GCM MetaTrader\terminal64.exe",
+    ]
+
     def connect(self, login: int, password: str, server: str) -> tuple[bool, str]:
         if not _MT5_AVAILABLE:
             return False, "MetaTrader5 package not installed (pip install MetaTrader5)"
 
-        if not mt5.initialize():
-            return False, f"MT5 initialize failed: {mt5.last_error()}"
+        import os
 
-        if not mt5.login(login, password=password, server=server):
-            mt5.shutdown()
-            return False, f"Login failed: {mt5.last_error()}"
+        # First try: attach to any already-running terminal (no path)
+        ok = mt5.initialize(login=login, password=password, server=server, timeout=10000)
+        if ok:
+            self._connected = True
+            self._login  = login
+            self._server = server
+            logger.info(f"MT5 connected (running terminal): login={login} server={server}")
+            return True, "Connected"
 
-        self._connected = True
-        self._login  = login
-        self._server = server
-        logger.info(f"MT5 connected: login={login} server={server}")
-        return True, "Connected"
+        # Second try: launch each known terminal in API mode
+        for path in self._TERMINAL_PATHS:
+            if not os.path.exists(path):
+                continue
+            logger.info(f"Trying terminal: {path}")
+            ok = mt5.initialize(path=path, login=login, password=password,
+                                server=server, timeout=30000)
+            if ok:
+                self._connected = True
+                self._login  = login
+                self._server = server
+                logger.info(f"MT5 connected via {path}: login={login} server={server}")
+                return True, "Connected"
+            logger.warning(f"Terminal {path} failed: {mt5.last_error()}")
+
+        last_err = mt5.last_error()
+        return False, (
+            f"MT5 connect failed: {last_err}. "
+            "Make sure MetaTrader 5 is installed and 'Algo Trading' is enabled "
+            "in Tools → Options → Expert Advisors."
+        )
 
     def disconnect(self):
         if _MT5_AVAILABLE and self._connected:
@@ -186,6 +232,9 @@ class MT5Broker:
         order_type = mt5.ORDER_TYPE_BUY  if direction == 'buy'  else mt5.ORDER_TYPE_SELL
         price      = tick.ask            if direction == 'buy'  else tick.bid
 
+        # Pick filling mode supported by this symbol
+        filling_mode = _best_filling_mode(info)
+
         request: dict = {
             "action":       mt5.TRADE_ACTION_DEAL,
             "symbol":       symbol,
@@ -196,7 +245,7 @@ class MT5Broker:
             "magic":        magic,
             "comment":      comment,
             "type_time":    mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
+            "type_filling": filling_mode,
         }
         if sl is not None: request["sl"] = sl
         if tp is not None: request["tp"] = tp
@@ -227,6 +276,8 @@ class MT5Broker:
 
         close_type = mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
         price      = tick.bid            if pos.type == mt5.POSITION_TYPE_BUY else tick.ask
+        close_info = mt5.symbol_info(pos.symbol)
+        filling    = _best_filling_mode(close_info) if close_info else mt5.ORDER_FILLING_RETURN
 
         request = {
             "action":       mt5.TRADE_ACTION_DEAL,
@@ -239,7 +290,7 @@ class MT5Broker:
             "magic":        pos.magic,
             "comment":      "close",
             "type_time":    mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
+            "type_filling": filling,
         }
         result = mt5.order_send(request)
         if result is None:
