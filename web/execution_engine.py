@@ -53,10 +53,12 @@ class ExecutionConfig:
     risk_pct:           float = 0.01   # fraction of account balance to risk per trade
     max_positions:      int   = 3      # hard cap on concurrent open positions
     min_kalman_score:   int   = 65     # minimum Kalman score required
+    min_close_score:    int   = 70     # minimum score to trigger auto-close on reversal
     agent_max_age_h:    float = 24.0   # max age (hours) of accepted agent session
     auto_tickers:       set   = field(default_factory=set)  # tickers with auto=ON
     enabled:            bool  = True   # global kill-switch
     require_agent:      bool  = True   # when False, execute on Kalman signal alone
+    auto_close:         bool  = False  # auto-close open position when signal reverses
 
 
 @dataclass
@@ -104,10 +106,12 @@ class ExecutionEngine:
                 "risk_pct":         c.risk_pct,
                 "max_positions":    c.max_positions,
                 "min_kalman_score": c.min_kalman_score,
+                "min_close_score":  c.min_close_score,
                 "agent_max_age_h":  c.agent_max_age_h,
                 "auto_tickers":     sorted(c.auto_tickers),
                 "enabled":          c.enabled,
                 "require_agent":    c.require_agent,
+                "auto_close":       c.auto_close,
             }
 
     # ── Concurrence check ─────────────────────────────────────────────────────

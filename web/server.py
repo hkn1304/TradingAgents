@@ -190,10 +190,14 @@ class MT5ConfigRequest(BaseModel):
     risk_pct:          Optional[float]     = None
     max_positions:     Optional[int]       = None
     min_kalman_score:  Optional[int]       = None
+    min_close_score:   Optional[int]       = None
     agent_max_age_h:   Optional[float]     = None
     auto_tickers:      Optional[list[str]] = None
     enabled:           Optional[bool]      = None
     require_agent:     Optional[bool]      = None
+    auto_close:        Optional[bool]      = None
+    agent_mode:        Optional[str]       = None
+    auto_template_id:  Optional[str]       = None
 
 
 class MT5ExecuteRequest(BaseModel):

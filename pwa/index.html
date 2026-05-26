@@ -3620,14 +3620,15 @@ async function mt5ClosePosition(ticket) {
   if (!confirm(`Close position #${ticket}?`)) return;
   try {
     const d = await apiFetch('/api/mt5/close/' + ticket, { method: 'POST' });
-    if (d.success) { alert('Position closed.'); mt5RefreshPositions(); _renderTradeLog(); }
+    if (d.closed) { alert('Position closed.'); mt5RefreshPositions(); _renderTradeLog(); }
     else alert('Close failed: ' + d.comment);
   } catch (e) { alert('Error: ' + e.message); }
 }
 
 async function _renderTradeLog() {
   try {
-    const entries = await apiFetch('/api/mt5/log');
+    const data = await apiFetch('/api/mt5/log');
+    const entries = data.log || [];
     $('exec-log-list').innerHTML = entries.length ? entries.map(e => `
       <div class="exec-log-item">
         <div>
@@ -3647,7 +3648,7 @@ async function _renderTradeLog() {
 async function _mt5AutoExecuteFromScan(scanResults) {
   if (!_mt5Connected) return;
   const requireAgent  = $('exec-require-agent').checked;
-  const autoClose     = $('exec-auto-close').checked;
+  const autoClose     = $('exec-auto-close')?.checked ?? false;
   const minCloseScore = parseInt($('exec-minclosescore')?.value) || 70;
 
   // Fetch current open positions once for the whole batch
