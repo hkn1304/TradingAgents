@@ -3,10 +3,18 @@ title Stop TradingAgents
 cd /d "%~dp0"
 
 echo ============================================
-echo  Stopping TradingAgents Server + ngrok
+echo  Stopping TradingAgents Server + Tunnels
 echo ============================================
 
-:: Kill ngrok
+:: Kill Cloudflare tunnel
+taskkill /IM cloudflared.exe /F >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    echo [OK] cloudflared stopped.
+) else (
+    echo [--] cloudflared was not running.
+)
+
+:: Kill ngrok (in case it was used instead)
 taskkill /IM ngrok.exe /F >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     echo [OK] ngrok stopped.
@@ -26,9 +34,10 @@ if "%KILLED%"=="1" (
     echo [--] API server was not running.
 )
 
-:: Also close the named console windows if still open
+:: Close named console windows
 taskkill /FI "WINDOWTITLE eq TradingAgents API" /F >nul 2>&1
-taskkill /FI "WINDOWTITLE eq ngrok" /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq cloudflared"        /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq ngrok"              /F >nul 2>&1
 
 echo.
 echo All done.
