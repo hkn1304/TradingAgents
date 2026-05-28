@@ -1385,6 +1385,14 @@ class RingCache {
     this._store.set(key, { data, exp: Date.now() + ttlMs });
   }
   size()   { return this._ring.length; }
+  /** Remove all entries whose key contains the given substring. */
+  evict(substr) {
+    this._ring = this._ring.filter(k => {
+      if (!k.includes(substr)) return true;
+      this._store.delete(k);
+      return false;
+    });
+  }
 }
 
 const _cache = new RingCache(40);
@@ -1395,9 +1403,7 @@ function _cacheTtl(path) {
   if (path.includes('/api/markets/news'))       return 300_000;   // 5 min
   if (path.includes('/api/kalman/'))            return 300_000;   // 5 min
   if (path.includes('/api/portfolio/kalman')) {
-    const m = path.match(/[?&]horizon=([^&]+)/);
-    const interval = (_PORT_REFRESH_MS || {})[m ? m[1] : '1d'] || 3_600_000;
-    return interval * 0.85; // expire before next refresh tick so auto-refresh always gets fresh data
+    return 2 * 60 * 1000; // 2 min — short enough that consecutive manual scans get fresh data
   }
   return 0; // price, sessions, jobs, chat — never cache
 }
@@ -3094,16 +3100,14 @@ const _PORT_BAR_LABELS = { '1h':'15m bars','4h':'30m bars','1d':'1h bars','1w':'
 const _PORT_REFRESH_MS = { '1h': 15*60*1000, '4h': 30*60*1000, '1d': 60*60*1000, '1w': 60*60*1000, '1m': 60*60*1000 };
 
 let _portHorizon = localStorage.getItem('ta_port_horizon') || '1d';
+// sessionStorage: persists within the same browser tab (survives refresh),
+// but resets when the tab is closed / a new session starts.
 let _portTickerConfigs = (() => {
   try {
-    const saved = localStorage.getItem('ta_port_configs');
+    const saved = sessionStorage.getItem('ta_port_configs');
     if (saved) return JSON.parse(saved);
-    // Migrate from old flat-ticker format
-    const old = JSON.parse(localStorage.getItem('ta_port_tickers') || '["","","","",""]');
-    const arr = Array.isArray(old) ? old : [''];
-    return arr.map(t => ({ ticker: t || '', horizon: _portHorizon }));
-  }
-  catch { return [{ ticker: '', horizon: '1d' }]; }
+  } catch {}
+  return [{ ticker: '', horizon: _portHorizon }];
 })();
 let _portLoading  = false;
 let _portHasData  = false;   // true once a successful scan has been rendered
@@ -3121,7 +3125,7 @@ function setPortHorizon(h) {
   _renderPortHorizonBtns();
   _resetPortRefreshTimer();
   // Re-scan immediately if tickers are already filled in
-  const active = _portTickers.filter(t => t);
+  const active = _portTickerConfigs.filter(c => c.ticker);
   if (active.length) runPortfolioScan();
 }
 
@@ -3134,7 +3138,7 @@ function _renderPortHorizonBtns() {
 }
 
 function _savePortConfigs() {
-  localStorage.setItem('ta_port_configs', JSON.stringify(_portTickerConfigs));
+  sessionStorage.setItem('ta_port_configs', JSON.stringify(_portTickerConfigs));
 }
 
 function _renderPortTickerInputs() {
@@ -3156,13 +3160,25 @@ function _renderPortTickerInputs() {
 }
 
 function _savePortTicker(idx, val) {
-  _portTickerConfigs[idx].ticker = val.trim().toUpperCase();
+  const t = val.trim().toUpperCase();
+  _portTickerConfigs[idx].ticker = t;
   _savePortConfigs();
+  _cache.evict('/api/portfolio/kalman'); // ticker changed — discard stale portfolio cache
+  // Warn visually if this ticker already exists in another row
+  const inp = $('port-t' + idx);
+  if (inp && t && _portTickerConfigs.some((c, i) => i !== idx && c.ticker === t)) {
+    inp.style.borderColor = 'var(--neutral)';
+    inp.title = 'Duplicate ticker — will only be scanned once';
+  } else if (inp) {
+    inp.style.borderColor = '';
+    inp.title = '';
+  }
 }
 
 function _savePortHorizon(idx, val) {
   _portTickerConfigs[idx].horizon = val;
   _savePortConfigs();
+  _cache.evict('/api/portfolio/kalman'); // horizon changed — discard stale portfolio cache
 }
 
 function _addPortTicker() {
@@ -3206,13 +3222,23 @@ async function runPortfolioScan() {
   _flushPortInputs();
   _savePortConfigs();
 
-  const active = _portTickerConfigs.filter(c => c.ticker);
+  // Deduplicate: first occurrence of each ticker wins; later duplicates are silently skipped
+  const _seen = new Set();
+  const active = _portTickerConfigs.filter(c => {
+    if (!c.ticker || _seen.has(c.ticker)) return false;
+    _seen.add(c.ticker);
+    return true;
+  });
+
+  // Debug: log exact state so browser console shows what's being scanned
+  console.log('[PORT scan] configs:', JSON.stringify(_portTickerConfigs));
+  console.log('[PORT scan] active:', active.map(c => `${c.ticker}/${c.horizon}`).join(', '));
+
   if (!active.length) { alert('Enter at least one ticker.'); return; }
 
   _portLoading = true;
   const btn = $('port-analyze-btn');
-  btn.disabled = true;
-  btn.textContent = 'Analyzing…';
+  if (btn) { btn.disabled = true; btn.textContent = 'Analyzing…'; }
   $('port-alloc-card').style.display = 'none';
 
   if (!_portHasData) {
@@ -3233,16 +3259,22 @@ async function runPortfolioScan() {
       const h = cfg.horizon || _portHorizon || '1d';
       (byHorizon[h] = byHorizon[h] || []).push(cfg.ticker);
     }
-    const callPromises = Object.entries(byHorizon).map(([h, tickers]) =>
-      apiFetch(`/api/portfolio/kalman?tickers=${encodeURIComponent(tickers.join(','))}&horizon=${h}`)
-        .then(d => d.results.map(r => ({ ...r, _horizon: h })))
-    );
+    const callPromises = Object.entries(byHorizon).map(([h, tickers]) => {
+      const url = `/api/portfolio/kalman?tickers=${encodeURIComponent(tickers.join(','))}&horizon=${h}`;
+      console.log('[PORT scan] fetching:', url);
+      return apiFetch(url).then(d => {
+        console.log('[PORT scan] raw results:', d.results.map(r => `${r.ticker}:$${r.price}:${r.signal_strength}`).join(', '));
+        return d.results.map(r => ({ ...r, _horizon: h }));
+      });
+    });
     const groups  = await Promise.all(callPromises);
     const resultMap = {};
     for (const grp of groups) for (const r of grp) resultMap[r.ticker] = r;
+    console.log('[PORT scan] resultMap keys:', Object.keys(resultMap));
 
     // Reorder to match the user's ticker order
     const ordered = active.map(c => resultMap[c.ticker] || { ticker: c.ticker, error: 'No data', _horizon: c.horizon });
+    console.log('[PORT scan] ordered:', ordered.map(r => `${r.ticker}:$${r.price}:${r.signal_strength}:${r.error||''}`).join(', '));
 
     // Recompute allocation across all merged results
     const buyRes    = ordered.filter(r => !r.error && ['buy','strong_buy'].includes(r.signal) && r.signal_strength >= 45);
@@ -3275,8 +3307,7 @@ async function runPortfolioScan() {
       `<div class="card"><div class="error-msg">⚠ ${e.message}</div></div>`;
   } finally {
     _portLoading = false;
-    btn.disabled = false;
-    btn.textContent = 'Analyze Portfolio';
+    if (btn) { btn.disabled = false; btn.textContent = 'Analyze Portfolio'; }
   }
 }
 
@@ -3443,7 +3474,20 @@ function _startPortAutoScan() {
   }, ms);
   _portCountdownTimer = setInterval(_updateScanCountdown, 1000);
   _updateScanCountdown();
+  // Fire immediately (brief delay so UI is ready)
+  setTimeout(runPortfolioScan, 600);
 }
+
+// When the user returns to the tab, catch up if the timer fired while backgrounded
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && _portAutoScanTimer && _portNextScanTime) {
+    if (Date.now() >= _portNextScanTime) {
+      // Timer elapsed while tab was hidden — run now and reset
+      _portNextScanTime = Date.now() + _portScanIntervalMin * 60 * 1000;
+      runPortfolioScan();
+    }
+  }
+});
 
 function _stopPortAutoScan() {
   clearInterval(_portAutoScanTimer);
@@ -3804,6 +3848,12 @@ async function _mt5AutoExecuteFromScan(scanResults) {
     if (!_mt5AutoTickers[r.ticker]) continue;
     const dir = r.direction === 'bullish' ? 'buy' : r.direction === 'bearish' ? 'sell' : null;
     if (!dir) continue;
+
+    // ── Hard floor: score < 10 means data glitch / candle-boundary noise ─────
+    if (r.signal_strength < 10) {
+      console.warn(`Auto-action skipped ${r.ticker}: score ${r.signal_strength} < 10 (unreliable — possible data gap or candle boundary)`);
+      continue;
+    }
 
     // ── Auto-close on reversal ────────────────────────────────────────────────
     const openPos = openPositions[r.ticker];
