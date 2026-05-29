@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 import logging
+import threading
 from typing import Optional
 
 import pandas as pd
@@ -16,6 +17,10 @@ from .base import Capability, DataProvider, OHLCVInterval, ProviderError
 from tradingagents.dataflows.stockstats_utils import load_ohlcv
 
 logger = logging.getLogger(__name__)
+
+# yf.download() is not thread-safe — concurrent calls swap each other's data.
+# This lock serialises all downloads so parallel API requests don't corrupt results.
+_yf_download_lock = threading.Lock()
 
 # ── Canonical → yfinance ticker translation ────────────────────────────────────
 
@@ -131,15 +136,16 @@ class YFinanceProvider(DataProvider):
         yf_ticker = self.normalize_ticker(ticker)
         yf_interval = _INTERVAL_MAP[interval]
 
-        raw = yf.download(
-            yf_ticker,
-            start=start_date,
-            end=end_date,
-            interval=yf_interval,
-            progress=False,
-            auto_adjust=True,
-            multi_level_index=False,
-        )
+        with _yf_download_lock:
+            raw = yf.download(
+                yf_ticker,
+                start=start_date,
+                end=end_date,
+                interval=yf_interval,
+                progress=False,
+                auto_adjust=True,
+                multi_level_index=False,
+            )
 
         if raw.empty:
             return pd.DataFrame(columns=["Date", "Open", "High", "Low", "Close", "Volume"])

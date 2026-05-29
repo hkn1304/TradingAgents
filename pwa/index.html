@@ -3253,28 +3253,26 @@ async function runPortfolioScan() {
   }
 
   try {
-    // Group tickers by their individual horizon, then fetch in parallel
-    const byHorizon = {};
-    for (const cfg of active) {
-      const h = cfg.horizon || _portHorizon || '1d';
-      (byHorizon[h] = byHorizon[h] || []).push(cfg.ticker);
-    }
-    const callPromises = Object.entries(byHorizon).map(([h, tickers]) => {
-      const url = `/api/portfolio/kalman?tickers=${encodeURIComponent(tickers.join(','))}&horizon=${h}`;
+    // Fetch each ticker individually in parallel — one URL per ticker so each
+    // gets its own isolated cache entry and there is zero cross-contamination.
+    const callPromises = active.map(cfg => {
+      const h   = cfg.horizon || _portHorizon || '1d';
+      const url = `/api/portfolio/kalman?tickers=${encodeURIComponent(cfg.ticker)}&horizon=${h}`;
       console.log('[PORT scan] fetching:', url);
       return apiFetch(url).then(d => {
-        console.log('[PORT scan] raw results:', d.results.map(r => `${r.ticker}:$${r.price}:${r.signal_strength}`).join(', '));
-        return d.results.map(r => ({ ...r, _horizon: h }));
-      });
+        const r = d.results[0];
+        console.log('[PORT scan] result:', `${r?.ticker}:$${r?.price}:${r?.signal_strength}:${r?.error||'ok'}`);
+        return r ? { ...r, _horizon: h } : { ticker: cfg.ticker, error: 'Empty response', _horizon: h };
+      }).catch(err => ({ ticker: cfg.ticker, error: err.message, _horizon: h }));
     });
-    const groups  = await Promise.all(callPromises);
-    const resultMap = {};
-    for (const grp of groups) for (const r of grp) resultMap[r.ticker] = r;
-    console.log('[PORT scan] resultMap keys:', Object.keys(resultMap));
+    const results = await Promise.all(callPromises);
+    console.log('[PORT scan] final:', results.map(r => `${r.ticker}:$${r.price}:${r.signal_strength}`).join(', '));
 
-    // Reorder to match the user's ticker order
+    // Results are already in active order — build resultMap for allocation calc
+    const resultMap = Object.fromEntries(results.map(r => [r.ticker, r]));
+
+    // ordered = same order as user's ticker list
     const ordered = active.map(c => resultMap[c.ticker] || { ticker: c.ticker, error: 'No data', _horizon: c.horizon });
-    console.log('[PORT scan] ordered:', ordered.map(r => `${r.ticker}:$${r.price}:${r.signal_strength}:${r.error||''}`).join(', '));
 
     // Recompute allocation across all merged results
     const buyRes    = ordered.filter(r => !r.error && ['buy','strong_buy'].includes(r.signal) && r.signal_strength >= 45);
