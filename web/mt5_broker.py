@@ -85,6 +85,25 @@ def _best_filling_mode(symbol_info):
     return mt5.ORDER_FILLING_RETURN  # ECN/STP brokers
 
 
+# ── XM Global symbol name map ─────────────────────────────────────────────────
+# XM uses non-standard names for several instruments.
+# Keys are canonical names used in the app; values are what MT5 expects.
+_XM_SYMBOL_MAP: dict[str, str] = {
+    "XAUUSD": "GOLD",
+    "XAGUSD": "SILVER",
+    "XPTUSD": "PLATINUM",
+    "XPDUSD": "PALLADIUM",
+    "USOIL":  "OIL",
+    "UKOIL":  "BRENT",
+    "BTCUSD": "BTCUSD",   # same on XM
+    "ETHUSD": "ETHUSD",
+}
+
+def _xm_symbol(ticker: str) -> str:
+    """Translate a canonical ticker to the XM MT5 symbol name."""
+    return _XM_SYMBOL_MAP.get(ticker.upper(), ticker.upper())
+
+
 # ── Broker ────────────────────────────────────────────────────────────────────
 
 class MT5Broker:
@@ -201,7 +220,8 @@ class MT5Broker:
         ]
 
     def get_position_for_symbol(self, symbol: str) -> Optional[Position]:
-        hits = [p for p in self.get_positions() if p.symbol == symbol]
+        mt5_sym = _xm_symbol(symbol)
+        hits = [p for p in self.get_positions() if p.symbol == mt5_sym]
         return hits[0] if hits else None
 
     # ── Orders ────────────────────────────────────────────────────────────────
@@ -218,6 +238,8 @@ class MT5Broker:
     ) -> OrderResult:
         if not self.connected:
             return OrderResult(False, None, -1, "Not connected")
+
+        symbol = _xm_symbol(symbol)  # translate XAUUSD→GOLD etc.
 
         info = mt5.symbol_info(symbol)
         if info is None:
@@ -305,7 +327,7 @@ class MT5Broker:
         """Round volume to the symbol's lot step, clamped to [min, max]."""
         if not self.connected:
             return round(max(0.01, volume), 2)
-        info = mt5.symbol_info(symbol)
+        info = mt5.symbol_info(_xm_symbol(symbol))
         if info is None:
             return round(max(0.01, volume), 2)
         vol  = max(info.volume_min, min(info.volume_max, volume))
