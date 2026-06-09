@@ -1319,10 +1319,11 @@ nav.tab-bar {
     <div class="card" id="pnl-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div class="card-title" style="margin:0">P&amp;L History</div>
-        <div class="pnl-range-row" style="margin:0">
+        <div class="pnl-range-row" style="margin:0;gap:6px">
           <button class="pnl-range-btn active" onclick="_pnlSetDays(7,this)">7D</button>
           <button class="pnl-range-btn" onclick="_pnlSetDays(30,this)">30D</button>
           <button class="pnl-range-btn" onclick="_pnlSetDays(90,this)">90D</button>
+          <button class="pnl-range-btn" onclick="_renderPnl()" title="Refresh from MT5" style="margin-left:4px">↺</button>
         </div>
       </div>
       <div class="pnl-summary" id="pnl-summary"></div>
@@ -4089,7 +4090,13 @@ async function mt5ClosePosition(ticket) {
   if (!confirm(`Close position #${ticket}?`)) return;
   try {
     const d = await apiFetch('/api/mt5/close/' + ticket, { method: 'POST' });
-    if (d.closed) { alert('Position closed.'); mt5RefreshPositions(); _renderTradeLog(); _renderPnl(); }
+    if (d.closed) {
+      alert('Position closed.');
+      mt5RefreshPositions();
+      _renderTradeLog();
+      // Delay P&L refresh: MT5 needs ~1s to write the deal to history
+      setTimeout(_renderPnl, 1500);
+    }
     else alert('Close failed: ' + d.comment);
   } catch (e) { alert('Error: ' + e.message); }
 }
@@ -4239,6 +4246,7 @@ async function _mt5AutoExecuteFromScan(scanResults) {
           delete openPositions[r.ticker];
           mt5RefreshPositions();
           _renderTradeLog();
+          setTimeout(_renderPnl, 1500);
         }
       } catch {}
       continue; // don't open a new position this tick
@@ -4254,6 +4262,7 @@ async function _mt5AutoExecuteFromScan(scanResults) {
             delete openPositions[r.ticker];
             mt5RefreshPositions();
             _renderTradeLog();
+            setTimeout(_renderPnl, 1500);
           }
         } catch {}
       } else {

@@ -382,9 +382,11 @@ class MT5Broker:
         """
         if not self.connected or not _MT5_AVAILABLE:
             return []
-        from datetime import datetime, timedelta, timezone
-        date_from = datetime.now(timezone.utc) - timedelta(days=days)
-        date_to   = datetime.now(timezone.utc)
+        from datetime import datetime, timedelta
+        # MT5 Python library requires naive UTC datetimes (no tzinfo).
+        # Add a 1-hour buffer on date_to so very recent deals aren't missed.
+        date_from = datetime.utcnow() - timedelta(days=days)
+        date_to   = datetime.utcnow() + timedelta(hours=1)
         raw = mt5.history_deals_get(date_from, date_to)
         if not raw:
             return []
