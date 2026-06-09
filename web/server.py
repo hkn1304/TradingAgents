@@ -194,6 +194,7 @@ class MT5ConfigRequest(BaseModel):
     min_kalman_score:  Optional[int]       = None
     min_close_score:   Optional[int]       = None
     min_hold_score:    Optional[int]       = None
+    tp_rr_ratio:       Optional[float]    = None
     agent_max_age_h:   Optional[float]     = None
     auto_tickers:      Optional[list[str]] = None
     enabled:           Optional[bool]      = None
@@ -374,6 +375,50 @@ def markets_news(ticker: str, limit: int = 6):
     news = provider.get_news(ticker, max_items=limit)
     result = {"ticker": ticker, "news": news}
     _mc_set(key, result, 300)  # 5 min — news feed doesn't need instant refresh
+    return result
+
+
+@app.get("/api/markets/calendar")
+def markets_calendar():
+    """High-impact economic events for the next 7 days (ForexFactory feed)."""
+    cached = _mc_get("econ_calendar")
+    if cached is not None:
+        return cached
+    import requests as _req
+    from datetime import datetime, timedelta, timezone
+    try:
+        resp = _req.get(
+            "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
+            timeout=8,
+            headers={"User-Agent": "TradingAgents/1.0"},
+        )
+        events = resp.json()
+        now    = datetime.now(timezone.utc)
+        cutoff = now + timedelta(days=7)
+        out = []
+        for e in events:
+            if e.get("impact") != "High":
+                continue
+            date_str = e.get("date", "")
+            try:
+                dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+                if dt < now or dt > cutoff:
+                    continue
+                e["_ts"] = dt.isoformat()
+            except Exception:
+                continue
+            out.append({
+                "title":    e.get("title", ""),
+                "country":  e.get("country", ""),
+                "date":     e.get("date", ""),
+                "forecast": e.get("forecast", ""),
+                "previous": e.get("previous", ""),
+            })
+        out.sort(key=lambda x: x["date"])
+        result = {"events": out}
+    except Exception as exc:
+        result = {"events": [], "error": str(exc)}
+    _mc_set("econ_calendar", result, 3600)  # cache 1 hour
     return result
 
 
@@ -573,6 +618,16 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
 
             last_price = float(df2['close'].iloc[-1])
 
+            # ATR (14-period) for volatility warning
+            hi  = df2['high'].values.astype(float)
+            lo  = df2['low'].values.astype(float)
+            cl  = df2['close'].values.astype(float)
+            pc  = np.concatenate([[cl[0]], cl[:-1]])
+            tr  = np.maximum(hi - lo, np.maximum(np.abs(hi - pc), np.abs(lo - pc)))
+            atr_14  = float(np.mean(tr[-14:])) if len(tr) >= 14 else float(np.mean(tr))
+            atr_avg = float(np.mean(tr[-50:])) if len(tr) >= 14 else atr_14
+            atr_ratio = atr_14 / atr_avg if atr_avg > 0 else 1.0
+
             results.append({
                 "ticker":           ticker,
                 "error":            None,
@@ -588,6 +643,9 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
                 "models_agree":     models_agree,
                 "regime":           rw['regime'],
                 "z_now":            rw['z_now'],
+                "atr":              round(atr_14, 5),
+                "atr_ratio":        round(atr_ratio, 2),
+                "atr_high":         bool(atr_ratio > 1.5),
                 "sparkline_closes": closes.tolist(),
                 "sparkline_kalman": k_line.tolist(),
             })

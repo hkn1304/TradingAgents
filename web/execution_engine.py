@@ -55,6 +55,7 @@ class ExecutionConfig:
     min_kalman_score:   int   = 65     # minimum Kalman score required
     min_close_score:    int   = 70     # minimum score to trigger auto-close on reversal
     min_hold_score:     int   = 35     # close position early if score drops below this
+    tp_rr_ratio:        float = 2.0   # take-profit = SL-distance × this ratio (0 = disabled)
     agent_max_age_h:    float = 24.0   # max age (hours) of accepted agent session
     auto_tickers:       set   = field(default_factory=set)  # tickers with auto=ON
     enabled:            bool  = True   # global kill-switch
@@ -109,6 +110,7 @@ class ExecutionEngine:
                 "min_kalman_score": c.min_kalman_score,
                 "min_close_score":  c.min_close_score,
                 "min_hold_score":   c.min_hold_score,
+                "tp_rr_ratio":      c.tp_rr_ratio,
                 "agent_max_age_h":  c.agent_max_age_h,
                 "auto_tickers":     sorted(c.auto_tickers),
                 "enabled":          c.enabled,
@@ -282,6 +284,14 @@ class ExecutionEngine:
                 sl = (signal.entry_price - dist if signal.direction == 'buy'
                       else signal.entry_price + dist)
 
+            # Take profit: SL distance × R:R ratio (0 = disabled)
+            tp = None
+            if sl is not None and signal.entry_price and cfg.tp_rr_ratio > 0:
+                sl_dist = abs(signal.entry_price - sl)
+                tp = (signal.entry_price + cfg.tp_rr_ratio * sl_dist
+                      if signal.direction == 'buy'
+                      else signal.entry_price - cfg.tp_rr_ratio * sl_dist)
+
             # Volume: ATR-based risk sizing, fallback to minimum lot
             volume = 0.01
             if sl is not None and signal.entry_price:
@@ -298,10 +308,11 @@ class ExecutionEngine:
                 direction = signal.direction,
                 volume    = volume,
                 sl        = sl,
+                tp        = tp,
                 comment   = f"TA-K{signal.kalman_score}",
             )
             return self._record(signal, result.success, result.comment,
-                                ticket=result.ticket, volume=volume, sl=sl)
+                                ticket=result.ticket, volume=volume, sl=sl, tp=tp)
 
     def _record(
         self,
@@ -311,6 +322,7 @@ class ExecutionEngine:
         ticket:  Optional[int] = None,
         volume:  float = 0.0,
         sl:      Optional[float] = None,
+        tp:      Optional[float] = None,
     ) -> dict:
         entry = {
             "ts":           datetime.utcnow().isoformat(),
@@ -324,6 +336,7 @@ class ExecutionEngine:
             "ticket":       ticket,
             "volume":       volume,
             "sl":           sl,
+            "tp":           tp,
             "comment":      comment,
         }
         self._log.insert(0, entry)
