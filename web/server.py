@@ -191,6 +191,7 @@ class MT5ConfigRequest(BaseModel):
     max_positions:     Optional[int]       = None
     min_kalman_score:  Optional[int]       = None
     min_close_score:   Optional[int]       = None
+    min_hold_score:    Optional[int]       = None
     agent_max_age_h:   Optional[float]     = None
     auto_tickers:      Optional[list[str]] = None
     enabled:           Optional[bool]      = None

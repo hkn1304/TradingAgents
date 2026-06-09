@@ -54,6 +54,7 @@ class ExecutionConfig:
     max_positions:      int   = 3      # hard cap on concurrent open positions
     min_kalman_score:   int   = 65     # minimum Kalman score required
     min_close_score:    int   = 70     # minimum score to trigger auto-close on reversal
+    min_hold_score:     int   = 35     # close position early if score drops below this
     agent_max_age_h:    float = 24.0   # max age (hours) of accepted agent session
     auto_tickers:       set   = field(default_factory=set)  # tickers with auto=ON
     enabled:            bool  = True   # global kill-switch
@@ -107,6 +108,7 @@ class ExecutionEngine:
                 "max_positions":    c.max_positions,
                 "min_kalman_score": c.min_kalman_score,
                 "min_close_score":  c.min_close_score,
+                "min_hold_score":   c.min_hold_score,
                 "agent_max_age_h":  c.agent_max_age_h,
                 "auto_tickers":     sorted(c.auto_tickers),
                 "enabled":          c.enabled,
