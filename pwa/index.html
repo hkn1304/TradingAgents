@@ -3483,12 +3483,16 @@ async function loadCalendar() {
 // ── Portfolio TF switcher ─────────────────────────────────────────────────────
 const _portTfScores = {}; // ticker → {hz: {score, signal}}
 
-async function _portSwitchTF(ticker, newHz) {
+function _portSwitchTF(ticker, newHz) {
   const idx = _portTickerConfigs.findIndex(c => c.ticker === ticker);
   if (idx === -1) return;
   _portTickerConfigs[idx].horizon = newHz;
   _savePortConfigs();
   _cache.evict('/api/portfolio/kalman');
+  // Sync the DOM horizon dropdown BEFORE runPortfolioScan calls _flushPortInputs(),
+  // otherwise _flushPortInputs reads the old value and overwrites our change.
+  const sel = $('port-hz' + idx);
+  if (sel) sel.value = newHz;
   runPortfolioScan();
 }
 
