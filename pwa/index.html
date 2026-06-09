@@ -1319,13 +1319,10 @@ nav.tab-bar {
     <div class="card" id="pnl-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div class="card-title" style="margin:0">P&amp;L History</div>
-        <div class="pnl-range-row" style="margin:0;gap:6px">
+        <div class="pnl-range-row" style="margin:0">
           <button class="pnl-range-btn active" onclick="_pnlSetDays(7,this)">7D</button>
-          <button class="pnl-range-btn" onclick="_pnlSetDays(15,this)">15D</button>
           <button class="pnl-range-btn" onclick="_pnlSetDays(30,this)">30D</button>
           <button class="pnl-range-btn" onclick="_pnlSetDays(90,this)">90D</button>
-          <button class="pnl-range-btn" onclick="_pnlSetDays(3650,this)">All</button>
-          <button class="pnl-range-btn" onclick="_renderPnl()" title="Refresh from MT5" style="margin-left:4px">↺</button>
         </div>
       </div>
       <div class="pnl-summary" id="pnl-summary"></div>
@@ -1333,13 +1330,10 @@ nav.tab-bar {
       <div id="pnl-deals"></div>
     </div>
 
-    <!-- Trade Log (app orders, session only) -->
+    <!-- Trade Log (app orders) -->
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div class="card-title" style="margin:0">Order Log</div>
-        <span style="font-size:10px;color:var(--muted)">This session only · resets on server restart</span>
-      </div>
-      <div id="exec-log-list"><div style="font-size:12px;color:var(--muted)">No orders placed this session.</div></div>
+      <div class="card-title">Order Log</div>
+      <div id="exec-log-list"><div style="font-size:12px;color:var(--muted)">No entries.</div></div>
     </div>
 
   </div><!-- /tab-execute -->
@@ -3401,7 +3395,12 @@ async function runPortfolioScan() {
   console.log('[PORT scan] configs:', JSON.stringify(_portTickerConfigs));
   console.log('[PORT scan] active:', active.map(c => `${c.ticker}/${c.horizon}`).join(', '));
 
-  if (!active.length) { alert('Enter at least one ticker.'); return; }
+  if (!active.length) {
+    // If called from auto-scan while restore is still pending, skip silently
+    if (_portAutoScanTimer) return;
+    alert('Enter at least one ticker.');
+    return;
+  }
 
   _portLoading = true;
   const btn = $('port-analyze-btn');
@@ -3753,8 +3752,14 @@ function _startPortAutoScan() {
   }, ms);
   _portCountdownTimer = setInterval(_updateScanCountdown, 1000);
   _updateScanCountdown();
-  // Fire immediately (brief delay so UI is ready)
-  setTimeout(runPortfolioScan, 600);
+  // Fire immediately — but wait for server restore if localStorage was empty
+  setTimeout(async () => {
+    if (!_portTickerConfigs.some(c => c.ticker)) {
+      // Give server restore up to 3s to populate tickers
+      await new Promise(r => setTimeout(r, 3000));
+    }
+    runPortfolioScan();
+  }, 600);
 }
 
 // When the user returns to the tab, catch up if the timer fired while backgrounded
@@ -4095,13 +4100,7 @@ async function mt5ClosePosition(ticket) {
   if (!confirm(`Close position #${ticket}?`)) return;
   try {
     const d = await apiFetch('/api/mt5/close/' + ticket, { method: 'POST' });
-    if (d.closed) {
-      alert('Position closed.');
-      mt5RefreshPositions();
-      _renderTradeLog();
-      // Delay P&L refresh: MT5 needs ~1s to write the deal to history
-      setTimeout(_renderPnl, 1500);
-    }
+    if (d.closed) { alert('Position closed.'); mt5RefreshPositions(); _renderTradeLog(); _renderPnl(); }
     else alert('Close failed: ' + d.comment);
   } catch (e) { alert('Error: ' + e.message); }
 }
@@ -4116,12 +4115,7 @@ function _pnlSetDays(days, btn) {
 }
 
 async function _renderPnl() {
-  if (!_mt5Connected) {
-    $('pnl-summary').innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;padding:6px 0">Connect MT5 to view P&L history.</div>';
-    $('pnl-deals').innerHTML = '';
-    $('pnl-svg').innerHTML = '';
-    return;
-  }
+  if (!_mt5Connected) return;
   try {
     const d = await apiFetch(`/api/mt5/deals?days=${_pnlDays}`);
 
@@ -4256,7 +4250,6 @@ async function _mt5AutoExecuteFromScan(scanResults) {
           delete openPositions[r.ticker];
           mt5RefreshPositions();
           _renderTradeLog();
-          setTimeout(_renderPnl, 1500);
         }
       } catch {}
       continue; // don't open a new position this tick
@@ -4272,7 +4265,6 @@ async function _mt5AutoExecuteFromScan(scanResults) {
             delete openPositions[r.ticker];
             mt5RefreshPositions();
             _renderTradeLog();
-            setTimeout(_renderPnl, 1500);
           }
         } catch {}
       } else {
