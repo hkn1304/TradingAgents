@@ -158,6 +158,7 @@ class MT5Broker:
 
     # Known terminal paths — tried in order when no running terminal is found
     _TERMINAL_PATHS = [
+        r"C:\Program Files\MetaTrader 5\terminal64.exe",          # MetaQuotes default
         r"C:\Program Files\XM Global MT5\terminal64.exe",
         r"C:\Program Files\ALB Yatirim MetaTrader 5 Terminal\terminal64.exe",
         r"C:\Program Files\GCM MT5 Terminal\terminal64.exe",
@@ -382,23 +383,19 @@ class MT5Broker:
         """
         if not self.connected or not _MT5_AVAILABLE:
             return []
-        import time as _time
-        # Use Unix timestamps — most reliable format across MT5 versions
-        ts_to   = int(_time.time()) + 3600          # +1h buffer for recent deals
-        ts_from = ts_to - days * 86400 - 3600
-        raw = mt5.history_deals_get(ts_from, ts_to)
-        if raw is None:
-            err = mt5.last_error()
-            logger.warning(f"history_deals_get returned None: {err}")
+        from datetime import datetime, timedelta, timezone
+        date_from = datetime.now(timezone.utc) - timedelta(days=days)
+        date_to   = datetime.now(timezone.utc)
+        raw = mt5.history_deals_get(date_from, date_to)
+        if not raw:
             return []
-        logger.info(f"history_deals_get({days}d): {len(raw)} raw deals")
         out = []
         for d in raw:
-            # Skip balance, credit, and other non-trade operations (type >= 2)
+            # entry=1 → OUT (position closed), entry=0 → IN (position opened)
+            # Skip balance/credit operations (type >= 2)
             if d.type >= 2:
                 continue
-            # Skip entry=IN (position opens); keep OUT and INOUT (closes/reversals)
-            if getattr(d, 'entry', -1) == 0:
+            if d.entry != mt5.DEAL_ENTRY_OUT:
                 continue
             commission = round(getattr(d, 'commission', 0.0) or 0.0, 2)
             swap       = round(getattr(d, 'swap',       0.0) or 0.0, 2)
