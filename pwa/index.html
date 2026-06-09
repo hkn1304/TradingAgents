@@ -754,6 +754,31 @@ nav.tab-bar {
 /* ── ATR warning badge ────────────────────────────────────────────────────── */
 .atr-warn { font-size: 11px; color: var(--neutral); margin-left: 6px; }
 
+/* ── P&L chart + deal history ─────────────────────────────────────────────── */
+.pnl-summary {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  margin-bottom: 12px;
+}
+.pnl-stat { background: var(--bg3); border-radius: 6px; padding: 8px 10px; text-align: center; }
+.pnl-stat-val { font-size: 16px; font-weight: 800; }
+.pnl-stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.pnl-chart-wrap { background: var(--bg3); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+.pnl-deal-row {
+  display: grid; grid-template-columns: auto 1fr auto auto;
+  gap: 6px; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.pnl-deal-row:last-child { border-bottom: none; }
+.pnl-range-row {
+  display: flex; gap: 8px; align-items: center;
+  margin-bottom: 10px; font-size: 12px;
+}
+.pnl-range-btn {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.pnl-range-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,.1); }
+
 /* ── Economic calendar card ───────────────────────────────────────────────── */
 .cal-event {
   display: flex; align-items: flex-start; gap: 10px;
@@ -1290,9 +1315,24 @@ nav.tab-bar {
       </div>
     </div>
 
-    <!-- Trade Log -->
+    <!-- P&L Dashboard -->
+    <div class="card" id="pnl-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin:0">P&amp;L History</div>
+        <div class="pnl-range-row" style="margin:0">
+          <button class="pnl-range-btn active" onclick="_pnlSetDays(7,this)">7D</button>
+          <button class="pnl-range-btn" onclick="_pnlSetDays(30,this)">30D</button>
+          <button class="pnl-range-btn" onclick="_pnlSetDays(90,this)">90D</button>
+        </div>
+      </div>
+      <div class="pnl-summary" id="pnl-summary"></div>
+      <div class="pnl-chart-wrap"><svg id="pnl-svg" width="100%" height="140"></svg></div>
+      <div id="pnl-deals"></div>
+    </div>
+
+    <!-- Trade Log (app orders) -->
     <div class="card">
-      <div class="card-title">Trade Log</div>
+      <div class="card-title">Order Log</div>
       <div id="exec-log-list"><div style="font-size:12px;color:var(--muted)">No entries.</div></div>
     </div>
 
@@ -1722,7 +1762,7 @@ function switchTab(tab) {
   if (tab === 'agents')    agentsOnVisible();
   if (tab === 'analysis')  analysisOnVisible();
   if (tab === 'markets')   { loadKalman(); loadCalendar(); }
-  if (tab === 'execute') { mt5RefreshPositions(); _startPlPoll(); }
+  if (tab === 'execute') { mt5RefreshPositions(); _startPlPoll(); _renderPnl(); _renderTradeLog(); }
   else                   { _stopPlPoll(); }
 }
 
@@ -3856,6 +3896,8 @@ async function mt5Connect() {
     _mt5Connected = d.connected;
     _renderMt5Status(d);
     if (d.connected) {
+      _renderPnl();
+      _renderTradeLog();
       // Seed portfolio with open positions if it's currently empty
       if (!_portTickerConfigs.some(c => c.ticker)) _seedPortFromPositions();
     } else {
@@ -4047,9 +4089,96 @@ async function mt5ClosePosition(ticket) {
   if (!confirm(`Close position #${ticket}?`)) return;
   try {
     const d = await apiFetch('/api/mt5/close/' + ticket, { method: 'POST' });
-    if (d.closed) { alert('Position closed.'); mt5RefreshPositions(); _renderTradeLog(); }
+    if (d.closed) { alert('Position closed.'); mt5RefreshPositions(); _renderTradeLog(); _renderPnl(); }
     else alert('Close failed: ' + d.comment);
   } catch (e) { alert('Error: ' + e.message); }
+}
+
+// ── P&L History ───────────────────────────────────────────────────────────────
+let _pnlDays = 7;
+
+function _pnlSetDays(days, btn) {
+  _pnlDays = days;
+  document.querySelectorAll('.pnl-range-btn').forEach(b => b.classList.toggle('active', b === btn));
+  _renderPnl();
+}
+
+async function _renderPnl() {
+  if (!_mt5Connected) return;
+  try {
+    const d = await apiFetch(`/api/mt5/deals?days=${_pnlDays}`);
+
+    // ── Summary row ──────────────────────────────────────────────────────────
+    const netColor = d.total_net >= 0 ? 'var(--bull)' : 'var(--bear)';
+    $('pnl-summary').innerHTML = `
+      <div class="pnl-stat">
+        <div class="pnl-stat-val" style="color:${netColor}">${d.total_net >= 0 ? '+' : ''}${fmt(d.total_net)}</div>
+        <div class="pnl-stat-lbl">Net P&amp;L</div>
+      </div>
+      <div class="pnl-stat">
+        <div class="pnl-stat-val">${d.total_trades}</div>
+        <div class="pnl-stat-lbl">Trades</div>
+      </div>
+      <div class="pnl-stat">
+        <div class="pnl-stat-val" style="color:var(--bull)">${d.win_rate}%</div>
+        <div class="pnl-stat-lbl">Win rate</div>
+      </div>
+      <div class="pnl-stat">
+        <div class="pnl-stat-val"><span style="color:var(--bull)">${d.winning}W</span> / <span style="color:var(--bear)">${d.losing}L</span></div>
+        <div class="pnl-stat-lbl">W / L</div>
+      </div>`;
+
+    // ── Cumulative P&L chart (SVG) ───────────────────────────────────────────
+    const daily = d.daily || [];
+    const svg   = $('pnl-svg');
+    if (!daily.length) { svg.innerHTML = '<text x="50%" y="50%" fill="#8b949e" font-size="12" text-anchor="middle" dominant-baseline="middle">No closed trades in this period</text>'; }
+    else {
+      const W = svg.getBoundingClientRect().width || 320;
+      const H = 130; const PAD = { t:10, r:10, b:24, l:44 };
+      const vals = daily.map(r => r.cumulative);
+      const lo   = Math.min(0, ...vals); const hi = Math.max(0, ...vals);
+      const range = hi - lo || 1;
+      const toX = i => PAD.l + (i / Math.max(daily.length - 1, 1)) * (W - PAD.l - PAD.r);
+      const toY = v => PAD.t + (1 - (v - lo) / range) * (H - PAD.t - PAD.b);
+      const zero = toY(0);
+
+      const pts  = daily.map((r, i) => `${toX(i).toFixed(1)},${toY(r.cumulative).toFixed(1)}`).join(' ');
+      const area = `M${toX(0)},${zero} ` + daily.map((r,i) => `L${toX(i).toFixed(1)},${toY(r.cumulative).toFixed(1)}`).join(' ') + ` L${toX(daily.length-1)},${zero} Z`;
+      const lineColor = vals[vals.length-1] >= 0 ? 'var(--bull)' : 'var(--bear)';
+
+      // Y-axis labels
+      const yLabels = [hi, (hi+lo)/2, lo].map(v =>
+        `<text x="${PAD.l - 4}" y="${toY(v).toFixed(1)}" fill="#8b949e" font-size="9" text-anchor="end" dominant-baseline="middle">${v >= 0?'+':''}${fmt(v)}</text>`).join('');
+      // Zero line
+      const zeroLine = lo < 0 && hi > 0 ? `<line x1="${PAD.l}" y1="${zero}" x2="${W - PAD.r}" y2="${zero}" stroke="#30363d" stroke-dasharray="3,3"/>` : '';
+      // X-axis date labels (first and last)
+      const xLabels = `
+        <text x="${toX(0)}" y="${H - 4}" fill="#8b949e" font-size="9" text-anchor="middle">${daily[0].date.slice(5)}</text>
+        <text x="${toX(daily.length-1)}" y="${H - 4}" fill="#8b949e" font-size="9" text-anchor="middle">${daily[daily.length-1].date.slice(5)}</text>`;
+
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.innerHTML = `
+        ${zeroLine}${yLabels}${xLabels}
+        <path d="${area}" fill="${lineColor}" opacity=".15"/>
+        <polyline points="${pts}" fill="none" stroke="${lineColor}" stroke-width="2"/>
+        ${daily.map((r,i) => `<circle cx="${toX(i).toFixed(1)}" cy="${toY(r.cumulative).toFixed(1)}" r="2.5" fill="${r.cumulative>=0?'var(--bull)':'var(--bear)'}"/>`).join('')}`;
+    }
+
+    // ── Deal rows ────────────────────────────────────────────────────────────
+    $('pnl-deals').innerHTML = (d.deals || []).slice(0, 30).map(deal => {
+      const nc = deal.net >= 0 ? 'bull-c' : 'bear-c';
+      const dt = new Date(deal.time_close).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      return `<div class="pnl-deal-row">
+        <span class="${deal.direction==='buy'?'bull-c':'bear-c'}" style="font-size:10px;font-weight:800">${deal.direction==='buy'?'▲':'▼'}</span>
+        <span><strong>${deal.canonical_ticker}</strong> <span style="font-size:10px;color:var(--muted)">${deal.volume} lots · ${dt}</span></span>
+        <span style="font-size:10px;color:var(--muted)">${deal.commission!==0?`com ${deal.commission}`:''}</span>
+        <span class="${nc}" style="font-weight:700">${deal.net>=0?'+':''}${fmt(deal.net)}</span>
+      </div>`;
+    }).join('') || '<div style="color:var(--muted);font-size:12px">No closed trades in this period.</div>';
+
+  } catch (e) {
+    $('pnl-summary').innerHTML = `<div style="color:var(--muted);font-size:12px;grid-column:1/-1">MT5 not connected or no history.</div>`;
+  }
 }
 
 async function _renderTradeLog() {

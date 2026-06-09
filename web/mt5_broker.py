@@ -371,3 +371,49 @@ class MT5Broker:
         vol  = max(info.volume_min, min(info.volume_max, volume))
         step = info.volume_step
         return round(round(vol / step) * step, 8)
+
+    # ── Deal history ──────────────────────────────────────────────────────────
+
+    def get_deal_history(self, days: int = 30) -> list[dict]:
+        """
+        Return closed deals from MT5 history (entry=OUT only).
+        Each dict contains: ticket, symbol, canonical_ticker, direction,
+        volume, price, profit, commission, swap, net, time_close (ISO str).
+        """
+        if not self.connected or not _MT5_AVAILABLE:
+            return []
+        from datetime import datetime, timedelta, timezone
+        date_from = datetime.now(timezone.utc) - timedelta(days=days)
+        date_to   = datetime.now(timezone.utc)
+        raw = mt5.history_deals_get(date_from, date_to)
+        if not raw:
+            return []
+        out = []
+        for d in raw:
+            # entry=1 → OUT (position closed), entry=0 → IN (position opened)
+            # Skip balance/credit operations (type >= 2)
+            if d.type >= 2:
+                continue
+            if d.entry != mt5.DEAL_ENTRY_OUT:
+                continue
+            commission = round(getattr(d, 'commission', 0.0) or 0.0, 2)
+            swap       = round(getattr(d, 'swap',       0.0) or 0.0, 2)
+            profit     = round(d.profit, 2)
+            net        = round(profit + commission + swap, 2)
+            ts         = datetime.fromtimestamp(d.time, tz=timezone.utc).isoformat()
+            out.append({
+                "ticket":           d.ticket,
+                "symbol":           d.symbol,
+                "canonical_ticker": _canonical_ticker(d.symbol),
+                "direction":        "buy" if d.type == mt5.DEAL_TYPE_BUY else "sell",
+                "volume":           d.volume,
+                "price":            round(d.price, 5),
+                "profit":           profit,
+                "commission":       commission,
+                "swap":             swap,
+                "net":              net,
+                "time_close":       ts,
+            })
+        # Newest first
+        out.sort(key=lambda x: x["time_close"], reverse=True)
+        return out

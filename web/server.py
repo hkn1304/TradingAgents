@@ -767,6 +767,41 @@ def mt5_log(limit: int = 50):
     return {"log": _exec_engine.get_log(limit)}
 
 
+@app.get("/api/mt5/deals")
+def mt5_deals(days: int = 30):
+    """Closed deal history with P&L from MT5."""
+    deals = _mt5_broker.get_deal_history(days)
+
+    # Build daily P&L series (date → net P&L)
+    from collections import defaultdict
+    daily: dict = defaultdict(float)
+    for d in reversed(deals):          # oldest first for cumulative calc
+        day = d["time_close"][:10]     # YYYY-MM-DD
+        daily[day] = round(daily[day] + d["net"], 2)
+
+    daily_sorted = [{"date": k, "pnl": v} for k, v in sorted(daily.items())]
+
+    # Cumulative P&L
+    cum = 0.0
+    for row in daily_sorted:
+        cum = round(cum + row["pnl"], 2)
+        row["cumulative"] = cum
+
+    total_net    = round(sum(d["net"] for d in deals), 2)
+    winning      = sum(1 for d in deals if d["net"] > 0)
+    losing       = sum(1 for d in deals if d["net"] < 0)
+
+    return {
+        "deals":        deals[:100],
+        "daily":        daily_sorted,
+        "total_net":    total_net,
+        "total_trades": len(deals),
+        "winning":      winning,
+        "losing":       losing,
+        "win_rate":     round(winning / len(deals) * 100, 1) if deals else 0,
+    }
+
+
 def _acct_dict(acct) -> Optional[dict]:
     if acct is None:
         return None
