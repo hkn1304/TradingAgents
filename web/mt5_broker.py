@@ -46,17 +46,18 @@ class AccountInfo:
 
 @dataclass
 class Position:
-    ticket:        int
-    symbol:        str
-    direction:     str    # 'buy' | 'sell'
-    volume:        float
-    entry_price:   float
-    current_price: float
-    sl:            float
-    tp:            float
-    profit:        float
-    comment:       str
-    open_time:     str
+    ticket:           int
+    symbol:           str
+    canonical_ticker: str   # app-side ticker (e.g. XAUUSD even when MT5 uses GOLD)
+    direction:        str   # 'buy' | 'sell'
+    volume:           float
+    entry_price:      float
+    current_price:    float
+    sl:               float
+    tp:               float
+    profit:           float
+    comment:          str
+    open_time:        str
 
 
 @dataclass
@@ -86,8 +87,8 @@ def _best_filling_mode(symbol_info):
 
 
 # ── XM Global symbol name map ─────────────────────────────────────────────────
-# XM uses non-standard names for several instruments.
-# Keys are canonical names used in the app; values are what MT5 expects.
+# Only instruments where XM uses a completely different name (not just a suffix).
+# Stocks are handled automatically by _resolve_xm_symbol() which probes MT5.
 _XM_SYMBOL_MAP: dict[str, str] = {
     "XAUUSD": "GOLD",
     "XAGUSD": "SILVER",
@@ -95,13 +96,49 @@ _XM_SYMBOL_MAP: dict[str, str] = {
     "XPDUSD": "PALLADIUM",
     "USOIL":  "OIL",
     "UKOIL":  "BRENT",
-    "BTCUSD": "BTCUSD",   # same on XM
-    "ETHUSD": "ETHUSD",
 }
 
+# Cache resolved symbols so MT5 is only probed once per ticker per session
+_symbol_cache: dict[str, str] = {}
+
+# Reverse map: MT5 symbol → canonical ticker
+_XM_REVERSE_MAP: dict[str, str] = {v: k for k, v in _XM_SYMBOL_MAP.items()}
+
+def _canonical_ticker(mt5_symbol: str) -> str:
+    """Translate an XM MT5 symbol back to the app's canonical ticker name."""
+    s = mt5_symbol.upper()
+    if s in _XM_REVERSE_MAP:
+        return _XM_REVERSE_MAP[s]
+    # Check session cache (reverse lookup for auto-detected stock suffixes)
+    for canonical, resolved in _symbol_cache.items():
+        if resolved.upper() == s:
+            return canonical
+    # Strip common XM stock suffixes (.N, .NAS, etc.)
+    for suffix in ('.NAS', '.NYSE', '.N', '.US'):
+        if s.endswith(suffix):
+            return s[:-len(suffix)]
+    return s
+
 def _xm_symbol(ticker: str) -> str:
-    """Translate a canonical ticker to the XM MT5 symbol name."""
-    return _XM_SYMBOL_MAP.get(ticker.upper(), ticker.upper())
+    """
+    Translate a canonical ticker to the XM MT5 symbol name.
+    1. Check explicit map (metals, energy).
+    2. Check session cache.
+    3. Probe MT5 for ticker, ticker.N, ticker.NAS in that order.
+    4. Fall back to the raw ticker (MT5 will return a clear error).
+    """
+    t = ticker.upper()
+    if t in _XM_SYMBOL_MAP:
+        return _XM_SYMBOL_MAP[t]
+    if t in _symbol_cache:
+        return _symbol_cache[t]
+    if _MT5_AVAILABLE and mt5.terminal_info() is not None:
+        for candidate in [t, t + '.N', t + '.NAS', t + '.NYSE', t + '.US']:
+            if mt5.symbol_info(candidate) is not None:
+                _symbol_cache[t] = candidate
+                logger.info(f"Resolved XM symbol: {t} → {candidate}")
+                return candidate
+    return t  # fallback — MT5 will return a descriptive error
 
 
 # ── Broker ────────────────────────────────────────────────────────────────────
@@ -204,11 +241,12 @@ class MT5Broker:
             return []
         return [
             Position(
-                ticket        = p.ticket,
-                symbol        = p.symbol,
-                direction     = 'buy' if p.type == mt5.POSITION_TYPE_BUY else 'sell',
-                volume        = p.volume,
-                entry_price   = p.price_open,
+                ticket           = p.ticket,
+                symbol           = p.symbol,
+                canonical_ticker = _canonical_ticker(p.symbol),
+                direction        = 'buy' if p.type == mt5.POSITION_TYPE_BUY else 'sell',
+                volume           = p.volume,
+                entry_price      = p.price_open,
                 current_price = p.price_current,
                 sl            = p.sl,
                 tp            = p.tp,

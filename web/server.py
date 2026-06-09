@@ -711,17 +711,18 @@ def _acct_dict(acct) -> Optional[dict]:
 
 def _pos_dict(p) -> dict:
     return {
-        "ticket":        p.ticket,
-        "symbol":        p.symbol,
-        "direction":     p.direction,
-        "volume":        p.volume,
-        "entry_price":   p.entry_price,
-        "current_price": p.current_price,
-        "sl":            p.sl,
-        "tp":            p.tp,
-        "profit":        p.profit,
-        "comment":       p.comment,
-        "open_time":     p.open_time,
+        "ticket":           p.ticket,
+        "symbol":           p.symbol,
+        "canonical_ticker": p.canonical_ticker,
+        "direction":        p.direction,
+        "volume":           p.volume,
+        "entry_price":      p.entry_price,
+        "current_price":    p.current_price,
+        "sl":               p.sl,
+        "tp":               p.tp,
+        "profit":           p.profit,
+        "comment":          p.comment,
+        "open_time":        p.open_time,
     }
 
 

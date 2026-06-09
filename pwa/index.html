@@ -3838,7 +3838,9 @@ async function _mt5AutoExecuteFromScan(scanResults) {
   let openPositions = {};
   try {
     const st = await apiFetch('/api/mt5/status');
-    for (const p of (st.positions || [])) openPositions[p.symbol] = p;
+    for (const p of (st.positions || [])) {
+      openPositions[p.canonical_ticker || p.symbol] = p;
+    }
   } catch {}
 
   for (const r of scanResults) {
