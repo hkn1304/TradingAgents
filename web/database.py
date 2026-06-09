@@ -124,6 +124,13 @@ def init_db() -> None:
             created_at  TEXT    DEFAULT (datetime('now'))
         );
         CREATE INDEX IF NOT EXISTS idx_ksig_ticker ON kalman_signals(ticker, timeframe, model, ts);
+
+        -- Generic key-value store for user preferences (portfolio configs, etc.)
+        CREATE TABLE IF NOT EXISTS user_prefs (
+            key        TEXT PRIMARY KEY,
+            value_json TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         """)
 
 
@@ -409,3 +416,26 @@ def kalman_signal_history(ticker: str, timeframe: str, limit: int = 50):
     cols = ['model','ts','price','filtered_price','velocity',
             'bias','signal','vel_signal','z_score','gain','regime']
     return [dict(zip(cols, r)) for r in rows]
+
+
+# ── User preferences (key-value store) ────────────────────────────────────────
+
+def pref_get(key: str):
+    """Return the parsed JSON value for key, or None if not set."""
+    with _conn() as con:
+        row = con.execute(
+            "SELECT value_json FROM user_prefs WHERE key=?", (key,)
+        ).fetchone()
+    return json.loads(row[0]) if row else None
+
+
+def pref_set(key: str, value) -> None:
+    """Upsert a JSON-serialisable value under key."""
+    with _conn() as con:
+        con.execute(
+            """INSERT INTO user_prefs (key, value_json, updated_at)
+               VALUES (?,?,?)
+               ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,
+                                              updated_at=excluded.updated_at""",
+            (key, json.dumps(value), _now()),
+        )

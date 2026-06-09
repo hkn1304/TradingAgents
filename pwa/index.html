@@ -3105,12 +3105,17 @@ const _PORT_BAR_LABELS = { '1h':'15m bars','4h':'30m bars','1d':'1h bars','1w':'
 const _PORT_REFRESH_MS = { '1h': 15*60*1000, '4h': 30*60*1000, '1d': 60*60*1000, '1w': 60*60*1000, '1m': 60*60*1000 };
 
 let _portHorizon = localStorage.getItem('ta_port_horizon') || '1d';
-// sessionStorage: persists within the same browser tab (survives refresh),
-// but resets when the tab is closed / a new session starts.
+// Three-layer persistence:
+//   1. localStorage  — instant, survives refresh/close (cleared by cache clear)
+//   2. Server DB     — survives cache clears, loaded async on startup
+//   3. Open positions— last resort when both are empty and MT5 is connected
 let _portTickerConfigs = (() => {
   try {
-    const saved = sessionStorage.getItem('ta_port_configs');
-    if (saved) return JSON.parse(saved);
+    const saved = localStorage.getItem('ta_port_configs');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    }
   } catch {}
   return [{ ticker: '', horizon: _portHorizon }];
 })();
@@ -3122,6 +3127,30 @@ let _portLastScanTs   = null;
 function initPortfolioTab() {
   _renderPortHorizonBtns();
   _renderPortTickerInputs();
+  // If no tickers: try server DB first, then fall back to open positions
+  if (!_portTickerConfigs.some(c => c.ticker)) {
+    _restorePortConfigsFromServer().then(restored => {
+      if (!restored) _seedPortFromPositions();
+    });
+  }
+}
+
+// Populate portfolio with open MT5 positions when no tickers are saved
+async function _seedPortFromPositions() {
+  if (!_mt5Connected) return;
+  try {
+    const st = await apiFetch('/api/mt5/status');
+    const positions = (st.positions || []).filter(p => p.canonical_ticker || p.symbol);
+    if (!positions.length) return;
+    _portTickerConfigs = positions.map(p => ({
+      ticker:  p.canonical_ticker || p.symbol,
+      horizon: _portHorizon || '1d',
+    }));
+    _portTickerConfigs.push({ ticker: '', horizon: _portHorizon || '1d' });
+    _savePortConfigs();
+    _renderPortTickerInputs();
+    console.log('[PORT] seeded from open positions:', _portTickerConfigs.map(c => c.ticker).filter(Boolean));
+  } catch {}
 }
 
 function setPortHorizon(h) {
@@ -3143,7 +3172,30 @@ function _renderPortHorizonBtns() {
 }
 
 function _savePortConfigs() {
-  sessionStorage.setItem('ta_port_configs', JSON.stringify(_portTickerConfigs));
+  const data = JSON.stringify(_portTickerConfigs);
+  localStorage.setItem('ta_port_configs', data);
+  // Mirror to server DB silently (non-blocking)
+  apiFetch('/api/prefs/port_configs', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ value: _portTickerConfigs }),
+  }).catch(() => {});
+}
+
+// Restore from server DB if localStorage was cleared
+async function _restorePortConfigsFromServer() {
+  try {
+    const res = await apiFetch('/api/prefs/port_configs');
+    const configs = res.value;
+    if (Array.isArray(configs) && configs.length && configs.some(c => c.ticker)) {
+      _portTickerConfigs = configs;
+      localStorage.setItem('ta_port_configs', JSON.stringify(configs));
+      _renderPortTickerInputs();
+      console.log('[PORT] restored configs from server DB:', configs.map(c => c.ticker).filter(Boolean));
+      return true;
+    }
+  } catch {}
+  return false;
 }
 
 function _renderPortTickerInputs() {
@@ -3624,7 +3676,12 @@ async function mt5Connect() {
     });
     _mt5Connected = d.connected;
     _renderMt5Status(d);
-    if (!d.connected) alert('Connection failed: ' + (d.message || ''));
+    if (d.connected) {
+      // Seed portfolio with open positions if it's currently empty
+      if (!_portTickerConfigs.some(c => c.ticker)) _seedPortFromPositions();
+    } else {
+      alert('Connection failed: ' + (d.message || ''));
+    }
   } catch (e) { alert('Error: ' + e.message); }
   btn.disabled = false;
 }

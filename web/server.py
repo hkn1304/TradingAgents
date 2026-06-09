@@ -87,6 +87,8 @@ from web.database import (
     template_get,
     template_list,
     template_delete,
+    pref_get,
+    pref_set,
 )
 from web.stream import manager as ws_manager, set_loop
 from web.job_runner import (
@@ -247,6 +249,19 @@ def get_config():
             "server":   os.getenv("MT5_SERVER", ""),
         },
     }
+
+
+# ── /api/prefs — persistent user preferences ─────────────────────────────────
+
+@app.get("/api/prefs/{key}")
+def prefs_get(key: str):
+    value = pref_get(key)
+    return {"key": key, "value": value}
+
+@app.post("/api/prefs/{key}")
+def prefs_set(key: str, body: dict):
+    pref_set(key, body.get("value"))
+    return {"ok": True}
 
 
 # ── /api/markets/* ───────────────────────────────────────────────────────────────────
