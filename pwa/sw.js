@@ -1,4 +1,4 @@
-const CACHE = 'ta-v11';
+const CACHE = 'ta-v12';
 // Only cache true static assets — NOT index.html.
 // HTML changes on every deploy; caching it causes stale JS to run after updates.
 const STATIC = ['/manifest.json', '/icon-192.svg', '/icon-512.svg'];
