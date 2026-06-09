@@ -1467,7 +1467,12 @@ function _cacheTtl(path) {
   if (path.includes('/api/markets/news'))       return 300_000;   // 5 min
   if (path.includes('/api/kalman/'))            return 300_000;   // 5 min
   if (path.includes('/api/portfolio/kalman')) {
-    return 2 * 60 * 1000; // 2 min — short enough that consecutive manual scans get fresh data
+    const m = path.match(/[?&]horizon=([^&]+)/);
+    const hz = m ? m[1] : '1d';
+    // Expire just before the natural refresh tick for that horizon:
+    // 1h→~13 min, 4h→~25 min, 1d→~51 min, 1w/1m→~51 min
+    const interval = (_PORT_REFRESH_MS || {})[hz] || 3_600_000;
+    return interval * 0.85;
   }
   return 0; // price, sessions, jobs, chat — never cache
 }
