@@ -382,21 +382,23 @@ class MT5Broker:
         """
         if not self.connected or not _MT5_AVAILABLE:
             return []
-        from datetime import datetime, timedelta
-        # MT5 Python library requires naive UTC datetimes (no tzinfo).
-        # Add a 1-hour buffer on date_to so very recent deals aren't missed.
-        date_from = datetime.utcnow() - timedelta(days=days)
-        date_to   = datetime.utcnow() + timedelta(hours=1)
-        raw = mt5.history_deals_get(date_from, date_to)
-        if not raw:
+        import time as _time
+        # Use Unix timestamps — most reliable format across MT5 versions
+        ts_to   = int(_time.time()) + 3600          # +1h buffer for recent deals
+        ts_from = ts_to - days * 86400 - 3600
+        raw = mt5.history_deals_get(ts_from, ts_to)
+        if raw is None:
+            err = mt5.last_error()
+            logger.warning(f"history_deals_get returned None: {err}")
             return []
+        logger.info(f"history_deals_get({days}d): {len(raw)} raw deals")
         out = []
         for d in raw:
-            # entry=1 → OUT (position closed), entry=0 → IN (position opened)
-            # Skip balance/credit operations (type >= 2)
+            # Skip balance, credit, and other non-trade operations (type >= 2)
             if d.type >= 2:
                 continue
-            if d.entry != mt5.DEAL_ENTRY_OUT:
+            # Skip entry=IN (position opens); keep OUT and INOUT (closes/reversals)
+            if getattr(d, 'entry', -1) == 0:
                 continue
             commission = round(getattr(d, 'commission', 0.0) or 0.0, 2)
             swap       = round(getattr(d, 'swap',       0.0) or 0.0, 2)

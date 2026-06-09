@@ -1321,8 +1321,10 @@ nav.tab-bar {
         <div class="card-title" style="margin:0">P&amp;L History</div>
         <div class="pnl-range-row" style="margin:0;gap:6px">
           <button class="pnl-range-btn active" onclick="_pnlSetDays(7,this)">7D</button>
+          <button class="pnl-range-btn" onclick="_pnlSetDays(15,this)">15D</button>
           <button class="pnl-range-btn" onclick="_pnlSetDays(30,this)">30D</button>
           <button class="pnl-range-btn" onclick="_pnlSetDays(90,this)">90D</button>
+          <button class="pnl-range-btn" onclick="_pnlSetDays(3650,this)">All</button>
           <button class="pnl-range-btn" onclick="_renderPnl()" title="Refresh from MT5" style="margin-left:4px">↺</button>
         </div>
       </div>
@@ -1331,10 +1333,13 @@ nav.tab-bar {
       <div id="pnl-deals"></div>
     </div>
 
-    <!-- Trade Log (app orders) -->
+    <!-- Trade Log (app orders, session only) -->
     <div class="card">
-      <div class="card-title">Order Log</div>
-      <div id="exec-log-list"><div style="font-size:12px;color:var(--muted)">No entries.</div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="card-title" style="margin:0">Order Log</div>
+        <span style="font-size:10px;color:var(--muted)">This session only · resets on server restart</span>
+      </div>
+      <div id="exec-log-list"><div style="font-size:12px;color:var(--muted)">No orders placed this session.</div></div>
     </div>
 
   </div><!-- /tab-execute -->
@@ -4111,7 +4116,12 @@ function _pnlSetDays(days, btn) {
 }
 
 async function _renderPnl() {
-  if (!_mt5Connected) return;
+  if (!_mt5Connected) {
+    $('pnl-summary').innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;padding:6px 0">Connect MT5 to view P&L history.</div>';
+    $('pnl-deals').innerHTML = '';
+    $('pnl-svg').innerHTML = '';
+    return;
+  }
   try {
     const d = await apiFetch(`/api/mt5/deals?days=${_pnlDays}`);
 
