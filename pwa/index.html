@@ -4095,6 +4095,66 @@ async function mt5ApproveSignal(ticker, direction, score, modelsAgree, atr) {
   } catch (e) { alert('Error: ' + e.message); }
 }
 
+let _mt5EditingPos = null;  // {ticket, field} being edited
+
+function mt5EditSL(ticket, currentSL) {
+  _mt5EditingPos = { ticket, field: 'sl' };
+  mt5RefreshPositions();
+  setTimeout(() => $(`sl-edit-${ticket}`)?.focus(), 50);
+}
+
+function mt5EditTP(ticket, currentTP) {
+  _mt5EditingPos = { ticket, field: 'tp' };
+  mt5RefreshPositions();
+  setTimeout(() => $(`tp-edit-${ticket}`)?.focus(), 50);
+}
+
+async function mt5SaveSL(ticket) {
+  const input = $(`sl-edit-${ticket}`);
+  const newSL = parseFloat(input?.value) || null;
+  _mt5EditingPos = null;
+  if (newSL === null) {
+    mt5RefreshPositions();
+    return;
+  }
+  try {
+    const d = await apiFetch(`/api/mt5/modify/${ticket}?sl=${newSL}`);
+    if (d.success) {
+      showToast(`✓ SL updated to ${newSL}`, 'success', 2000);
+      mt5RefreshPositions();
+    } else {
+      showToast(`Error: ${d.error}`, 'error', 3000);
+      mt5RefreshPositions();
+    }
+  } catch (e) {
+    showToast(`Failed: ${e.message}`, 'error', 3000);
+    mt5RefreshPositions();
+  }
+}
+
+async function mt5SaveTP(ticket) {
+  const input = $(`tp-edit-${ticket}`);
+  const newTP = parseFloat(input?.value) || null;
+  _mt5EditingPos = null;
+  if (newTP === null) {
+    mt5RefreshPositions();
+    return;
+  }
+  try {
+    const d = await apiFetch(`/api/mt5/modify/${ticket}?tp=${newTP}`);
+    if (d.success) {
+      showToast(`✓ TP updated to ${newTP}`, 'success', 2000);
+      mt5RefreshPositions();
+    } else {
+      showToast(`Error: ${d.error}`, 'error', 3000);
+      mt5RefreshPositions();
+    }
+  } catch (e) {
+    showToast(`Failed: ${e.message}`, 'error', 3000);
+    mt5RefreshPositions();
+  }
+}
+
 async function mt5RefreshPositions() {
   if (!_mt5Connected) return;
   try {
@@ -4114,14 +4174,27 @@ async function mt5RefreshPositions() {
                       p.direction === 'sell' && p.sl && p.sl < p.entry_price ? 'neutral-c' : '';
       const tpColor = p.direction === 'buy' && p.tp && p.tp > p.entry_price ? 'bull-c' :
                       p.direction === 'sell' && p.tp && p.tp < p.entry_price ? 'bull-c' : '';
+
+      // Check if SL or TP is being edited
+      const isEditSL = _mt5EditingPos?.ticket === p.ticket && _mt5EditingPos?.field === 'sl';
+      const isEditTP = _mt5EditingPos?.ticket === p.ticket && _mt5EditingPos?.field === 'tp';
+
       return `
       <tr>
         <td><strong>${p.symbol}</strong></td>
         <td class="${p.direction==='buy'?'bull-c':'bear-c'}">${p.direction.toUpperCase()}</td>
         <td>${p.volume}</td>
         <td>${fmt(p.entry_price,4)}</td>
-        <td class="${slColor}" style="font-size:11px" title="SL ${slTxt} = ${slTxt2} P&L">${slTxt}</td>
-        <td class="${tpColor}" style="font-size:11px" title="TP ${tpTxt} = ${tpTxt2} P&L">${tpTxt}</td>
+        <td class="${slColor}" style="font-size:11px;cursor:pointer;padding:4px" onclick="mt5EditSL(${p.ticket}, ${p.sl||0})">
+          ${isEditSL
+            ? `<input type="number" step="0.01" value="${p.sl||''}" id="sl-edit-${p.ticket}" style="width:60px;padding:2px" autofocus onblur="mt5SaveSL(${p.ticket})" onkeydown="if(event.key==='Enter') mt5SaveSL(${p.ticket})">`
+            : `<span title="SL ${slTxt} = ${slTxt2} P&L">${slTxt}</span>`}
+        </td>
+        <td class="${tpColor}" style="font-size:11px;cursor:pointer;padding:4px" onclick="mt5EditTP(${p.ticket}, ${p.tp||0})">
+          ${isEditTP
+            ? `<input type="number" step="0.01" value="${p.tp||''}" id="tp-edit-${p.ticket}" style="width:60px;padding:2px" autofocus onblur="mt5SaveTP(${p.ticket})" onkeydown="if(event.key==='Enter') mt5SaveTP(${p.ticket})">`
+            : `<span title="TP ${tpTxt} = ${tpTxt2} P&L">${tpTxt}</span>`}
+        </td>
         <td class="${p.profit>=0?'bull-c':'bear-c'}">${sign(p.profit)}${fmt(p.profit)}</td>
         <td><button class="exec-btn-danger" onclick="mt5ClosePosition(${p.ticket})">✕</button></td>
       </tr>`;
