@@ -212,6 +212,34 @@ class MT5Broker:
         logger.warning(f"Order failed: retcode={result.retcode} — {result.comment}")
         return OrderResult(False, None, result.retcode, result.comment)
 
+    def modify_sl(self, ticket: int, sl: float,
+                  tp: Optional[float] = None) -> OrderResult:
+        """Move stop-loss (and optionally take-profit) for an open position."""
+        if not self.connected:
+            return OrderResult(False, None, -1, "Not connected")
+
+        positions = mt5.positions_get(ticket=ticket)
+        if not positions:
+            return OrderResult(False, None, -1, f"Position {ticket} not found")
+        pos = positions[0]
+
+        request = {
+            "action":   mt5.TRADE_ACTION_SLTP,
+            "symbol":   pos.symbol,
+            "position": ticket,
+            "sl":       float(sl),
+            "tp":       float(tp) if tp is not None else pos.tp,
+        }
+        result = mt5.order_send(request)
+        if result is None:
+            return OrderResult(False, None, -1, str(mt5.last_error()))
+
+        success = result.retcode == mt5.TRADE_RETCODE_DONE
+        if success:
+            logger.info(f"SL modified: ticket {ticket} → {sl}")
+        return OrderResult(success, ticket if success else None,
+                           result.retcode, result.comment)
+
     def close_position(self, ticket: int) -> OrderResult:
         if not self.connected:
             return OrderResult(False, None, -1, "Not connected")

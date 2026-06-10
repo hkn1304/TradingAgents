@@ -1045,6 +1045,19 @@ nav.tab-bar {
   <!-- ── Tab 5: Execute (MT5 Auto-trading) ─────────────────────────────── -->
   <div id="tab-execute" class="tab-content" style="padding-bottom:80px">
 
+    <!-- Morning briefing banner -->
+    <div class="card" id="exec-briefing-banner" style="display:none;border-left:3px solid var(--accent)">
+      <div class="card-title">Morning Brief</div>
+      <div id="exec-briefing-text" style="font-size:12px;line-height:1.7;white-space:pre-line"></div>
+      <div id="exec-briefing-date" class="exec-log-ts"></div>
+    </div>
+
+    <!-- Guardian alerts (signal flips against open positions) -->
+    <div class="card" id="exec-alerts-card" style="display:none;border-left:3px solid var(--bear)">
+      <div class="card-title">⚠ Guardian Alerts</div>
+      <div id="exec-alerts-list"></div>
+    </div>
+
     <!-- Connection Panel -->
     <div class="card">
       <div class="card-title">MT5 Connection</div>
@@ -1093,6 +1106,37 @@ nav.tab-bar {
       <button class="exec-btn" onclick="mt5SaveConfig()">Save Config</button>
     </div>
 
+    <!-- Guardian config -->
+    <div class="card">
+      <div class="card-title">Position Guardian</div>
+      <div class="exec-cfg-grid">
+        <div>
+          <div class="exec-cfg-label">Breakeven trigger (×ATR)</div>
+          <input class="exec-number" id="exec-be-mult" type="number" step="0.25" min="0.25" max="3" value="1">
+        </div>
+        <div>
+          <div class="exec-cfg-label">Zombie exit (hours)</div>
+          <input class="exec-number" id="exec-zombie" type="number" step="1" min="2" max="168" value="20">
+        </div>
+        <div>
+          <div class="exec-cfg-label">Daily drawdown stop (%)</div>
+          <input class="exec-number" id="exec-dd" type="number" step="0.5" min="0.5" max="10" value="2">
+        </div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:4px">
+          <span class="exec-cfg-label" style="margin:0">Guardian active</span>
+          <label class="exec-toggle">
+            <input type="checkbox" id="exec-guardian-on" checked>
+            <span class="exec-toggle-track"></span>
+          </label>
+        </div>
+      </div>
+      <button class="exec-btn" onclick="guardianSaveConfig()">Save Guardian</button>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px">
+        Moves SL to entry after profit ≥ trigger, closes stalled losers,
+        halts auto-trading on daily drawdown, alerts on Kalman flips.
+      </div>
+    </div>
+
     <!-- Auto-execute toggles (filled dynamically from portfolio tickers) -->
     <div class="card" id="exec-auto-card">
       <div class="card-title">Auto-Execute Tickers</div>
@@ -1131,6 +1175,22 @@ nav.tab-bar {
     <div class="card">
       <div class="card-title">Trade Log</div>
       <div id="exec-log-list"><div style="font-size:12px;color:var(--muted)">No entries.</div></div>
+    </div>
+
+    <!-- Signal calibration (closed-trade outcomes by score bucket) -->
+    <div class="card">
+      <div class="card-title">Signal Calibration</div>
+      <div id="exec-calib-body"><div style="font-size:12px;color:var(--muted)">No closed trades yet.</div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px">
+        Win rates by Kalman score at entry — tells you which thresholds actually work.
+      </div>
+    </div>
+
+    <!-- Equity curve -->
+    <div class="card">
+      <div class="card-title">Equity Curve <span id="exec-equity-now" style="float:right;font-size:13px"></span></div>
+      <svg id="exec-equity-svg" class="port-sparkline" style="height:70px" viewBox="0 0 300 70" preserveAspectRatio="none"></svg>
+      <div id="exec-equity-note" style="font-size:10px;color:var(--muted);margin-top:4px"></div>
     </div>
 
   </div><!-- /tab-execute -->
@@ -1303,7 +1363,13 @@ function _cacheTtl(path) {
 }
 
 // ── API fetch ─────────────────────────────────────────────────────────────────
-async function apiFetch(path) {
+async function apiFetch(path, opts = null) {
+  if (opts) {
+    // POST / DELETE etc — bypass cache entirely
+    const r = await fetch(API + path, opts);
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }
   const ttl = _cacheTtl(path);
   if (ttl > 0) {
     const hit = _cache.get(path);
@@ -1546,7 +1612,7 @@ function switchTab(tab) {
   if (tab === 'agents')    agentsOnVisible();
   if (tab === 'analysis')  analysisOnVisible();
   if (tab === 'markets')   loadKalman();
-  if (tab === 'execute')   mt5RefreshPositions();
+  if (tab === 'execute')   execOnVisible();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -3224,12 +3290,162 @@ let _mt5PendingSignals = []; // [{ticker, direction, score, modelsAgree, atr}]
 
 function initExecuteTab() {
   mt5PollStatus();
+  loadBriefing();
+  loadGuardianAlerts();
+}
+
+function execOnVisible() {
+  mt5RefreshPositions();
+  loadBriefing();
+  loadGuardianAlerts();
+  loadCalibration();
+  loadEquityCurve();
+  _renderTradeLog();
+}
+
+// ── Morning briefing banner ───────────────────────────────────────────────────
+async function loadBriefing() {
+  try {
+    const d = await apiFetch('/api/briefing/latest');
+    const b = d.briefing;
+    if (!b) return;
+    // Strip the title line (shown in card header) and render the rest
+    const lines = b.text.split('\n');
+    $('exec-briefing-text').textContent = lines.slice(1).join('\n') || b.text;
+    $('exec-briefing-date').textContent = b.date;
+    $('exec-briefing-banner').style.display = 'block';
+  } catch {}
+}
+
+// ── Guardian alerts ───────────────────────────────────────────────────────────
+async function loadGuardianAlerts() {
+  try {
+    const d = await apiFetch('/api/guardian/alerts');
+    const alerts = d.alerts || [];
+    if (!alerts.length) {
+      $('exec-alerts-card').style.display = 'none';
+      return;
+    }
+    $('exec-alerts-list').innerHTML = alerts.map(a => `
+      <div class="exec-auto-row">
+        <div style="font-size:12px">
+          <strong>${a.ticker}</strong>
+          <span class="${a.position_dir==='buy'?'bull-c':'bear-c'}">${a.position_dir.toUpperCase()}</span>
+          position — Kalman now
+          <span class="${a.kalman_dir==='bullish'?'bull-c':'bear-c'}">${a.kalman_dir.toUpperCase()}</span>
+          <div class="exec-log-ts">${a.ts ? new Date(a.ts+'Z').toLocaleString() : ''}</div>
+        </div>
+        <button class="exec-btn-sm" onclick="ackGuardianAlert('${a.id}')">Dismiss</button>
+      </div>`).join('');
+    $('exec-alerts-card').style.display = 'block';
+  } catch {}
+}
+
+async function ackGuardianAlert(id) {
+  try {
+    await apiFetch('/api/guardian/alerts/' + id + '/ack', { method: 'POST' });
+    loadGuardianAlerts();
+  } catch {}
+}
+
+// ── Guardian config ───────────────────────────────────────────────────────────
+function _fillGuardianInputs(cfg) {
+  if (cfg.breakeven_atr_mult != null) $('exec-be-mult').value = cfg.breakeven_atr_mult;
+  if (cfg.zombie_bars        != null) $('exec-zombie').value  = cfg.zombie_bars;
+  if (cfg.drawdown_pct       != null) $('exec-dd').value      = (cfg.drawdown_pct * 100).toFixed(1);
+  if (cfg.guardian_enabled   != null) $('exec-guardian-on').checked = cfg.guardian_enabled;
+}
+
+async function guardianSaveConfig() {
+  const payload = {
+    breakeven_atr_mult: parseFloat($('exec-be-mult').value) || 1.0,
+    zombie_bars:        parseInt($('exec-zombie').value)    || 20,
+    drawdown_pct:       (parseFloat($('exec-dd').value) || 2) / 100,
+    guardian_enabled:   $('exec-guardian-on').checked,
+  };
+  try {
+    await apiFetch('/api/mt5/config', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    alert('Guardian config saved.');
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+// ── Signal calibration ────────────────────────────────────────────────────────
+async function loadCalibration() {
+  try {
+    const d = await apiFetch('/api/stats/calibration');
+    if (!d.total_closed) {
+      $('exec-calib-body').innerHTML =
+        '<div style="font-size:12px;color:var(--muted)">No closed trades yet.</div>';
+      return;
+    }
+    const buckets = Object.entries(d.score_buckets);
+    const regimes = Object.entries(d.regimes);
+    const row = ([label, s]) => {
+      if (!s.trades) return '';
+      const wr = Math.round(s.win_rate * 100);
+      const cls = wr >= 55 ? 'bull-c' : wr <= 45 ? 'bear-c' : '';
+      return `<tr>
+        <td>${label}</td>
+        <td class="${cls}">${wr}%</td>
+        <td>${s.trades}</td>
+        <td class="${(s.avg_pnl??0) >= 0 ? 'bull-c' : 'bear-c'}">${s.avg_pnl ?? '—'}</td>
+      </tr>`;
+    };
+    $('exec-calib-body').innerHTML = `
+      <table class="exec-pos-table">
+        <thead><tr><th>Score</th><th>Win %</th><th>Trades</th><th>Avg P/L</th></tr></thead>
+        <tbody>${buckets.map(row).join('')}</tbody>
+      </table>
+      <table class="exec-pos-table" style="margin-top:8px">
+        <thead><tr><th>Regime</th><th>Win %</th><th>Trades</th><th>Avg P/L</th></tr></thead>
+        <tbody>${regimes.map(row).join('')}</tbody>
+      </table>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">${d.total_closed} closed trades</div>`;
+  } catch {}
+}
+
+// ── Equity curve ──────────────────────────────────────────────────────────────
+async function loadEquityCurve() {
+  try {
+    const d = await apiFetch('/api/stats/equity');
+    const snaps = d.snapshots || [];
+    if (snaps.length < 1) {
+      $('exec-equity-note').textContent = 'No snapshots yet — one is taken per day while connected.';
+      return;
+    }
+    const last = snaps[snaps.length - 1];
+    $('exec-equity-now').textContent = '$' + fmt(last.balance);
+    if (snaps.length < 2) {
+      $('exec-equity-note').textContent = `1 snapshot (${last.date}) — curve appears after a few days.`;
+      return;
+    }
+    const vals = snaps.map(s => s.balance);
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const range = (max - min) || 1;
+    const W = 300, H = 70, pad = 4;
+    const pts = vals.map((v, i) => {
+      const x = pad + (i / (vals.length - 1)) * (W - 2 * pad);
+      const y = H - pad - ((v - min) / range) * (H - 2 * pad);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    const up = vals[vals.length - 1] >= vals[0];
+    $('exec-equity-svg').innerHTML =
+      `<polyline points="${pts}" fill="none" stroke="${up ? 'var(--bull)' : 'var(--bear)'}" stroke-width="2"/>`;
+    const chg = ((vals[vals.length-1] - vals[0]) / vals[0]) * 100;
+    $('exec-equity-note').textContent =
+      `${snaps[0].date} → ${last.date} · ${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
+  } catch {}
 }
 
 async function mt5PollStatus() {
   try {
     const d = await apiFetch('/api/mt5/status');
     _mt5Connected = d.connected;
+    if (d.config) _fillGuardianInputs(d.config);
     _renderMt5Status(d);
   } catch {}
 }
@@ -3370,20 +3586,22 @@ function _renderPendingSignals(signals) {
 
 async function mt5ApproveSignal(ticker, direction, score, modelsAgree, atr) {
   if (!_mt5Connected) { alert('MT5 not connected'); return; }
+  // Gate expects 'bullish' | 'bearish'
+  const dir = direction === 'buy' ? 'bullish' : direction === 'sell' ? 'bearish' : direction;
   try {
     const d = await apiFetch('/api/mt5/execute', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ ticker, direction, signal_strength: score, models_agree: modelsAgree, atr: atr||null }),
+      body: JSON.stringify({ ticker, direction: dir, signal_strength: score, models_agree: modelsAgree, atr: atr||null }),
     });
-    if (d.success) {
-      alert(`✓ Order placed — ticket ${d.ticket}`);
+    if (d.executed) {
+      alert(`✓ Order placed — ticket ${d.log?.ticket}`);
       _mt5PendingSignals = _mt5PendingSignals.filter(s => s.ticker !== ticker);
       _renderPendingSignals(_mt5PendingSignals);
       mt5RefreshPositions();
       _renderTradeLog();
     } else {
-      alert('Execution failed: ' + d.comment);
+      alert('Execution failed: ' + (d.reason || d.log?.comment || 'unknown'));
     }
   } catch (e) { alert('Error: ' + e.message); }
 }
@@ -3439,22 +3657,25 @@ async function _mt5AutoExecuteFromScan(scanResults) {
   for (const r of scanResults) {
     if (r.error) continue;
     if (!_mt5AutoTickers[r.ticker]) continue;
-    const dir = r.direction === 'bullish' ? 'buy' : r.direction === 'bearish' ? 'sell' : null;
-    if (!dir) continue;
+    if (r.direction !== 'bullish' && r.direction !== 'bearish') continue;
     try {
       const d = await apiFetch('/api/mt5/execute', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
           ticker: r.ticker,
-          direction: dir,
+          direction: r.direction,          // 'bullish' | 'bearish' — gate expects these
           signal_strength: r.signal_strength,
           models_agree: r.models_agree,
           atr: null,
+          regime:    r.regime    || null,
+          z_now:     r.z_now     ?? null,
+          rw_signal: r.rw_signal || null,
+          cv_signal: r.cv_signal || null,
         }),
       });
-      if (d.success) {
-        console.log(`Auto-executed ${r.ticker} ${dir} ticket=${d.ticket}`);
+      if (d.executed) {
+        console.log(`Auto-executed ${r.ticker} ${r.direction} ticket=${d.log?.ticket}`);
         mt5RefreshPositions();
         _renderTradeLog();
       }

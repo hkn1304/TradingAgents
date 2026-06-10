@@ -56,6 +56,11 @@ class ExecutionConfig:
     agent_max_age_h:   float = 24.0   # max age (hours) of accepted agent session
     auto_tickers:      set   = field(default_factory=set)  # tickers with auto=ON
     enabled:           bool  = True   # global kill-switch
+    # Guardian settings
+    breakeven_atr_mult: float = 1.0   # SL→entry after this ×ATR of favourable move
+    zombie_bars:        int   = 20    # close losing position stalled this many hours
+    drawdown_pct:       float = 0.02  # daily drawdown kill-switch threshold
+    guardian_enabled:   bool  = True  # master switch for the guardian loop
 
 
 @dataclass
@@ -69,6 +74,12 @@ class ExecutionSignal:
     stop_loss:    Optional[float]
     position_pct: Optional[float]
     age_hours:    float
+    # Signal snapshot for the trade journal / calibration
+    models_agree: bool = False
+    regime:       str  = ""
+    z_now:        float = 0.0
+    rw_signal:    str  = ""
+    cv_signal:    str  = ""
 
 
 # ── Engine ────────────────────────────────────────────────────────────────────
@@ -106,6 +117,10 @@ class ExecutionEngine:
                 "agent_max_age_h":  c.agent_max_age_h,
                 "auto_tickers":     sorted(c.auto_tickers),
                 "enabled":          c.enabled,
+                "breakeven_atr_mult": c.breakeven_atr_mult,
+                "zombie_bars":        c.zombie_bars,
+                "drawdown_pct":       c.drawdown_pct,
+                "guardian_enabled":   c.guardian_enabled,
             }
 
     # ── Concurrence check ─────────────────────────────────────────────────────
@@ -151,6 +166,11 @@ class ExecutionEngine:
             stop_loss    = agent.get('stop_loss'),
             position_pct = agent.get('position_pct'),
             age_hours    = agent['age_hours'],
+            models_agree = models_agree,
+            regime       = kalman_result.get('regime', ''),
+            z_now        = kalman_result.get('z_now', 0.0),
+            rw_signal    = kalman_result.get('rw_signal') or '',
+            cv_signal    = kalman_result.get('cv_signal') or '',
         )
 
     def _find_recent_agent_signal(
@@ -303,6 +323,27 @@ class ExecutionEngine:
         if success:
             logger.info(f"Executed {signal.ticker} {signal.direction} "
                         f"vol={volume} ticket={ticket}")
+            if ticket:
+                try:
+                    from web.trades_db import trade_journal_insert
+                    trade_journal_insert(
+                        ticker       = signal.ticker,
+                        direction    = signal.direction,
+                        volume       = volume,
+                        entry_price  = signal.entry_price,
+                        sl           = sl,
+                        mt5_ticket   = ticket,
+                        kalman_score = signal.kalman_score,
+                        models_agree = signal.models_agree,
+                        regime       = signal.regime,
+                        z_now        = signal.z_now,
+                        rw_signal    = signal.rw_signal,
+                        cv_signal    = signal.cv_signal,
+                        agent_rating = signal.agent_rating,
+                        session_id   = signal.session_id,
+                    )
+                except Exception as exc:
+                    logger.error(f"Trade journal insert failed: {exc}")
         else:
             logger.warning(f"Execution skipped {signal.ticker}: {comment}")
         return entry

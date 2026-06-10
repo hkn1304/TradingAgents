@@ -99,6 +99,15 @@ from web.chat import chat as chat_handler
 from web.report_summarizer import get_or_build_summary, HORIZONS
 from web.mt5_broker import MT5Broker
 from web.execution_engine import ExecutionEngine
+from web.guardian import guardian_loop
+from web.trades_db import (
+    init_trades_db,
+    trade_journal_stats,
+    equity_snapshot_list,
+    guardian_alerts_list,
+    guardian_alert_ack,
+    briefing_latest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -111,10 +120,19 @@ _exec_engine = ExecutionEngine(_mt5_broker)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    init_trades_db()
     set_loop(asyncio.get_event_loop())
     start_worker()
+    asyncio.create_task(
+        guardian_loop(_mt5_broker, _exec_engine, scan_fn=_guardian_scan)
+    )
     logger.info("TradingAgents web server ready")
     yield
+
+
+def _guardian_scan(tickers_csv: str, horizon: str = "1d") -> dict:
+    """Blocking portfolio scan used by the guardian's morning briefing."""
+    return portfolio_kalman(tickers=tickers_csv, horizon=horizon)
 
 
 # ── App ─────────────────────────────────────────────────────────────────────────────
@@ -192,6 +210,10 @@ class MT5ConfigRequest(BaseModel):
     agent_max_age_h:   Optional[float]     = None
     auto_tickers:      Optional[list[str]] = None
     enabled:           Optional[bool]      = None
+    breakeven_atr_mult: Optional[float]    = None
+    zombie_bars:        Optional[int]      = None
+    drawdown_pct:       Optional[float]    = None
+    guardian_enabled:   Optional[bool]     = None
 
 
 class MT5ExecuteRequest(BaseModel):
@@ -200,6 +222,11 @@ class MT5ExecuteRequest(BaseModel):
     signal_strength: int
     models_agree:    bool
     atr:             Optional[float] = None
+    # Optional signal snapshot, stored in the trade journal for calibration
+    regime:          Optional[str]   = None
+    z_now:           Optional[float] = None
+    rw_signal:       Optional[str]   = None
+    cv_signal:       Optional[str]   = None
 
 
 # ── /api/models ──────────────────────────────────────────────────────────────────
@@ -628,6 +655,10 @@ def mt5_execute(body: MT5ExecuteRequest):
         "direction":       body.direction,
         "signal_strength": body.signal_strength,
         "models_agree":    body.models_agree,
+        "regime":          body.regime or "",
+        "z_now":           body.z_now or 0.0,
+        "rw_signal":       body.rw_signal,
+        "cv_signal":       body.cv_signal,
     }
     signal = _exec_engine.check_concurrence(body.ticker.upper(), kalman_result)
     if signal is None:
@@ -650,6 +681,37 @@ def mt5_close(ticket: int):
 @app.get("/api/mt5/log")
 def mt5_log(limit: int = 50):
     return {"log": _exec_engine.get_log(limit)}
+
+
+# ── Guardian / stats endpoints ───────────────────────────────────────────────
+
+@app.get("/api/stats/calibration")
+def stats_calibration():
+    """Win rate / trade count / avg P&L by Kalman score bucket and regime."""
+    return trade_journal_stats()
+
+
+@app.get("/api/stats/equity")
+def stats_equity(limit: int = 90):
+    """Daily balance/equity snapshots, oldest first."""
+    return {"snapshots": equity_snapshot_list(limit)}
+
+
+@app.get("/api/briefing/latest")
+def briefing_get_latest():
+    return {"briefing": briefing_latest()}
+
+
+@app.get("/api/guardian/alerts")
+def guardian_get_alerts(limit: int = 20):
+    return {"alerts": guardian_alerts_list(limit)}
+
+
+@app.post("/api/guardian/alerts/{alert_id}/ack")
+def guardian_ack_alert(alert_id: str):
+    if not guardian_alert_ack(alert_id):
+        raise HTTPException(404, detail="Alert not found")
+    return {"acknowledged": True}
 
 
 def _acct_dict(acct) -> Optional[dict]:
