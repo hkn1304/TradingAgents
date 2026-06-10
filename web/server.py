@@ -267,6 +267,20 @@ def get_config():
             "aggressive_analyst", "neutral_analyst", "conservative_analyst",
             "portfolio_manager",
         ],
+        "mt5_accounts": {
+            "demo": {
+                "login":    os.getenv("MT5_LOGIN", ""),
+                "password": os.getenv("MT5_PASSWORD", ""),
+                "server":   os.getenv("MT5_SERVER", ""),
+                "label":    "📊 Demo (MetaQuotes)"
+            },
+            "real": {
+                "login":    os.getenv("MT5_REAL_LOGIN", ""),
+                "password": os.getenv("MT5_REAL_PASSWORD", ""),
+                "server":   os.getenv("MT5_REAL_SERVER", ""),
+                "label":    "💰 Real (XM Global)"
+            }
+        },
         "mt5_defaults": {
             "login":    os.getenv("MT5_LOGIN", ""),
             "password": os.getenv("MT5_PASSWORD", ""),

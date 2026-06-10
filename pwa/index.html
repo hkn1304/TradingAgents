@@ -2906,27 +2906,24 @@ function onAnalysisProviderChange(provider) {
 }
 
 // ── MT5 Account Presets ────────────────────────────────────────────────────────
-const _mt5Accounts = {
-  demo: {
-    login: 5050922134,
-    server: 'MetaQuotes-Demo',
-    label: '📊 Demo (MetaQuotes)'
-  },
-  real: {
-    login: 381818734,
-    server: 'XMGlobal-MT5 13',
-    label: '💰 Real (XM Global)'
+let _mt5Accounts = {};
+
+async function _loadMt5Accounts() {
+  try {
+    const cfg = await apiFetch('/api/config');
+    _mt5Accounts = cfg.mt5_accounts || {};
+  } catch (e) {
+    console.warn('Failed to load MT5 accounts:', e);
   }
-};
+}
 
 function _selectAccount(preset) {
   const acc = _mt5Accounts[preset];
   if (!acc) return;
-  $('exec-login').value = acc.login;
-  $('exec-password').value = '';  // You enter password manually for security
-  $('exec-server').value = acc.server;
-  $('exec-password').focus();
-  showToast(`Selected: ${acc.label} — enter password`, 'info', 3000);
+  $('exec-login').value = acc.login || '';
+  $('exec-password').value = acc.password || '';  // Auto-fill from .env
+  $('exec-server').value = acc.server || '';
+  showToast(`Selected: ${acc.label}`, 'info', 2000);
 }
 
 async function loadMt5Defaults() {
@@ -4429,6 +4426,7 @@ function init() {
   initExecuteTab();
   loadModelOptions();
   loadSessionHistory();
+  _loadMt5Accounts();
   loadMt5Defaults();
   loadCalendar();
 
