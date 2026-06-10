@@ -1315,6 +1315,15 @@ nav.tab-bar {
       </div>
     </div>
 
+    <!-- Morning Briefing (Guardian AI) -->
+    <div class="card" id="briefing-card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="card-title" style="margin:0">🤖 Guardian Briefing</div>
+        <button class="pnl-range-btn" onclick="_loadBriefing()" title="Refresh" style="margin-left:4px">↺</button>
+      </div>
+      <div id="briefing-body" style="font-size:12px;color:var(--muted);white-space:pre-wrap;font-family:monospace;line-height:1.4;padding:8px;background:var(--bg3);border-radius:6px">Loading...</div>
+    </div>
+
     <!-- P&L Dashboard -->
     <div class="card" id="pnl-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -1762,7 +1771,7 @@ function switchTab(tab) {
   if (tab === 'agents')    agentsOnVisible();
   if (tab === 'analysis')  analysisOnVisible();
   if (tab === 'markets')   { loadKalman(); loadCalendar(); }
-  if (tab === 'execute') { mt5RefreshPositions(); _startPlPoll(); _renderPnl(); _renderTradeLog(); }
+  if (tab === 'execute') { mt5RefreshPositions(); _startPlPoll(); _renderPnl(); _renderTradeLog(); _loadBriefing(); }
   else                   { _stopPlPoll(); }
 }
 
@@ -4113,6 +4122,24 @@ async function mt5ClosePosition(ticket) {
     if (d.closed) { alert('Position closed.'); mt5RefreshPositions(); _renderTradeLog(); _renderPnl(); }
     else alert('Close failed: ' + d.comment);
   } catch (e) { alert('Error: ' + e.message); }
+}
+
+// ── Guardian Briefing ─────────────────────────────────────────────────────────
+async function _loadBriefing() {
+  try {
+    const d = await apiFetch('/api/briefing/latest');
+    const brief = d.briefing;
+    const el = $('briefing-body');
+    if (!brief) {
+      el.textContent = 'No briefing yet. Guardian runs at 08:00 UTC daily.';
+      el.style.color = 'var(--muted)';
+    } else {
+      el.textContent = brief;
+      el.style.color = 'var(--text)';
+    }
+  } catch (e) {
+    $('briefing-body').textContent = '⚠ Failed to load briefing: ' + e.message;
+  }
 }
 
 // ── P&L History ───────────────────────────────────────────────────────────────
