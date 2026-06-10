@@ -4103,6 +4103,13 @@ async function mt5RefreshPositions() {
     $('exec-positions-body').innerHTML = positions.length ? positions.map(p => {
       const slTxt = p.sl && p.sl > 0 ? fmt(p.sl, 4) : '—';
       const tpTxt = p.tp && p.tp > 0 ? fmt(p.tp, 4) : '—';
+      // Calculate profit/loss if TP or SL is hit
+      const slDist = p.sl && p.sl > 0 ? Math.abs(p.entry_price - p.sl) : 0;
+      const tpDist = p.tp && p.tp > 0 ? Math.abs(p.entry_price - p.tp) : 0;
+      const slPnl = slDist * p.volume;  // Loss amount (as positive)
+      const tpPnl = tpDist * p.volume;  // Profit amount
+      const slTxt2 = p.sl && p.sl > 0 ? `−${fmt(slPnl)}` : '—';
+      const tpTxt2 = p.tp && p.tp > 0 ? `+${fmt(tpPnl)}` : '—';
       const slColor = p.direction === 'buy' && p.sl && p.sl > p.entry_price ? 'neutral-c' :
                       p.direction === 'sell' && p.sl && p.sl < p.entry_price ? 'neutral-c' : '';
       const tpColor = p.direction === 'buy' && p.tp && p.tp > p.entry_price ? 'bull-c' :
@@ -4113,8 +4120,8 @@ async function mt5RefreshPositions() {
         <td class="${p.direction==='buy'?'bull-c':'bear-c'}">${p.direction.toUpperCase()}</td>
         <td>${p.volume}</td>
         <td>${fmt(p.entry_price,4)}</td>
-        <td class="${slColor}" style="font-size:11px">${slTxt}</td>
-        <td class="${tpColor}" style="font-size:11px">${tpTxt}</td>
+        <td class="${slColor}" style="font-size:11px" title="SL ${slTxt} = ${slTxt2} P&L">${slTxt}</td>
+        <td class="${tpColor}" style="font-size:11px" title="TP ${tpTxt} = ${tpTxt2} P&L">${tpTxt}</td>
         <td class="${p.profit>=0?'bull-c':'bear-c'}">${sign(p.profit)}${fmt(p.profit)}</td>
         <td><button class="exec-btn-danger" onclick="mt5ClosePosition(${p.ticket})">✕</button></td>
       </tr>`;
