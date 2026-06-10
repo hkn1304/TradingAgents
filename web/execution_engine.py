@@ -61,6 +61,11 @@ class ExecutionConfig:
     enabled:            bool  = True   # global kill-switch
     require_agent:      bool  = True   # when False, execute on Kalman signal alone
     auto_close:         bool  = False  # auto-close open position when signal reverses
+    # Guardian settings
+    breakeven_atr_mult: float = 1.0   # SL→entry after this multiple of SL-dist in favour
+    zombie_bars:        int   = 20    # close losing position stalled this many hours
+    drawdown_pct:       float = 0.02  # daily drawdown kill-switch threshold
+    guardian_enabled:   bool  = True  # master switch for the guardian loop
 
 
 @dataclass
@@ -113,9 +118,13 @@ class ExecutionEngine:
                 "tp_rr_ratio":      c.tp_rr_ratio,
                 "agent_max_age_h":  c.agent_max_age_h,
                 "auto_tickers":     sorted(c.auto_tickers),
-                "enabled":          c.enabled,
-                "require_agent":    c.require_agent,
-                "auto_close":       c.auto_close,
+                "enabled":            c.enabled,
+                "require_agent":      c.require_agent,
+                "auto_close":         c.auto_close,
+                "breakeven_atr_mult": c.breakeven_atr_mult,
+                "zombie_bars":        c.zombie_bars,
+                "drawdown_pct":       c.drawdown_pct,
+                "guardian_enabled":   c.guardian_enabled,
             }
 
     # ── Concurrence check ─────────────────────────────────────────────────────

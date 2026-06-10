@@ -121,23 +121,39 @@ def _canonical_ticker(mt5_symbol: str) -> str:
 
 def _xm_symbol(ticker: str) -> str:
     """
-    Translate a canonical ticker to the XM MT5 symbol name.
-    1. Check explicit map (metals, energy).
-    2. Check session cache.
-    3. Probe MT5 for ticker, ticker.N, ticker.NAS in that order.
-    4. Fall back to the raw ticker (MT5 will return a clear error).
+    Translate a canonical ticker to the broker's actual MT5 symbol name.
+    1. Check session cache (already resolved + validated for this account).
+    2. Check explicit map (metals, energy) — but validate against live broker
+       first, because MetaQuotes demo uses XAGUSD while XM uses SILVER.
+    3. Probe MT5 for ticker, ticker.N, ticker.NAS … in that order.
+    4. Fall back to the raw ticker (MT5 will return a descriptive error).
     """
     t = ticker.upper()
-    if t in _XM_SYMBOL_MAP:
-        return _XM_SYMBOL_MAP[t]
     if t in _symbol_cache:
         return _symbol_cache[t]
-    if _MT5_AVAILABLE and mt5.terminal_info() is not None:
+
+    live = _MT5_AVAILABLE and mt5.terminal_info() is not None
+
+    if t in _XM_SYMBOL_MAP:
+        mapped = _XM_SYMBOL_MAP[t]
+        # Validate against the live broker — MetaQuotes demo uses XAGUSD,
+        # XM real uses SILVER; never assume the hardcoded name is correct.
+        if live:
+            if mt5.symbol_info(mapped) is not None:
+                _symbol_cache[t] = mapped
+                logger.info(f"Symbol mapped (explicit): {t} → {mapped}")
+                return mapped
+            # Hardcoded name absent on this broker — fall through to probe
+        else:
+            return mapped  # not yet connected, best-effort guess
+
+    if live:
         for candidate in [t, t + '.N', t + '.NAS', t + '.NYSE', t + '.US']:
             if mt5.symbol_info(candidate) is not None:
                 _symbol_cache[t] = candidate
-                logger.info(f"Resolved XM symbol: {t} → {candidate}")
+                logger.info(f"Symbol resolved (probe): {t} → {candidate}")
                 return candidate
+
     return t  # fallback — MT5 will return a descriptive error
 
 
@@ -177,6 +193,7 @@ class MT5Broker:
             self._connected = True
             self._login  = login
             self._server = server
+            _symbol_cache.clear()   # symbol names differ per broker/account
             logger.info(f"MT5 connected (running terminal): login={login} server={server}")
             return True, "Connected"
 
@@ -191,6 +208,7 @@ class MT5Broker:
                 self._connected = True
                 self._login  = login
                 self._server = server
+                _symbol_cache.clear()   # symbol names differ per broker/account
                 logger.info(f"MT5 connected via {path}: login={login} server={server}")
                 return True, "Connected"
             logger.warning(f"Terminal {path} failed: {mt5.last_error()}")
@@ -206,6 +224,7 @@ class MT5Broker:
         if _MT5_AVAILABLE and self._connected:
             mt5.shutdown()
         self._connected = False
+        _symbol_cache.clear()   # don't leak resolved names to the next account
         logger.info("MT5 disconnected")
 
     @property
@@ -361,6 +380,31 @@ class MT5Broker:
         return OrderResult(success, result.order if success else None, result.retcode, result.comment)
 
     # ── Symbol helpers ────────────────────────────────────────────────────────
+
+    def modify_sl(self, ticket: int, sl: float,
+                  tp: Optional[float] = None) -> OrderResult:
+        """Move stop-loss (and optionally take-profit) for an open position."""
+        if not self.connected:
+            return OrderResult(False, None, -1, "Not connected")
+        positions = mt5.positions_get(ticket=ticket)
+        if not positions:
+            return OrderResult(False, None, -1, f"Position {ticket} not found")
+        pos = positions[0]
+        request = {
+            "action":   mt5.TRADE_ACTION_SLTP,
+            "symbol":   pos.symbol,
+            "position": ticket,
+            "sl":       float(sl),
+            "tp":       float(tp) if tp is not None else pos.tp,
+        }
+        result = mt5.order_send(request)
+        if result is None:
+            return OrderResult(False, None, -1, str(mt5.last_error()))
+        success = result.retcode == mt5.TRADE_RETCODE_DONE
+        if success:
+            logger.info(f"SL modified: ticket {ticket} → {sl}")
+        return OrderResult(success, ticket if success else None,
+                           result.retcode, result.comment)
 
     def normalize_volume(self, symbol: str, volume: float) -> float:
         """Round volume to the symbol's lot step, clamped to [min, max]."""

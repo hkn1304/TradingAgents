@@ -101,6 +101,15 @@ from web.chat import chat as chat_handler
 from web.report_summarizer import get_or_build_summary, HORIZONS
 from web.mt5_broker import MT5Broker
 from web.execution_engine import ExecutionEngine
+from web.guardian import guardian_loop
+from web.trades_db import (
+    init_trades_db,
+    trade_journal_stats,
+    equity_snapshot_list,
+    guardian_alerts_list,
+    guardian_alert_ack,
+    briefing_latest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -113,10 +122,19 @@ _exec_engine = ExecutionEngine(_mt5_broker)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    init_trades_db()
     set_loop(asyncio.get_event_loop())
     start_worker()
+    asyncio.create_task(
+        guardian_loop(_mt5_broker, _exec_engine, scan_fn=_guardian_scan)
+    )
     logger.info("TradingAgents web server ready")
     yield
+
+
+def _guardian_scan(tickers_csv: str, horizon: str = "1d") -> dict:
+    """Blocking scan wrapper for the guardian's morning briefing."""
+    return portfolio_kalman(tickers=tickers_csv, horizon=horizon)
 
 
 # ── App ─────────────────────────────────────────────────────────────────────────────
@@ -199,9 +217,14 @@ class MT5ConfigRequest(BaseModel):
     auto_tickers:      Optional[list[str]] = None
     enabled:           Optional[bool]      = None
     require_agent:     Optional[bool]      = None
-    auto_close:        Optional[bool]      = None
-    agent_mode:        Optional[str]       = None
-    auto_template_id:  Optional[str]       = None
+    auto_close:         Optional[bool]      = None
+    agent_mode:         Optional[str]       = None
+    auto_template_id:   Optional[str]       = None
+    # Guardian settings
+    breakeven_atr_mult: Optional[float]     = None
+    zombie_bars:        Optional[int]       = None
+    drawdown_pct:       Optional[float]     = None
+    guardian_enabled:   Optional[bool]      = None
 
 
 class MT5ExecuteRequest(BaseModel):
@@ -501,8 +524,10 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
     import numpy as np
     from datetime import datetime, timedelta
     from web.kalman import compute_both
+    from web.mt5_broker import _canonical_ticker
 
-    ticker_list = [t.strip().upper() for t in tickers.split(',') if t.strip()][:20]
+    # Accept broker-style names (SILVER → XAGUSD, GOLD → XAUUSD)
+    ticker_list = [_canonical_ticker(t.strip()) for t in tickers.split(',') if t.strip()][:20]
     if not ticker_list:
         raise HTTPException(400, detail="No tickers provided")
     for t in ticker_list:
@@ -800,6 +825,37 @@ def mt5_deals(days: int = 30):
         "losing":       losing,
         "win_rate":     round(winning / len(deals) * 100, 1) if deals else 0,
     }
+
+
+# ── Guardian / calibration endpoints ────────────────────────────────────────
+
+@app.get("/api/stats/calibration")
+def stats_calibration():
+    """Win rate / trade count / avg P&L by Kalman score bucket and regime."""
+    return trade_journal_stats()
+
+
+@app.get("/api/stats/equity")
+def stats_equity(limit: int = 90):
+    """Daily balance/equity snapshots, oldest first."""
+    return {"snapshots": equity_snapshot_list(limit)}
+
+
+@app.get("/api/briefing/latest")
+def briefing_get_latest():
+    return {"briefing": briefing_latest()}
+
+
+@app.get("/api/guardian/alerts")
+def guardian_get_alerts(limit: int = 20):
+    return {"alerts": guardian_alerts_list(limit)}
+
+
+@app.post("/api/guardian/alerts/{alert_id}/ack")
+def guardian_ack_alert(alert_id: str):
+    if not guardian_alert_ack(alert_id):
+        raise HTTPException(404, detail="Alert not found")
+    return {"acknowledged": True}
 
 
 def _acct_dict(acct) -> Optional[dict]:
