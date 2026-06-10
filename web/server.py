@@ -860,6 +860,23 @@ def briefing_get_latest():
     return {"briefing": briefing_latest()}
 
 
+@app.get("/api/briefing/regenerate")
+def briefing_regenerate_now():
+    """Force regenerate briefing for current account (on-demand)."""
+    if not _mt5_broker.connected:
+        return {"error": "MT5 not connected"}
+    try:
+        from datetime import datetime
+        from web.guardian import _maybe_morning_briefing
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        # Generate briefing ignoring the time check
+        _maybe_morning_briefing(_mt5_broker, _exec_engine, lambda tickers, horizon="1d": portfolio_kalman(tickers, horizon))
+        return {"success": True, "message": "Briefing regenerated"}
+    except Exception as exc:
+        logger.error(f"Briefing regenerate error: {exc}")
+        return {"error": str(exc)}
+
+
 @app.get("/api/guardian/alerts")
 def guardian_get_alerts(limit: int = 20):
     return {"alerts": guardian_alerts_list(limit)}

@@ -3944,6 +3944,7 @@ async function mt5Connect() {
     if (d.connected) {
       _renderPnl();
       _renderTradeLog();
+      _regenerateBriefing();  // Generate fresh briefing for new account
       // Seed portfolio with open positions if it's currently empty
       if (!_portTickerConfigs.some(c => c.ticker)) _seedPortFromPositions();
     } else {
@@ -4151,6 +4152,16 @@ async function mt5ClosePosition(ticket) {
 }
 
 // ── Guardian Briefing ─────────────────────────────────────────────────────────
+async function _regenerateBriefing() {
+  try {
+    await apiFetch('/api/briefing/regenerate');
+    _loadBriefing();
+  } catch (e) {
+    console.warn('Briefing regenerate failed:', e);
+    _loadBriefing();  // Fall back to loading existing
+  }
+}
+
 async function _loadBriefing() {
   try {
     const d = await apiFetch('/api/briefing/latest');
