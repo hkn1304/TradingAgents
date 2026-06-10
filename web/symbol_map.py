@@ -55,6 +55,13 @@ DATA_ALIASES: dict[str, str] = {
 _resolved_cache: dict[str, str] = {}   # data ticker → confirmed broker symbol
 
 
+def clear_symbol_cache():
+    """Drop resolved mappings — must be called when the broker account
+    changes, since symbol names differ between brokers (XM: SILVER,
+    MetaQuotes demo: XAGUSD, …)."""
+    _resolved_cache.clear()
+
+
 def normalize_data_ticker(ticker: str) -> str:
     """Map broker-style names typed by the user to data-provider tickers."""
     t = ticker.upper().strip()
@@ -77,10 +84,16 @@ def resolve_mt5_symbol(broker, ticker: str) -> str:
     nothing matches (the order will then fail with a clear message).
     """
     t = normalize_data_ticker(ticker)
-    if t in _resolved_cache:
-        return _resolved_cache[t]
     if not getattr(broker, "connected", False):
-        return t
+        return _resolved_cache.get(t, t)
+
+    # Validate cache against the live broker — a cached name from a
+    # previous account (demo vs real, different broker) may not exist here
+    if t in _resolved_cache:
+        cached = _resolved_cache[t]
+        if broker.symbol_exists(cached):
+            return cached
+        del _resolved_cache[t]
 
     candidates = DATA_TO_MT5_CANDIDATES.get(t, [t])
     if t not in candidates:

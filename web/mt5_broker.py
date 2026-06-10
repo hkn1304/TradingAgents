@@ -96,6 +96,10 @@ class MT5Broker:
         self._connected = True
         self._login  = login
         self._server = server
+        # Symbol names are broker-specific (XM: SILVER, MetaQuotes: XAGUSD)
+        # — never reuse mappings resolved on a previous account.
+        from web.symbol_map import clear_symbol_cache
+        clear_symbol_cache()
         logger.info(f"MT5 connected: login={login} server={server}")
         return True, "Connected"
 
@@ -103,6 +107,8 @@ class MT5Broker:
         if _MT5_AVAILABLE and self._connected:
             mt5.shutdown()
         self._connected = False
+        from web.symbol_map import clear_symbol_cache
+        clear_symbol_cache()
         logger.info("MT5 disconnected")
 
     @property
