@@ -278,6 +278,33 @@ class MT5Broker:
 
     # ── Symbol helpers ────────────────────────────────────────────────────────
 
+    def symbol_exists(self, symbol: str) -> bool:
+        """Exact-name check against the broker's symbol tree."""
+        if not self.connected:
+            return False
+        return mt5.symbol_info(symbol) is not None
+
+    def find_symbol(self, query: str) -> Optional[str]:
+        """
+        Case-insensitive search of all broker symbols for `query`.
+        Exact case-insensitive match wins; otherwise the shortest
+        symbol containing the query (so 'SILVER' beats 'SILVER_DEC25').
+        Returns the broker's exact spelling, or None.
+        """
+        if not self.connected:
+            return None
+        symbols = mt5.symbols_get()
+        if not symbols:
+            return None
+        q = query.upper()
+        exact = [s.name for s in symbols if s.name.upper() == q]
+        if exact:
+            return exact[0]
+        partial = [s.name for s in symbols if q in s.name.upper()]
+        if partial:
+            return min(partial, key=len)
+        return None
+
     def normalize_volume(self, symbol: str, volume: float) -> float:
         """Round volume to the symbol's lot step, clamped to [min, max]."""
         if not self.connected:

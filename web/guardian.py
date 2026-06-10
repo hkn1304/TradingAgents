@@ -167,11 +167,13 @@ def _check_signal_flip(position):
         from datetime import timedelta
         from providers import get_market_provider, OHLCVInterval
         from web.kalman import compute_both
+        from web.symbol_map import to_data_symbol
 
         provider = get_market_provider()
+        data_symbol = to_data_symbol(position.symbol)  # SILVER → XAGUSD
         end = datetime.utcnow().strftime("%Y-%m-%d")
         start = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
-        df = provider.get_ohlcv(position.symbol, start, end, OHLCVInterval.HOUR_1)
+        df = provider.get_ohlcv(data_symbol, start, end, OHLCVInterval.HOUR_1)
         if df.empty or len(df) < 30:
             return
         both = compute_both(df, timeframe="1h")

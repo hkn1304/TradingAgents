@@ -456,8 +456,10 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
     import numpy as np
     from datetime import datetime, timedelta
     from web.kalman import compute_both
+    from web.symbol_map import normalize_data_ticker
 
-    ticker_list = [t.strip().upper() for t in tickers.split(',') if t.strip()][:5]
+    # Accept broker-style names too (SILVER → XAGUSD)
+    ticker_list = [normalize_data_ticker(t) for t in tickers.split(',') if t.strip()][:5]
     if not ticker_list:
         raise HTTPException(400, detail="No tickers provided")
     for t in ticker_list:

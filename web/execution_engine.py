@@ -250,8 +250,17 @@ class ExecutionEngine:
 
             cfg = self._cfg
 
+            # Translate data ticker (e.g. XAGUSD) to the broker's actual
+            # symbol name (SILVER, Silver, XAGUSD.r, …)
+            from web.symbol_map import resolve_mt5_symbol
+            mt5_symbol = resolve_mt5_symbol(self._broker, signal.ticker)
+            if not self._broker.symbol_exists(mt5_symbol):
+                return self._record(signal, False,
+                    f"No broker symbol found for {signal.ticker} "
+                    f"(tried '{mt5_symbol}')")
+
             # Guard: position already open for this ticker?
-            existing = self._broker.get_position_for_symbol(signal.ticker)
+            existing = self._broker.get_position_for_symbol(mt5_symbol)
             if existing:
                 return self._record(signal, False,
                     f"Position already open — ticket {existing.ticket}")
@@ -280,12 +289,12 @@ class ExecutionEngine:
                 if dist > 0:
                     risk_cash = acct.balance * cfg.risk_pct
                     volume    = risk_cash / dist
-            volume = self._broker.normalize_volume(signal.ticker, volume)
+            volume = self._broker.normalize_volume(mt5_symbol, volume)
             if volume <= 0:
                 volume = 0.01
 
             result = self._broker.place_market_order(
-                symbol    = signal.ticker,
+                symbol    = mt5_symbol,
                 direction = signal.direction,
                 volume    = volume,
                 sl        = sl,
