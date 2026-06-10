@@ -4156,11 +4156,11 @@ async function _loadBriefing() {
     const d = await apiFetch('/api/briefing/latest');
     const brief = d.briefing;
     const el = $('briefing-body');
-    if (!brief) {
+    if (!brief || !brief.text) {
       el.textContent = 'No briefing yet. Guardian runs at 08:00 UTC daily.';
       el.style.color = 'var(--muted)';
     } else {
-      el.textContent = brief;
+      el.textContent = brief.text;
       el.style.color = 'var(--text)';
     }
   } catch (e) {
