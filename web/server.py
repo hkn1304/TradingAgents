@@ -773,6 +773,28 @@ def mt5_execute(body: MT5ExecuteRequest):
     return {"executed": entry["success"], "log": entry}
 
 
+@app.post("/api/mt5/modify/{ticket}")
+def mt5_modify(ticket: int, sl: Optional[float] = None, tp: Optional[float] = None):
+    """Modify stop loss and/or take profit for an open position."""
+    if sl is None and tp is None:
+        return {"error": "Provide sl and/or tp"}
+    try:
+        # Get current position to preserve whichever field isn't being modified
+        positions = [p for p in _mt5_broker.get_positions() if p.ticket == ticket]
+        if not positions:
+            return {"success": False, "error": f"Position {ticket} not found"}
+        pos = positions[0]
+        new_sl = sl if sl is not None else pos.sl
+        new_tp = tp if tp is not None else pos.tp
+        result = _mt5_broker.modify_sl(ticket, new_sl, new_tp)
+        if result.success:
+            return {"success": True, "message": f"Updated: SL={new_sl}, TP={new_tp}"}
+        return {"success": False, "error": result.comment}
+    except Exception as exc:
+        logger.error(f"Modify position error: {exc}")
+        return {"error": str(exc)}
+
+
 @app.post("/api/mt5/close/{ticket}")
 def mt5_close(ticket: int):
     # Snapshot position before closing so we can log it
