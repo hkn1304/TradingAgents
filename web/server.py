@@ -1,8 +1,8 @@
-"""
-FastAPI application — all REST endpoints + WebSocket streaming.
+﻿"""
+FastAPI application â€” all REST endpoints + WebSocket streaming.
 
 Route map
-─────────
+â”€â”€â”€â”€â”€â”€â”€â”€â”€
 GET  /api/config                      provider capabilities + available agents
 GET  /api/markets/price               live price (5-10 s refresh)
 GET  /api/markets/ohlcv               OHLCV bars
@@ -24,7 +24,7 @@ GET  /api/sessions/{session_id}       full session with reports + agent status
 DELETE /api/sessions/{session_id}     delete session
 
 GET  /api/sessions/{session_id}/chat    chat history
-POST /api/sessions/{session_id}/chat   send message → get reply
+POST /api/sessions/{session_id}/chat   send message â†’ get reply
 GET  /api/sessions/{session_id}/summary compact JSON card (horizon=today|tomorrow|week|month)
 
 GET  /api/templates                   list templates
@@ -113,11 +113,11 @@ from web.trades_db import (
 
 logger = logging.getLogger(__name__)
 
-# ── MT5 singletons (created once, shared across requests) ────────────────────
+# â”€â”€ MT5 singletons (created once, shared across requests) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 _mt5_broker  = MT5Broker()
 _exec_engine = ExecutionEngine(_mt5_broker)
 
-# ── Lifespan ───────────────────────────────────────────────────────────────────────
+# â”€â”€ Lifespan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -137,7 +137,7 @@ def _guardian_scan(tickers_csv: str, horizon: str = "1d") -> dict:
     return portfolio_kalman(tickers=tickers_csv, horizon=horizon)
 
 
-# ── App ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€ App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 app = FastAPI(title="TradingAgents Web", lifespan=lifespan)
 app.add_middleware(
@@ -148,7 +148,7 @@ app.add_middleware(
 )
 
 
-# ── Request / Response models ───────────────────────────────────────────────────────
+# â”€â”€ Request / Response models â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class JobSubmit(BaseModel):
     ticker:           str
@@ -235,7 +235,7 @@ class MT5ExecuteRequest(BaseModel):
     atr:             Optional[float] = None
 
 
-# ── /api/models ──────────────────────────────────────────────────────────────────
+# â”€â”€ /api/models â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/api/models")
 def get_models():
@@ -249,7 +249,7 @@ def get_models():
     return result
 
 
-# ── /api/config ───────────────────────────────────────────────────────────────────
+# â”€â”€ /api/config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/api/config")
 def get_config():
@@ -272,13 +272,13 @@ def get_config():
                 "login":    os.getenv("MT5_LOGIN", ""),
                 "password": os.getenv("MT5_PASSWORD", ""),
                 "server":   os.getenv("MT5_SERVER", ""),
-                "label":    "📊 Demo (MetaQuotes)"
+                "label":    "ğŸ“Š Demo (MetaQuotes)"
             },
             "real": {
                 "login":    os.getenv("MT5_REAL_LOGIN", ""),
                 "password": os.getenv("MT5_REAL_PASSWORD", ""),
                 "server":   os.getenv("MT5_REAL_SERVER", ""),
-                "label":    "💰 Real (XM Global)"
+                "label":    "ğŸ’° Real (XM Global)"
             }
         },
         "mt5_defaults": {
@@ -289,7 +289,7 @@ def get_config():
     }
 
 
-# ── /api/prefs — persistent user preferences ─────────────────────────────────
+# â”€â”€ /api/prefs â€” persistent user preferences â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/api/prefs/{key}")
 def prefs_get(key: str):
@@ -302,11 +302,11 @@ def prefs_set(key: str, body: dict):
     return {"ok": True}
 
 
-# ── /api/markets/* ───────────────────────────────────────────────────────────────────
+# â”€â”€ /api/markets/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 import time as _time
 
-_market_cache: dict = {}  # key → (value, expires_at)
+_market_cache: dict = {}  # key â†’ (value, expires_at)
 
 def _mc_get(key: str):
     entry = _market_cache.get(key)
@@ -329,7 +329,7 @@ def markets_price(ticker: str):
     if price is None:
         raise HTTPException(503, detail="Price unavailable")
     result = {"ticker": ticker, "price": price}
-    _mc_set(key, result, 10)  # 10 s — matches UI refresh rate
+    _mc_set(key, result, 10)  # 10 s â€” matches UI refresh rate
     return result
 
 
@@ -341,7 +341,7 @@ def markets_ohlcv(
 ):
     from datetime import datetime, timedelta
     provider  = get_market_provider()
-    end_date  = datetime.utcnow().strftime("%Y-%m-%d")
+    end_date  = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")  # +1d: yfinance end is exclusive
     start_date = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
 
     interval_map = {
@@ -371,7 +371,7 @@ def markets_indicators(ticker: str, date: str | None = None):
     provider = get_market_provider()
     indicators = provider.get_indicators(ticker, date)
     result = {"ticker": ticker, "date": date, "indicators": indicators}
-    _mc_set(key, result, 120)  # 2 min — intraday indicators don't change fast
+    _mc_set(key, result, 120)  # 2 min â€” intraday indicators don't change fast
     return result
 
 
@@ -383,7 +383,7 @@ def markets_pivots(ticker: str, interval: str = "1d", days: int = 90):
     if cached is not None:
         return cached
     provider   = get_market_provider()
-    end_date   = datetime.utcnow().strftime("%Y-%m-%d")
+    end_date   = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")  # +1d: yfinance end is exclusive
     start_date = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
 
     interval_map = {
@@ -396,7 +396,7 @@ def markets_pivots(ticker: str, interval: str = "1d", days: int = 90):
         raise HTTPException(404, detail=f"Not enough OHLCV data for pivots on {ticker}")
 
     result = {"ticker": ticker, "interval": interval, "pivots": provider.calc_pivots(df)}
-    _mc_set(key, result, 300)  # 5 min — daily pivots barely move intraday
+    _mc_set(key, result, 300)  # 5 min â€” daily pivots barely move intraday
     return result
 
 
@@ -411,7 +411,7 @@ def markets_news(ticker: str, limit: int = 6):
         raise HTTPException(501, detail="Current provider does not support news")
     news = provider.get_news(ticker, max_items=limit)
     result = {"ticker": ticker, "news": news}
-    _mc_set(key, result, 300)  # 5 min — news feed doesn't need instant refresh
+    _mc_set(key, result, 300)  # 5 min â€” news feed doesn't need instant refresh
     return result
 
 
@@ -459,7 +459,7 @@ def markets_calendar():
     return result
 
 
-# ── /api/kalman/{ticker} ─────────────────────────────────────────────────────────────
+# â”€â”€ /api/kalman/{ticker} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/api/kalman/{ticker}")
 def get_kalman(
@@ -476,7 +476,7 @@ def get_kalman(
         raise HTTPException(400, detail="Invalid ticker")
 
     provider = get_market_provider()
-    end_date   = datetime.utcnow().strftime("%Y-%m-%d")
+    end_date   = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")  # +1d: yfinance end is exclusive
     start_date = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
 
     interval_map = {
@@ -525,7 +525,7 @@ def get_kalman_history(ticker: str, timeframe: str = "1d", limit: int = 50):
     }
 
 
-# ── /api/portfolio/kalman ────────────────────────────────────────────────────
+# â”€â”€ /api/portfolio/kalman â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/api/portfolio/kalman")
 def portfolio_kalman(tickers: str, horizon: str = "1d"):
@@ -540,7 +540,7 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
     from web.kalman import compute_both
     from web.mt5_broker import _canonical_ticker
 
-    # Accept broker-style names (SILVER → XAGUSD, GOLD → XAUUSD)
+    # Accept broker-style names (SILVER â†’ XAGUSD, GOLD â†’ XAUUSD)
     ticker_list = [_canonical_ticker(t.strip()) for t in tickers.split(',') if t.strip()][:20]
     if not ticker_list:
         raise HTTPException(400, detail="No tickers provided")
@@ -548,7 +548,7 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
         if not re.match(r'^[A-Z0-9.\-=]{1,20}$', t):
             raise HTTPException(400, detail=f"Invalid ticker: {t}")
 
-    # horizon → (OHLCVInterval, lookback_days, kalman_timeframe_key)
+    # horizon â†’ (OHLCVInterval, lookback_days, kalman_timeframe_key)
     horizon_cfg = {
         "1h": (OHLCVInterval.MIN_15, 5,   "15m"),
         "4h": (OHLCVInterval.MIN_30, 14,  "30m"),
@@ -560,7 +560,7 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
     bar_label = tf_key
 
     provider   = get_market_provider()
-    end_date   = datetime.utcnow().strftime("%Y-%m-%d")
+    end_date   = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")  # +1d: yfinance end is exclusive
     start_date = (datetime.utcnow() - timedelta(days=lookback_days)).strftime("%Y-%m-%d")
 
     results = []
@@ -626,13 +626,13 @@ def portfolio_kalman(tickers: str, horizon: str = "1d"):
             # What direction do the models agree on (if they do)?
             agreed_side = rw_eff if models_agree else None  # 'buy' | 'sell' | None
 
-            # Composite score (0–100)
+            # Composite score (0â€“100)
             score = max(buy_r, sell_r) * 50
             # Agreement bonus only when models align WITH the bar-state direction
             if models_agree and agreed_side == ('buy' if direction == 'bullish' else 'sell'):
                 score += 15
             elif models_agree:
-                # Models agree but against the historical trend — mild penalty
+                # Models agree but against the historical trend â€” mild penalty
                 score -= 5
             if rw['regime'] == 'trending': score += 10
             cross_age = rw.get('signal_age_bars')
@@ -715,7 +715,7 @@ def _port_error(ticker: str, msg: str) -> dict:
     }
 
 
-# ── /api/mt5/* (Tab 5 — execution) ──────────────────────────────────────────
+# â”€â”€ /api/mt5/* (Tab 5 â€” execution) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.post("/api/mt5/connect", status_code=200)
 def mt5_connect(body: MT5ConnectRequest):
@@ -833,7 +833,7 @@ def mt5_deals(days: int = 30):
     """Closed deal history with P&L from MT5."""
     deals = _mt5_broker.get_deal_history(days)
 
-    # Build daily P&L series (date → net P&L)
+    # Build daily P&L series (date â†’ net P&L)
     from collections import defaultdict
     daily: dict = defaultdict(float)
     for d in reversed(deals):          # oldest first for cumulative calc
@@ -863,7 +863,7 @@ def mt5_deals(days: int = 30):
     }
 
 
-# ── Guardian / calibration endpoints ────────────────────────────────────────
+# â”€â”€ Guardian / calibration endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/api/stats/calibration")
 def stats_calibration():
@@ -944,7 +944,7 @@ def _pos_dict(p) -> dict:
     }
 
 
-# ── /api/jobs/* (Tab 3 — full pipeline) ─────────────────────────────────────────────
+# â”€â”€ /api/jobs/* (Tab 3 â€” full pipeline) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.post("/api/jobs", status_code=202)
 def submit_job(body: JobSubmit):
@@ -993,7 +993,7 @@ def cancel_job(session_id: str):
     return {"session_id": session_id, "status": "cancelling"}
 
 
-# ── /api/agents/run/* (Tab 2 — selective agents) ─────────────────────────────────
+# â”€â”€ /api/agents/run/* (Tab 2 â€” selective agents) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.post("/api/agents/run", status_code=202)
 def submit_agent_run(body: AgentRunSubmit):
@@ -1055,7 +1055,7 @@ def cancel_agent_run(session_id: str):
 
 
 
-# ── /api/sessions/* (history) ──────────────────────────────────────────────────────────
+# â”€â”€ /api/sessions/* (history) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/api/sessions")
 def list_sessions(limit: int = 50):
@@ -1081,7 +1081,7 @@ def delete_session(session_id: str):
     session_delete(session_id)
 
 
-# ── /api/sessions/{id}/chat ──────────────────────────────────────────────────────────
+# â”€â”€ /api/sessions/{id}/chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/api/sessions/{session_id}/chat")
 def get_chat(session_id: str):
@@ -1098,7 +1098,7 @@ async def post_chat(session_id: str, body: ChatMessage):
     return {"reply": reply}
 
 
-# ── /api/sessions/{id}/summary ──────────────────────────────────────────────────────────
+# â”€â”€ /api/sessions/{id}/summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/api/sessions/{session_id}/summary")
 def get_summary(session_id: str, horizon: str = "week", force: bool = False):
@@ -1133,7 +1133,7 @@ def get_summary(session_id: str, horizon: str = "week", force: bool = False):
     return {"session_id": session_id, "horizon": horizon, "summary": summary}
 
 
-# ── /api/templates/* ───────────────────────────────────────────────────────────────────
+# â”€â”€ /api/templates/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/api/templates")
 def get_templates():
@@ -1170,7 +1170,7 @@ def delete_template_route(template_id: str):
     template_delete(template_id)
 
 
-# ── WebSocket /ws/{session_id} ─────────────────────────────────────────────────────────────────
+# â”€â”€ WebSocket /ws/{session_id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(ws: WebSocket, session_id: str):
@@ -1202,7 +1202,7 @@ async def websocket_endpoint(ws: WebSocket, session_id: str):
         ws_manager.disconnect(session_id, ws)
 
 
-# ── Static PWA ───────────────────────────────────────────────────────────────────────
+# â”€â”€ Static PWA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _PWA_DIR = Path(__file__).parent.parent / "pwa"
 if _PWA_DIR.exists():

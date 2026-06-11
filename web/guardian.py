@@ -171,7 +171,7 @@ def _check_signal_flip(position):
 
         provider = get_market_provider()
         data_symbol = _canonical_ticker(position.symbol)  # SILVER → XAGUSD  # SILVER → XAGUSD
-        end = datetime.utcnow().strftime("%Y-%m-%d")
+        end = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")  # +1d: yfinance end is exclusive
         start = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
         df = provider.get_ohlcv(data_symbol, start, end, OHLCVInterval.HOUR_1)
         if df.empty or len(df) < 30:
