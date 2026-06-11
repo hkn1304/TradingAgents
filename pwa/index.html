@@ -3771,6 +3771,7 @@ let _mt5PendingSignals = []; // [{ticker, direction, score, modelsAgree, atr}]
 let _mt5PlPollTimer = null;
 let _mt5AgentMode = 'manual';   // 'manual' | 'auto'
 let _mt5AutoTemplateId = '';    // template id used in auto mode
+let _mt5PnlThresholds = {};     // ticket → lastNotifiedThreshold ($10, $20, -$10, -$20)
 
 // ── Auto-scan timer ───────────────────────────────────────────────────────────
 let _portAutoScanTimer   = null;
@@ -4173,6 +4174,22 @@ async function mt5RefreshPositions() {
   try {
     const d = await apiFetch('/api/mt5/status');
     const positions = d.positions || [];
+
+    // ── Check P&L milestones (every $10 profit/loss) ──────────────────────────
+    for (const p of positions) {
+      const pnl = Math.round(p.profit);
+      const lastThreshold = _mt5PnlThresholds[p.ticket] || 0;
+      const currentThreshold = Math.floor(pnl / 10) * 10;
+
+      // If P&L crossed a $10 boundary, notify
+      if (currentThreshold !== lastThreshold) {
+        _mt5PnlThresholds[p.ticket] = currentThreshold;
+        const arrow = currentThreshold > lastThreshold ? '📈' : '📉';
+        const sign = pnl >= 0 ? '+' : '';
+        showToast(`${arrow} ${p.symbol} P&L: ${sign}$${pnl}`, pnl >= 0 ? 'success' : 'warning', 3000);
+      }
+    }
+
     $('exec-positions-body').innerHTML = positions.length ? positions.map(p => {
       const slTxt = p.sl && p.sl > 0 ? fmt(p.sl, 4) : '—';
       const tpTxt = p.tp && p.tp > 0 ? fmt(p.tp, 4) : '—';
