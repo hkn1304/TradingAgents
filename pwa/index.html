@@ -3406,10 +3406,16 @@ function _resetPortRefreshTimer() {
   if (_portRefreshTimer) clearInterval(_portRefreshTimer);
   // Use shortest horizon interval across active tickers for refresh cadence
   const active = _portTickerConfigs.filter(c => c.ticker);
+  if (!active.length) return;  // No tickers, don't set up refresh
   const minMs  = active.reduce((m, c) => Math.min(m, _PORT_REFRESH_MS[c.horizon] || 3_600_000), 3_600_000);
   _portRefreshTimer = setInterval(() => {
-    if (_portTickerConfigs.some(c => c.ticker) && _portHasData) runPortfolioScan();
+    // Always refresh if we have active tickers (don't gate on _portHasData)
+    if (_portTickerConfigs.some(c => c.ticker)) runPortfolioScan();
   }, minMs);
+  // Also fire immediately on first setup (cache will be fresh since we just scanned)
+  if (_portHasData) {
+    setTimeout(() => runPortfolioScan(), minMs * 0.9);
+  }
 }
 
 async function runPortfolioScan() {
@@ -3429,6 +3435,13 @@ async function runPortfolioScan() {
   // Debug: log exact state so browser console shows what's being scanned
   console.log('[PORT scan] configs:', JSON.stringify(_portTickerConfigs));
   console.log('[PORT scan] active:', active.map(c => `${c.ticker}/${c.horizon}`).join(', '));
+
+  // Evict cache for active tickers so we always get fresh data, not stale cache hits
+  for (const cfg of active) {
+    const h = cfg.horizon || _portHorizon || '1d';
+    const url = `/api/portfolio/kalman?tickers=${encodeURIComponent(cfg.ticker)}&horizon=${h}`;
+    _cache.evict(url);
+  }
 
   if (!active.length) {
     // If called from auto-scan while restore is still pending, skip silently
