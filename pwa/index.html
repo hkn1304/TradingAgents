@@ -1135,9 +1135,14 @@ nav.tab-bar {
       <div class="port-tickers" id="port-tickers"></div>
       <button class="port-add-btn" onclick="_addPortTicker()">+ Add ticker</button>
 
-      <button class="port-analyze-btn" id="port-analyze-btn" onclick="runPortfolioScan()">
-        Analyze Portfolio
-      </button>
+      <div style="display:flex;gap:8px">
+        <button class="port-analyze-btn" id="port-analyze-btn" onclick="runPortfolioScan()" style="flex:1">
+          Analyze Portfolio
+        </button>
+        <button class="port-analyze-btn" id="port-refresh-btn" onclick="_manualRefreshPortfolio()" style="flex:0.3;background:var(--accent)">
+          ↻ Refresh
+        </button>
+      </div>
     </div>
 
     <div id="port-results"></div>
@@ -3416,6 +3421,12 @@ function _resetPortRefreshTimer() {
   if (_portHasData) {
     setTimeout(() => runPortfolioScan(), minMs * 0.9);
   }
+}
+
+function _manualRefreshPortfolio() {
+  // Force clear cache for portfolio kalman and re-scan
+  _cache.evict('/api/portfolio/kalman');
+  runPortfolioScan();
 }
 
 async function runPortfolioScan() {
